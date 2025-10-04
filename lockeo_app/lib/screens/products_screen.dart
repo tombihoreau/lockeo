@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../services/local_data_service.dart';
 import '../widgets/product_card.dart';
-import '../models/images.dart';
+import '../models/image.dart';
 import 'product_detail_screen.dart';
+import '../models/offer.dart';
 
 class ProductsScreen extends StatelessWidget {
   final LocalDataService dataService = LocalDataService();
@@ -13,8 +14,8 @@ class ProductsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Produits disponibles")),
       body: FutureBuilder<List<dynamic>>(
-        //à voir pour prendre un produit qui correspond à une offre
         future: Future.wait([
+          dataService.loadOffers(),
           dataService.loadProducts(),
           dataService.loadImages(),
         ]),
@@ -26,10 +27,15 @@ class ProductsScreen extends StatelessWidget {
             return const Center(child: Text("Erreur ou données introuvables"));
           }
 
-          final products = snapshot.data![0] as List<Product>;
-          final images = snapshot.data![1] as List<ImageModel>; 
-          final availableProducts = products.where((p) => p.isAvailable).toList();
-          if (availableProducts.isEmpty) {
+          final offers = snapshot.data![0] as List<Offer>;
+          final products = snapshot.data![1] as List<Product>;
+          final images = snapshot.data![2] as List<ImageModel>; 
+
+          final visibleOffers = offers.where((o) =>
+            products.any((p) => p.productId == o.productId && p.isAvailable)
+          ).toList();
+          
+          if (offers.isEmpty) {
             return const Center(child: Text("Aucun produit disponible"));
           }
           return GridView.builder(
@@ -40,15 +46,16 @@ class ProductsScreen extends StatelessWidget {
               mainAxisSpacing: 6,
               childAspectRatio: 0.65,
             ),
-            itemCount: availableProducts.length,
+            itemCount: visibleOffers.length,
             itemBuilder: (context, index) {
-              final availableProduct = availableProducts[index];
-              final productImages = images.where((img) => img.productId == availableProduct.productId).toList();
+              final offer = visibleOffers[index];
+              final product = products.firstWhere((p) => p.productId == offer.productId);
+              final productImages = images.where((img) => img.productId == product.productId).toList();
               final firstImage = productImages.firstWhere(
                 (img) => img.positionImage == 1,
                 orElse: () => ImageModel(
                   imageId: 0,
-                  productId: availableProduct.productId,
+                  productId: product.productId,
                   url: "assets/images/default.jpg",
                   positionImage: 0,
                   createdAt: "",
@@ -56,13 +63,15 @@ class ProductsScreen extends StatelessWidget {
               );
 
               return ProductCard(
-                product: availableProduct,
+                product: product,
                 image: firstImage,
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ProductDetailScreen(product: availableProduct, images: productImages),
+                      builder: (context) => ProductDetailScreen(
+                        offer: offer,
+                      ),
                     ),
                   );
                 },

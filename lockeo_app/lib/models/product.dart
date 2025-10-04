@@ -9,10 +9,10 @@ class Product {
   final double? latitude;
   final String city;
   final String postalCode;
-  final int ownerId;
   final bool isAvailable;
   final String createdAt;
   final String updatedAt;
+  final List<int> categoryIds; 
 
   Product({
     required this.productId,
@@ -25,10 +25,10 @@ class Product {
     this.latitude,
     required this.city,
     required this.postalCode,
-    required this.ownerId,
     required this.isAvailable,
     required this.createdAt,
     required this.updatedAt,
+    required this.categoryIds,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -43,10 +43,10 @@ class Product {
       latitude: json['latitude']?.toDouble(),
       city: json['city'],
       postalCode: json['postal_code'],
-      ownerId: json['owner_id'],
       isAvailable: json['is_available'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
+      categoryIds: List<int>.from(json['category_ids'] ?? []),
     );
   }
 }

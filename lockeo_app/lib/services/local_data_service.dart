@@ -1,7 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import '../models/product.dart';
-import '../models/images.dart';
+import '../models/image.dart';
+import '../models/offer.dart';
+import '../models/user.dart';
+import '../models/category.dart';
+
 
 class LocalDataService {
   Future<List<Product>> loadProducts() async {
@@ -9,6 +13,15 @@ class LocalDataService {
   }
   Future<List<ImageModel>> loadImages() async {
     return loadJson<ImageModel>("images", (json) => ImageModel.fromJson(json));
+  }
+  Future<List<Offer>> loadOffers() async {
+    return loadJson<Offer>("offers", (json) => Offer.fromJson(json));
+  }
+  Future<List<User>> loadUsers() async {
+    return loadJson<User>("users", (json) => User.fromJson(json));
+  }
+  Future<List<Category>> loadCategories() async {
+    return loadJson<Category>("categories", (json) => Category.fromJson(json));
   }
 
   Future<List<T>> loadJson<T>(String path, T Function(Map<String, dynamic>) fromJson) async {
