@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/screens/home_screen.dart';
 import 'package:lockeo_app/screens/products_screen.dart';
 
 void main() {
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
           elevation: 0,                        // pas d’ombre
         ),
       ),
-      home: ProductsScreen(),
+      home: HomeScreen(),
     );
   }
 }

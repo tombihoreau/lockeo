@@ -13,6 +13,7 @@ class Product {
   final String createdAt;
   final String updatedAt;
   final List<int> categoryIds; 
+  final bool isFavorite;
 
   Product({
     required this.productId,
@@ -29,6 +30,7 @@ class Product {
     required this.createdAt,
     required this.updatedAt,
     required this.categoryIds,
+    this.isFavorite = false,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,7 @@ class Product {
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
       categoryIds: List<int>.from(json['category_ids'] ?? []),
+      isFavorite: json['is_favorite'] ?? false,
     );
   }
 }
