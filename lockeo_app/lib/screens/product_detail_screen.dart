@@ -6,11 +6,12 @@ import '../models/user.dart';
 import '../models/category.dart';
 import '../services/local_data_service.dart';
 import '../widgets/images_slider.dart';
+import '../widgets/category_card.dart';
 import '../widgets/button.dart';
 
 class ProductDetailScreen extends StatelessWidget {
-  final Offer offer; 
-  
+  final Offer offer;
+
   const ProductDetailScreen({
     super.key,
     required this.offer,
@@ -34,12 +35,14 @@ class ProductDetailScreen extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
+
         if (!snapshot.hasData || snapshot.data == null) {
           return const Scaffold(
             body: Center(child: Text("Erreur ou données introuvables")),
           );
         }
 
+        // Données locales
         final products = snapshot.data![0] as List<Product>;
         final images = snapshot.data![1] as List<ImageModel>;
         final users = snapshot.data![2] as List<User>;
@@ -50,137 +53,205 @@ class ProductDetailScreen extends StatelessWidget {
         final owner = users.firstWhere((u) => u.userId == offer.userId);
         final productImages = images.where((img) => img.productId == product.productId).toList();
         final ownerOffersCount = offers.where((o) => o.userId == owner.userId).length;
-        final productCategories = categories
-          .where((cat) => product.categoryIds.contains(cat.categoryId))
-          .toList();
-          
+        final productCategories =
+            categories.where((cat) => product.categoryIds.contains(cat.categoryId)).toList();
+
         return Scaffold(
+          extendBodyBehindAppBar: true,
           appBar: AppBar(
-            title: Text(product.name),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
+            backgroundColor: Colors.transparent,
             elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Propriétaire
-                Row(
+
+          // --- CONTENU ---
+          body: Stack(
+            children: [
+              // Contenu scrollable
+              SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 24,
-                      child: Text(owner.firstName[0]), // première lettre du prénom
+                    // --- SLIDER D’IMAGES ---
+                    SizedBox(
+                      width: double.infinity,
+                      height: 320,
+                      child: ImageSlider(
+                        images: productImages,
+                        height: 320,
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          owner.firstName,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          "$ownerOffersCount annonces",
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Titre
+                              Text(
+                                product.name,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+
+                              // Localisation
+                              Row(
+                                children: [
+                                  const Icon(Icons.location_on, color: Colors.grey, size: 18),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      "${product.city}, ${product.postalCode}",
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Catégories
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: productCategories.map((category) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 8.0),
+                                      child: CategoryCard(
+                                        name: category.label,
+                                        iconUrl: category.iconUrl,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Description
+                              Text(
+                                product.description,
+                                style: const TextStyle(fontSize: 15, height: 1.4),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Propriétaire
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 26,
+                                      backgroundImage:
+                                          const AssetImage('assets/images/user.jpg'),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            owner.firstName,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const Row(
+                                            children: [
+                                              Icon(Icons.star, size: 16, color: Colors.amber),
+                                              SizedBox(width: 4),
+                                              Text("5"),
+                                            ],
+                                          ),
+                                          Text(
+                                            "$ownerOffersCount annonces",
+                                            style: const TextStyle(color: Colors.grey),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(Icons.chevron_right, color: Colors.grey),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 100),
+                            ],
+                          ),
+
+                          // --- Prix en haut à droite ---
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(
+                                    color: const Color(0xFF225A5D), width: 1.3),
+                                borderRadius: BorderRadius.circular(40),
+                              ),
+                              child: Text(
+                                "${product.price?.toStringAsFixed(0)}€",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF225A5D),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+              ),
+            ],
+          ),
 
-                // Slider d'images
-                ImageSlider(
-                  images: productImages,
-                  height: 250,
-                  borderRadius: 12,
-                ),
-                const SizedBox(height: 16),
-
-                // Categories
-
-                Wrap(
-                  spacing: 8, // espace horizontal entre les badges
-                  runSpacing: 8, // espace vertical (si retour à la ligne)
-                  children: productCategories.map((category) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9), // vert clair de fond
-                        border: Border.all(color: const Color(0xFF006633), width: 1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        category.label, // 👈 ton champ du modèle Category
-                        style: const TextStyle(
-                          color: Color(0xFF006633),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-
-                
-                const SizedBox(height: 16),
-                // Description
-                Text(
-                  product.description,
-                  style: const TextStyle(fontSize: 15, height: 1.4),
-                ),
-                const SizedBox(height: 16),
-
-                // Ville
-                Text(
-                  product.city,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-
-                // Prix
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      "${product.price?.toInt()}€",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 40,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Text(
-                      "1/2 journée",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 40),
-
-                CustomButton(
-                  text: "Faire une offre",
-                  filled: false, // bouton plein
-                  onPressed: () {
-                    print("Faire une offre !");
-                  },
-                ),
-
-                const SizedBox(height: 16),
-                  CustomButton(
-                  text: "Louer",
-                  filled: true, // bouton plein
-                  onPressed: () {
-                    print("Louer !");
-                  },
+          bottomNavigationBar: Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
                 ),
               ],
+            ),
+            child: CustomButton(
+              text: "Louer",
+              filled: true,
+              onPressed: () {
+                print("Louer !");
+              },
             ),
           ),
         );

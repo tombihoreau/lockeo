@@ -49,8 +49,6 @@ class ProductGrid extends StatelessWidget {
           products = products.where((p) => p.isFavorite).toList();
         }
 
-        print (products.length);
-
         // 👇 Si aucune liste d’offres fournie, on prend tout
         final visibleOffers = offers ?? allOffers;
 
@@ -59,8 +57,6 @@ class ProductGrid extends StatelessWidget {
             .where((o) => products.any(
                 (p) => p.productId == o.productId && p.isAvailable))
             .toList();
-
-        print(validOffers.length);
 
         if (randomize) validOffers.shuffle();
 
@@ -82,7 +78,7 @@ class ProductGrid extends StatelessWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 6,
             mainAxisSpacing: 6,
-            childAspectRatio: 0.65,
+            childAspectRatio: 0.6,
           ),
           itemCount: displayedOffers.length,
           itemBuilder: (context, index) {

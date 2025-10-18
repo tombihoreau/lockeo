@@ -12,8 +12,8 @@ class CustomButton extends StatelessWidget {
     required this.text,
     required this.onPressed,
     this.filled = true,
-    this.color = const Color(0xFF006633), // Vert foncé
-    this.borderRadius = 30.0,
+    this.color = const Color(0xFF00434A), 
+    this.borderRadius = 16.0,
   });
 
   @override

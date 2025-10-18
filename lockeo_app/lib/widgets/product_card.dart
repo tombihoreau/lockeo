@@ -23,25 +23,22 @@ class ProductCard extends StatelessWidget {
         color: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade300, width: 1),
         ),
         elevation: 0,
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image en haut
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  image.url,
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
+            Image.asset(
+              image.url,
+              height: 150,
+              width: double.infinity,
+              fit: BoxFit.cover,
             ),
+
+            // Padding uniquement en bas
+            const SizedBox(height: 12),
 
             // Infos produit
             Padding(
@@ -73,11 +70,22 @@ class ProductCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "${product.price?.toInt()}€",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(
+                          color: const Color(0xFF225A5D), width: 1.3),
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: Text(
+                      "${product.price?.toStringAsFixed(0)}€",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF225A5D),
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                   const Text(

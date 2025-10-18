@@ -7,11 +7,17 @@ class ImageSlider extends StatefulWidget {
   final double height;
   final double borderRadius;
 
+  /// Optionnel : gestion du favori
+  final bool isFavorite;
+  final VoidCallback? onToggleFavorite;
+
   const ImageSlider({
     super.key,
     required this.images,
     this.height = 250,
     this.borderRadius = 16,
+    this.isFavorite = false,
+    this.onToggleFavorite,
   });
 
   @override
@@ -35,54 +41,88 @@ class _ImageSliderState extends State<ImageSlider> {
             )
           ];
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Stack(
       children: [
+        // Carte avec coins arrondis + ombre légère
+
         CarouselSlider.builder(
           itemCount: displayedImages.length,
           options: CarouselOptions(
             height: widget.height,
             viewportFraction: 1.0,
             enableInfiniteScroll: false,
-            enlargeCenterPage: false, 
+            enlargeCenterPage: false,
             onPageChanged: (index, _) {
-              setState(() {
-                _currentIndex = index;
-              });
+              setState(() => _currentIndex = index);
             },
           ),
           itemBuilder: (context, index, realIdx) {
             final img = displayedImages[index];
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(widget.borderRadius),
-              child: Image.asset(
-                img.url,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            );
+            final isNetwork = img.url.startsWith('http');
+            return isNetwork
+                ? Image.network(
+                    img.url,
+                    height: double.infinity,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    img.url,
+                    height: double.infinity,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  );
           },
         ),
 
-        const SizedBox(height: 8),
+        // Bouton favori (en haut à droite)
+        Positioned(
+          top: 50,
+          right: 12,
+          child: GestureDetector(
+            onTap: widget.onToggleFavorite,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                widget.isFavorite ? Icons.favorite : Icons.favorite_border,
+                size: 20,
+                color: widget.isFavorite ? const Color(0xFFE74C3C) : Colors.black87,
+              ),
+            ),
+          ),
+        ),
 
         if (displayedImages.length > 1)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(displayedImages.length, (index) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: _currentIndex == index ? 10 : 8,
-                height: 8,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _currentIndex == index
-                      ? Colors.black
-                      : Colors.grey.withOpacity(0.3),
-                ),
-              );
-            }),
+          Positioned(
+            left: 12,
+            bottom: 12,
+            child: Row(
+              children: List.generate(displayedImages.length, (i) {
+                final active = i == _currentIndex;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  margin: const EdgeInsets.only(right: 6),
+                  width: active ? 8 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: active ? Colors.white : Colors.white.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                );
+              }),
+            ),
           ),
       ],
     );

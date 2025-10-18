@@ -8,7 +8,10 @@ class ProductsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Produits disponibles")),
+      appBar: AppBar(
+        title: const Text("Produits disponibles"),
+        backgroundColor: Colors.transparent,
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         child: ProductGrid(), 
