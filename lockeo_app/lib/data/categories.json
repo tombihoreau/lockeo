@@ -1,0 +1,37 @@
+[
+  {
+    "category_id": 1,
+    "label": "Vélo",
+    "iconUrl": "assets/icons/winter_sports.svg"
+  },
+  {
+    "category_id": 2,
+    "label": "Sports d'hiver",
+    "iconUrl": "assets/icons/winter_sports.svg"
+  },
+  {
+    "category_id": 3,
+    "label": "Natation",
+    "iconUrl": "assets/icons/winter_sports.svg"
+  },
+  {
+    "category_id": 4,
+    "label": "Randonnée",
+    "iconUrl": "assets/icons/winter_sports.svg"
+  },
+  {
+    "category_id": 5,
+    "label": "Camping",
+    "iconUrl": "assets/icons/winter_sports.svg"
+  },
+  {
+    "category_id": 6,
+    "label": "Sports nautiques",
+    "iconUrl": "assets/icons/winter_sports.svg"
+  },
+  {
+    "category_id": 7,
+    "label": "Escalade",
+    "iconUrl": "assets/icons/winter_sports.svg"
+  }
+]

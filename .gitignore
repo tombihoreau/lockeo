@@ -59,6 +59,20 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # ========== FRONTEND (Flutter) ==========
 
+# Gradle
+lockeo_app/android/.gradle/
+lockeo_app/android/build/
+lockeo_app/android/app/build/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Generated
+*.lock
+*.bin
+*.log
 
 gradle-wrapper.jar
 /.gradle
