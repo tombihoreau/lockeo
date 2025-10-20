@@ -132,7 +132,7 @@ class ProductDetailScreen extends StatelessWidget {
                                       padding: const EdgeInsets.only(right: 8.0),
                                       child: CategoryCard(
                                         name: category.label,
-                                        iconUrl: category.iconUrl,
+                                        iconName: category.iconName,
                                       ),
                                     );
                                   }).toList(),
@@ -248,7 +248,6 @@ class ProductDetailScreen extends StatelessWidget {
             ),
             child: CustomButton(
               text: "Louer",
-              filled: true,
               onPressed: () {
                 print("Louer !");
               },

@@ -1,20 +1,35 @@
 import 'package:flutter/material.dart';
 import '../services/local_data_service.dart';
 import '../widgets/product_grid.dart';
+import '../widgets/header.dart';
 
 class ProductsScreen extends StatelessWidget {
   final LocalDataService dataService = LocalDataService();
+  final String? searchQuery;
 
+  ProductsScreen({super.key, this.searchQuery});
+
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Produits disponibles"),
-        backgroundColor: Colors.transparent,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: ProductGrid(), 
+      body: Column(
+        children: [
+          Header(
+            isHome: false,
+            initialQuery: searchQuery,
+          ),
+          Expanded(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: ProductGrid(
+                searchQuery: searchQuery,
+                shrinkWrap: false, 
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

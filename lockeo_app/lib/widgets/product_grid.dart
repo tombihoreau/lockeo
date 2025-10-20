@@ -4,14 +4,14 @@ import '../models/image.dart';
 import '../models/offer.dart';
 import '../services/local_data_service.dart';
 import '../widgets/product_card.dart';
-import '../screens/product_detail_screen.dart';
 
 class ProductGrid extends StatelessWidget {
   final List<Offer>? offers; 
   final int? maxItems;
   final bool shrinkWrap;
   final bool randomize;
-  final bool favoritesOnly; // 👈 ton paramètre de filtre favoris
+  final bool favoritesOnly; 
+  final String? searchQuery;
 
   const ProductGrid({
     super.key,
@@ -19,7 +19,8 @@ class ProductGrid extends StatelessWidget {
     this.maxItems,
     this.shrinkWrap = false,
     this.randomize = false,
-    this.favoritesOnly = false, // 👈 par défaut false
+    this.favoritesOnly = false, 
+    this.searchQuery,
   });
 
   @override
@@ -49,6 +50,17 @@ class ProductGrid extends StatelessWidget {
           products = products.where((p) => p.isFavorite).toList();
         }
 
+        //recherche
+        if(searchQuery != null && searchQuery!.isNotEmpty) {
+          final query = searchQuery!.toLowerCase();
+          products = products.where((p) => 
+            p.name.toLowerCase().contains(query)
+          ).toList();
+          if(products.isEmpty) {
+            return const Center(child: Text("Aucun produit ne correspond à la recherche"));
+          }
+        }
+
         // 👇 Si aucune liste d’offres fournie, on prend tout
         final visibleOffers = offers ?? allOffers;
 
@@ -70,6 +82,7 @@ class ProductGrid extends StatelessWidget {
         }
 
         return GridView.builder(
+          padding: EdgeInsets.zero,
           shrinkWrap: shrinkWrap,
           physics: shrinkWrap
               ? const NeverScrollableScrollPhysics()
@@ -102,11 +115,10 @@ class ProductGrid extends StatelessWidget {
               product: product,
               image: firstImage,
               onTap: () {
-                Navigator.push(
+                Navigator.pushNamed(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => ProductDetailScreen(offer: offer),
-                  ),
+                  '/productDetails',
+                  arguments: offer, 
                 );
               },
             );

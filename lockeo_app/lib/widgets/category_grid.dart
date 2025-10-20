@@ -33,7 +33,7 @@ class CategoryGrid extends StatelessWidget {
               width: (MediaQuery.of(context).size.width - 16 * 2 - 12) / 2,
               child: CategoryCard(
                 name: category.label,
-                iconUrl: category.iconUrl,
+                iconName: category.iconName,
               ),
             );
           }).toList(),
