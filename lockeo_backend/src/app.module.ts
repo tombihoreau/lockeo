@@ -21,28 +21,41 @@ import { NotificationPreference } from './entities/notification-preference.entit
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { join } from 'path';
 
 @Module({
   imports: [UsersModule, ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'mysql',
-        host: config.get<string>('DB_HOST'),
-        port: parseInt(config.get<string>('DB_PORT', '3306')),
-        username: config.get<string>('DB_USER'),
-        password: config.get<string>('DB_PASS'),
-        database: config.get<string>('DB_NAME'),
-        autoLoadEntities: true,
-        entities: [
-      User, Product, Offer, Reservation, Review, Favorite,
-      Conversation, Message, MessageTemplate, Image,
-      ProductUnavailability, Category, ProductHasCategory,
-      NotificationTemplate, UserNotification, NotificationPreference,
-    ],
-        synchronize: true, // ⚠️ Ne jamais laisser en prod
-      }),
+      useFactory: (config: ConfigService) => {
+        const nodeEnv = config.get<string>('NODE_ENV', 'development');
+        const isProd = nodeEnv === 'production';
+        const synchronize = config.get<string>('DB_SYNCHRONIZE', isProd ? 'false' : 'true') === 'true';
+        const dropSchema = config.get<string>('DB_DROP_SCHEMA', 'false') === 'true';
+
+        return {
+          type: 'mysql',
+          host: config.get<string>('DB_HOST'),
+          port: parseInt(config.get<string>('DB_PORT', '3306')),
+          username: config.get<string>('DB_USER'),
+          password: config.get<string>('DB_PASS'),
+          database: config.get<string>('DB_NAME'),
+          autoLoadEntities: true,
+          entities: [
+            User, Product, Offer, Reservation, Review, Favorite,
+            Conversation, Message, MessageTemplate, Image,
+            ProductUnavailability, Category, ProductHasCategory,
+            NotificationTemplate, UserNotification, NotificationPreference,
+          ],
+          // Dev/test: autoriser la synchro et (optionnel) drop de schéma
+          synchronize,
+          dropSchema,
+          // Prod: utiliser les migrations compilées
+          migrations: [join(__dirname, 'database', 'migrations', '*.js')],
+          migrationsRun: isProd,
+        } as const;
+      },
     }),
     UsersModule, AuthModule],
   controllers: [AppController],
