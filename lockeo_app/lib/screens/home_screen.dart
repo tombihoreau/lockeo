@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lockeo_app/screens/categories_screen.dart';
 import '../widgets/product_grid.dart';
-import 'products_screen.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/header.dart';
 

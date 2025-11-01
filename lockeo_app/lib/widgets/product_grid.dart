@@ -6,12 +6,14 @@ import '../services/local_data_service.dart';
 import '../widgets/product_card.dart';
 
 class ProductGrid extends StatelessWidget {
-  final List<Offer>? offers; 
+  final List<Offer>? offers;
   final int? maxItems;
   final bool shrinkWrap;
   final bool randomize;
-  final bool favoritesOnly; 
+  final bool favoritesOnly;
   final String? searchQuery;
+  final List<String>? selectedCategories;
+  final ValueChanged<int>? onCountChanged;
 
   const ProductGrid({
     super.key,
@@ -19,8 +21,10 @@ class ProductGrid extends StatelessWidget {
     this.maxItems,
     this.shrinkWrap = false,
     this.randomize = false,
-    this.favoritesOnly = false, 
+    this.favoritesOnly = false,
     this.searchQuery,
+    this.selectedCategories,
+    this.onCountChanged,
   });
 
   @override
@@ -50,24 +54,47 @@ class ProductGrid extends StatelessWidget {
           products = products.where((p) => p.isFavorite).toList();
         }
 
-        //recherche
-        if(searchQuery != null && searchQuery!.isNotEmpty) {
+        // 🔹 Filtrer par catégories si présentes (attend que Product ait un champ 'category')
+        if (selectedCategories != null && selectedCategories!.isNotEmpty) {
+          products = products.where((p) {
+            // Si le produit a plusieurs catégories
+            final productCategories = (p.categoryIds ?? [])
+                .map((id) => id.toString())
+                .toList();
+
+            return productCategories.any(
+              (id) => selectedCategories!.contains(id),
+            );
+          }).toList();
+        }
+
+        // 🔎 Recherche
+        if (searchQuery != null && searchQuery!.isNotEmpty) {
           final query = searchQuery!.toLowerCase();
-          products = products.where((p) => 
-            p.name.toLowerCase().contains(query)
-          ).toList();
-          if(products.isEmpty) {
-            return const Center(child: Text("Aucun produit ne correspond à la recherche"));
+          products = products
+              .where((p) => p.name.toLowerCase().contains(query))
+              .toList();
+          if (products.isEmpty) {
+            // 🟡 Si aucun produit trouvé → informer le parent (0 résultat)
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              onCountChanged?.call(0);
+            });
+            return const Center(
+              child: Text("Aucun produit ne correspond à la recherche"),
+            );
           }
         }
 
         // 👇 Si aucune liste d’offres fournie, on prend tout
         final visibleOffers = offers ?? allOffers;
 
-        // 👇 On filtre uniquement celles avec un produit disponible
+        // 👇 On garde seulement celles avec un produit disponible
         var validOffers = visibleOffers
-            .where((o) => products.any(
-                (p) => p.productId == o.productId && p.isAvailable))
+            .where(
+              (o) => products.any(
+                (p) => p.productId == o.productId && p.isAvailable,
+              ),
+            )
             .toList();
 
         if (randomize) validOffers.shuffle();
@@ -77,10 +104,16 @@ class ProductGrid extends StatelessWidget {
             ? validOffers.take(maxItems!).toList()
             : validOffers;
 
+        // 🟢 Informe la page parente du nombre total d’éléments affichés
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          onCountChanged?.call(displayedOffers.length);
+        });
+
         if (displayedOffers.isEmpty) {
           return const Center(child: Text("Aucun produit disponible"));
         }
 
+        // 🧱 Grille des produits
         return GridView.builder(
           padding: EdgeInsets.zero,
           shrinkWrap: shrinkWrap,
@@ -96,10 +129,13 @@ class ProductGrid extends StatelessWidget {
           itemCount: displayedOffers.length,
           itemBuilder: (context, index) {
             final offer = displayedOffers[index];
-            final product = products.firstWhere((p) => p.productId == offer.productId);
-            
-            final productImages =
-                images.where((img) => img.productId == product.productId).toList();
+            final product = products.firstWhere(
+              (p) => p.productId == offer.productId,
+            );
+
+            final productImages = images
+                .where((img) => img.productId == product.productId)
+                .toList();
 
             final firstImage = productImages.isNotEmpty
                 ? productImages.first
@@ -118,7 +154,7 @@ class ProductGrid extends StatelessWidget {
                 Navigator.pushNamed(
                   context,
                   '/productDetails',
-                  arguments: offer, 
+                  arguments: offer,
                 );
               },
             );

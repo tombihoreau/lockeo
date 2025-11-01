@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:lockeo_app/models/offer.dart';
 import 'package:lockeo_app/screens/home_screen.dart';
-import 'package:lockeo_app/screens/products_screen.dart';
 import 'package:lockeo_app/screens/categories_screen.dart';
 import 'package:lockeo_app/screens/product_detail_screen.dart';
+import 'package:lockeo_app/screens/search_screen.dart';
 import 'package:lockeo_app/widgets/main_scaffold.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Aucun init de localisation ici (restauré à l'état précédent)
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,28 +42,15 @@ class MyApp extends StatelessWidget {
 
       // 🧱 Routes statiques
       routes: {
-        '/': (context) => const MainScaffold(
-              currentIndex: 0,
-              child: HomeScreen(),
-            ),
-        '/categories': (context) => const MainScaffold(
-              currentIndex: 2,
-              child: CategoriesScreen(),
-            ),
+        '/': (context) =>
+            const MainScaffold(currentIndex: 0, child: HomeScreen()),
+        '/categories': (context) =>
+            const MainScaffold(currentIndex: 2, child: CategoriesScreen()),
       },
 
       // ⚙️ Routes dynamiques (avec arguments)
       onGenerateRoute: (settings) {
         switch (settings.name) {
-          case '/products':
-            final query = settings.arguments as String?;
-            return MaterialPageRoute(
-              builder: (context) => MainScaffold(
-                currentIndex: 1,
-                child: ProductsScreen(searchQuery: query),
-              ),
-            );
-
           case '/productDetails':
             final offer = settings.arguments as Offer?;
             if (offer == null) {
@@ -68,11 +67,19 @@ class MyApp extends StatelessWidget {
               ),
             );
 
+          case '/search':
+            final query = settings.arguments as String?;
+            return MaterialPageRoute(
+              builder: (context) => MainScaffold(
+                currentIndex: 1,
+                child: SearchPage(initialQuery: query),
+              ),
+            );
+
           default:
             return MaterialPageRoute(
-              builder: (context) => const Scaffold(
-                body: Center(child: Text('Page non trouvée')),
-              ),
+              builder: (context) =>
+                  const Scaffold(body: Center(child: Text('Page non trouvée'))),
             );
         }
       },

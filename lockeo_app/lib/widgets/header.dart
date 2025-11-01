@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/products_screen.dart';
+import '../screens/search_screen.dart';
 
 class Header extends StatefulWidget {
   final String? userName; // 🔹 optionnel
@@ -109,8 +109,11 @@ class _HeaderState extends State<Header> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    const Icon(Icons.location_on,
-                        color: Colors.white70, size: 18),
+                    const Icon(
+                      Icons.location_on,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       widget.location!,
@@ -122,8 +125,11 @@ class _HeaderState extends State<Header> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(width: 6),
-                    const Icon(Icons.expand_more,
-                        color: Colors.white70, size: 18),
+                    const Icon(
+                      Icons.expand_more,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
                   ],
                 ),
 
@@ -156,23 +162,27 @@ class _HeaderState extends State<Header> {
                 ),
                 child: TextField(
                   controller: _controller,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
+                  readOnly: true,
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/search',
+                      arguments: _controller.text,
+                    );
+                  },
                   decoration: InputDecoration(
                     hintText: 'Objets, mot-clé...',
-                    hintStyle:
-                        const TextStyle(color: Colors.grey, fontSize: 13),
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 13,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.search, color: Colors.grey),
-                      onPressed: _onSearch,
+                      horizontal: 20,
+                      vertical: 14,
                     ),
+                    suffixIcon: const Icon(Icons.search, color: Colors.grey),
                   ),
-                  onSubmitted: (_) => _onSearch(),
                 ),
               ),
             ],
@@ -181,18 +191,6 @@ class _HeaderState extends State<Header> {
       ],
     );
   }
-
-  void _onSearch() {
-  final query = _controller.text.trim();
-  if (query.isNotEmpty) {
-    Navigator.pushNamed(
-      context,
-      '/products',
-      arguments: query, 
-    );
-  }
-}
-
 
   @override
   void dispose() {
