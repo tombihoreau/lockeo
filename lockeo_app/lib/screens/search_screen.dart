@@ -19,6 +19,7 @@ class _SearchPageState extends State<SearchPage> {
   List<String> _selectedCategories = [];
   double _maxDistance = 20;
   RangeValues _priceRange = const RangeValues(5, 10);
+  String _sortBy = "Prix"; 
 
   @override
   void initState() {
@@ -92,6 +93,7 @@ class _SearchPageState extends State<SearchPage> {
                                   'categories': _selectedCategories,
                                   'maxDistance': _maxDistance,
                                   'priceRange': _priceRange,
+                                  'sortBy': _sortBy,
                                 },
                               ),
                             ),
@@ -102,6 +104,7 @@ class _SearchPageState extends State<SearchPage> {
                               _selectedCategories = List<String>.from(result['categories'] ?? []);
                               _maxDistance = result['maxDistance'];
                               _priceRange = result['priceRange'];
+                              _sortBy = result['sortBy'];
                             });
 
                             // 🔄 ici tu pourras filtrer ta ProductGrid
@@ -128,6 +131,9 @@ class _SearchPageState extends State<SearchPage> {
                     child: ProductGrid(
                       searchQuery: _query,
                       selectedCategories: _selectedCategories,
+                      maxDistance: _maxDistance,
+                      priceRange: _priceRange,
+                      sortBy: _sortBy,
                       onCountChanged: (count) {
                         if (count != _resultCount) {
                           setState(() {

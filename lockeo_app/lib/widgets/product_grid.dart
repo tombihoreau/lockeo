@@ -13,6 +13,9 @@ class ProductGrid extends StatelessWidget {
   final bool favoritesOnly;
   final String? searchQuery;
   final List<String>? selectedCategories;
+  final double? maxDistance;
+  final RangeValues? priceRange;
+  final String? sortBy;
   final ValueChanged<int>? onCountChanged;
 
   const ProductGrid({
@@ -24,6 +27,9 @@ class ProductGrid extends StatelessWidget {
     this.favoritesOnly = false,
     this.searchQuery,
     this.selectedCategories,
+    this.maxDistance,
+    this.priceRange,
+    this.sortBy,
     this.onCountChanged,
   });
 
@@ -98,6 +104,46 @@ class ProductGrid extends StatelessWidget {
             .toList();
 
         if (randomize) validOffers.shuffle();
+
+        switch (sortBy) {
+          case "Prix":
+            validOffers.sort((a, b) {
+              final productA = products.firstWhere(
+                (p) => p.productId == a.productId,
+                orElse: () => products.first,
+              );
+              final productB = products.firstWhere(
+                (p) => p.productId == b.productId,
+                orElse: () => products.first,
+              );
+
+              final double priceA = productA.price ?? 0.0;
+              final double priceB = productB.price ?? 0.0;
+
+              return priceA.compareTo(priceB);
+            });
+            break;
+
+          case "Distance":
+            // 🚧 À implémenter plus tard avec LocationService
+            break;
+
+          case "Nouveautés":
+            validOffers.sort((a, b) {
+              final productA = products.firstWhere(
+                (p) => p.productId == a.productId,
+                orElse: () => products.first,
+              );
+              final productB = products.firstWhere(
+                (p) => p.productId == b.productId,
+                orElse: () => products.first,
+              );
+              return DateTime.parse(
+                productB.createdAt,
+              ).compareTo(DateTime.parse(productA.createdAt));
+            });
+            break;
+        }
 
         // 👇 On limite le nombre d’éléments si maxItems est défini
         final displayedOffers = maxItems != null
