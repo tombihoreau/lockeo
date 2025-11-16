@@ -74,6 +74,16 @@ class ProductGrid extends StatelessWidget {
           }).toList();
         }
 
+        if (priceRange != null) {
+          final double minPrice = priceRange!.start;
+          final double maxPrice = priceRange!.end;
+
+          products = products.where((p) {
+            final double price = p.price ?? 0.0;
+            return price >= minPrice && price <= maxPrice;
+          }).toList();
+        }
+
         // 🔎 Recherche
         if (searchQuery != null && searchQuery!.isNotEmpty) {
           final query = searchQuery!.toLowerCase();

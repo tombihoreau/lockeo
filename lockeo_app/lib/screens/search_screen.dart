@@ -18,7 +18,7 @@ class _SearchPageState extends State<SearchPage> {
   int _resultCount = 0;
   List<String> _selectedCategories = [];
   double _maxDistance = 20;
-  RangeValues _priceRange = const RangeValues(5, 10);
+  RangeValues? _priceRange;
   String _sortBy = "Prix"; 
 
   @override
@@ -129,6 +129,7 @@ class _SearchPageState extends State<SearchPage> {
                   // 🧩 Grille
                   Expanded(
                     child: ProductGrid(
+                      key: ValueKey("$_query-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy"),
                       searchQuery: _query,
                       selectedCategories: _selectedCategories,
                       maxDistance: _maxDistance,

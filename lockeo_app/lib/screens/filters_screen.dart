@@ -20,11 +20,12 @@ class _FiltersPageState extends State<FiltersPage> {
   List<Category> _categories = [];
   List<String> _selectedCategories = [];
   double _maxDistance = 20;
-  RangeValues _priceRange = const RangeValues(5, 10);
+  RangeValues? _priceRange;
   String _sortBy = "Prix";
   DateTime? _selectedDate;
   DateTimeRange? _selectedDateRange;
   bool _isLoading = true;
+  bool _enablePriceFilter = false;
 
   @override
   void initState() {
@@ -34,11 +35,19 @@ class _FiltersPageState extends State<FiltersPage> {
     final f = widget.initialFilters;
     if (f != null) {
       _selectedCategories = List<String>.from(f['categories'] ?? []);
-      _maxDistance = f['maxDistance'] ?? 20;
-      _priceRange = f['priceRange'] ?? const RangeValues(5, 10);
+      _maxDistance = f['maxDistance'];
+      _priceRange = f['priceRange'];
       _sortBy = f['sortBy'] ?? "Prix";
 
       final dr = f['selectedDateRange'];
+
+      if (f['priceRange'] != null) {
+        _enablePriceFilter = true;
+        _priceRange = f['priceRange'];
+      } else {
+        _enablePriceFilter = false;
+        _priceRange = const RangeValues(0, 100);
+      }
       if (dr != null && dr is Map && dr['start'] != null && dr['end'] != null) {
         try {
           _selectedDateRange = DateTimeRange(
@@ -115,7 +124,9 @@ class _FiltersPageState extends State<FiltersPage> {
                                       cat.categoryId.toString(),
                                     );
                                   } else {
-                                    _selectedCategories.add(cat.categoryId.toString());
+                                    _selectedCategories.add(
+                                      cat.categoryId.toString(),
+                                    );
                                   }
                                 });
                               },
@@ -343,26 +354,51 @@ class _FiltersPageState extends State<FiltersPage> {
                         const SizedBox(height: 30),
 
                         // 🔹 Prix
-                        const Text(
-                          "Prix (en €)",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Prix (en €)",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Switch(
+                              activeColor: const Color(0xFF00434A),
+                              value: _enablePriceFilter,
+                              onChanged: (val) {
+                                setState(() {
+                                  _enablePriceFilter = val;
+
+                                  // si le filtre est activé et que _priceRange est null (rare),
+                                  // on met une valeur par défaut
+                                  if (val && _priceRange == null) {
+                                    _priceRange = const RangeValues(0, 100);
+                                  }
+                                });
+                              },
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 10),
                         RangeSlider(
-                          values: _priceRange,
+                          values:
+                              _priceRange ??
+                              const RangeValues(0, 100), // toujours non-null
                           min: 0,
                           max: 100,
                           divisions: 20,
                           labels: RangeLabels(
-                            "${_priceRange.start.round()}€",
-                            "${_priceRange.end.round()}€",
+                            "${(_priceRange ?? const RangeValues(0, 100)).start.round()}€",
+                            "${(_priceRange ?? const RangeValues(0, 100)).end.round()}€",
                           ),
                           activeColor: const Color(0xFF00434A),
-                          onChanged: (values) =>
-                              setState(() => _priceRange = values),
+                          onChanged: _enablePriceFilter
+                              ? (values) {
+                                  setState(() => _priceRange = values);
+                                }
+                              : null, // désactive le slider
                         ),
                       ],
                     ),
@@ -384,7 +420,7 @@ class _FiltersPageState extends State<FiltersPage> {
               Navigator.pop(context, {
                 'categories': _selectedCategories,
                 'maxDistance': _maxDistance,
-                'priceRange': _priceRange,
+                'priceRange': _enablePriceFilter ? _priceRange : null,
                 'sortBy': _sortBy,
                 'selectedDateRange': _selectedDateRange == null
                     ? null
