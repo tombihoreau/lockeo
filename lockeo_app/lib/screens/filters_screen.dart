@@ -3,6 +3,7 @@ import '../services/local_data_service.dart';
 import '../models/category.dart';
 import '../widgets/button.dart';
 import '../widgets/search_header.dart';
+import '../widgets/categories_selector.dart';
 
 class FiltersPage extends StatefulWidget {
   final Map<String, dynamic>? initialFilters;
@@ -108,76 +109,12 @@ class _FiltersPageState extends State<FiltersPage> {
                         ),
                         const SizedBox(height: 10),
 
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: _categories.map((cat) {
-                            final isSelected = _selectedCategories.contains(
-                              cat.categoryId.toString(),
-                            );
-
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  if (isSelected) {
-                                    _selectedCategories.remove(
-                                      cat.categoryId.toString(),
-                                    );
-                                  } else {
-                                    _selectedCategories.add(
-                                      cat.categoryId.toString(),
-                                    );
-                                  }
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? const Color(0xFF00434A)
-                                        : Colors.grey.shade300,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (isSelected) ...[
-                                      Container(
-                                        margin: const EdgeInsets.only(right: 6),
-                                        width: 18,
-                                        height: 18,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF00434A),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.check,
-                                          size: 12,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                    Text(
-                                      cat.label,
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? const Color(0xFF00434A)
-                                            : Colors.black87,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                        CategoriesSelector(
+                          categories: _categories,
+                          selectedCategories: _selectedCategories,
+                          onChanged: (updatedList) {
+                            setState(() => _selectedCategories = updatedList);
+                          },
                         ),
 
                         const SizedBox(height: 30),
