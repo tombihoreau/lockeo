@@ -1,17 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class CategoryCard extends StatelessWidget {
   final String name;
-  final String iconUrl;
+  final String iconName;
   final VoidCallback? onTap;
 
   const CategoryCard({
     super.key,
     required this.name,
-    required this.iconUrl,
+    required this.iconName,
     this.onTap,
   });
+
+  IconData _getIconByName(String iconName) { //voir si y'a besoin du switch
+    switch (iconName) {
+      case 'bike':
+        return LucideIcons.bike;
+      case 'snowflake':
+        return LucideIcons.snowflake;
+      case 'waves':
+        return LucideIcons.waves;
+      case 'mountain':
+        return LucideIcons.mountain;
+      case 'tent':
+        return LucideIcons.tent;
+      case 'hand':
+        return LucideIcons.hand;
+      default:
+        return LucideIcons.box; // icône par défaut
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +45,7 @@ class CategoryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min, // 👈 permet à la carte de s’adapter à son contenu
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(10),
@@ -34,10 +53,9 @@ class CategoryCard extends StatelessWidget {
                 color: const Color(0xFF225A5D),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: SvgPicture.asset(
-                iconUrl,
-                width: 18,
-                height: 18,
+              child: Icon(
+                _getIconByName(iconName),
+                size: 18,
                 color: Colors.white,
               ),
             ),
@@ -50,8 +68,8 @@ class CategoryCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   color: Colors.black,
                 ),
-                softWrap: true,              // ✅ permet les retours à la ligne
-                overflow: TextOverflow.visible, // ✅ ne coupe plus le texte
+                softWrap: true,
+                overflow: TextOverflow.visible,
               ),
             ),
             const SizedBox(width: 4),

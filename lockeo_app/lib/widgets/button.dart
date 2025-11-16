@@ -3,17 +3,11 @@ import 'package:flutter/material.dart';
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
-  final bool filled; // true = bouton plein, false = contour
-  final Color color;
-  final double borderRadius;
 
   const CustomButton({
     super.key,
     required this.text,
     required this.onPressed,
-    this.filled = true,
-    this.color = const Color(0xFF00434A), 
-    this.borderRadius = 16.0,
   });
 
   @override
@@ -24,11 +18,11 @@ class CustomButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: filled ? color : Colors.transparent,
-          foregroundColor: filled ? Colors.white : color,
-          side: BorderSide(color: color, width: 1.5),
+          backgroundColor: const Color(0xFF00434A),
+          foregroundColor: Colors.white,
+          side: BorderSide(color: const Color(0xFF00434A), width: 1.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
+            borderRadius: BorderRadius.circular(16.0),
           ),
           elevation: 0, // pas d’ombre
         ),
