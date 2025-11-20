@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import type { Request } from 'express';
 
 export interface JwtPayload {
   sub: number;
@@ -11,7 +12,7 @@ export interface JwtPayload {
 }
 
 export interface AuthenticatedUser {
-  userId: number; 
+  userId: number;
   email: string;
   role: string;
 }
@@ -19,9 +20,11 @@ export interface AuthenticatedUser {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
+    // Extracteur Bearer fourni par passport-jwt (types installés)
+    const bearerExtractor = ExtractJwt.fromAuthHeaderAsBearerToken();
+
     super({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: bearerExtractor,
       secretOrKey: process.env.JWT_SECRET ?? 'dev-secret', // à mettre dans les variables d'environnement en prod
       ignoreExpiration: false,
     });
