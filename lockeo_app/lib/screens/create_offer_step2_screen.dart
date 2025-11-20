@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/offerDraft.dart';
 import '../widgets/button.dart';
+import 'create_offer_summary.dart';
+
 
 class CreateOfferStep2Screen extends StatefulWidget {
   final OfferDraft draft;
@@ -58,11 +60,18 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
       return;
     }
 
-    widget.draft.pricePerDay =
-        double.tryParse(pricePerDayController.text.trim());
-    widget.draft.pricePerWeek =
-        double.tryParse(pricePerWeekController.text.trim());
-    widget.draft.startDate = selectedStartDate;
+    final draft = OfferDraft(
+      pricePerDay: double.tryParse(pricePerDayController.text.trim()),
+      pricePerWeek: double.tryParse(pricePerWeekController.text.trim()),
+      startDate: selectedStartDate
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateOfferSummary(draft: draft),
+      ),
+    );
   }
 
   InputDecoration _inputDecoration(String hint) {
