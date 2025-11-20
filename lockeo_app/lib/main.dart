@@ -5,6 +5,7 @@ import 'package:lockeo_app/screens/categories_screen.dart';
 import 'package:lockeo_app/screens/product_detail_screen.dart';
 import 'package:lockeo_app/screens/search_screen.dart';
 import 'package:lockeo_app/widgets/main_scaffold.dart';
+import 'package:lockeo_app/screens/public_profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,6 +74,22 @@ class _MyAppState extends State<MyApp> {
               builder: (context) => MainScaffold(
                 currentIndex: 1,
                 child: SearchPage(initialQuery: query),
+              ),
+            );
+
+          case '/user':
+            final userId = settings.arguments as int;
+            if (userId <= 0) {
+              return MaterialPageRoute(
+                builder: (context) => const Scaffold(
+                  body: Center(child: Text('Utilisateur introuvable')),
+                ),
+              );
+            }
+            return MaterialPageRoute(
+              builder: (context) => MainScaffold(
+                currentIndex: 1,
+                child: PublicProfileScreen(userId: userId),
               ),
             );
 
