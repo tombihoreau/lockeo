@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
@@ -6,6 +6,12 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { Request } from 'express';
+import type { AuthenticatedUser } from './jwt.strategy';
+
+interface RequestWithUser extends Request {
+  user: AuthenticatedUser;
+}
 
 @ApiTags('auth')
 @Controller('auth')
@@ -33,7 +39,7 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({ schema: { example: { userId: 'uuid', email: 'alice@lockeo.io', role: 'user' } } })
-  me(@Request() req: any) {
-    return req.user; // vient de JwtStrategy.validate()
+  me(@Req() req: RequestWithUser): AuthenticatedUser {
+    return req.user;
   }
 }
