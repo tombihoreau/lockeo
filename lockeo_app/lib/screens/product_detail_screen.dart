@@ -12,10 +12,7 @@ import '../widgets/button.dart';
 class ProductDetailScreen extends StatelessWidget {
   final Offer offer;
 
-  const ProductDetailScreen({
-    super.key,
-    required this.offer,
-  });
+  const ProductDetailScreen({super.key, required this.offer});
 
   @override
   Widget build(BuildContext context) {
@@ -49,12 +46,19 @@ class ProductDetailScreen extends StatelessWidget {
         final offers = snapshot.data![3] as List<Offer>;
         final categories = snapshot.data![4] as List<Category>;
 
-        final product = products.firstWhere((p) => p.productId == offer.productId);
+        final product = products.firstWhere(
+          (p) => p.productId == offer.productId,
+        );
         final owner = users.firstWhere((u) => u.userId == offer.userId);
-        final productImages = images.where((img) => img.productId == product.productId).toList();
-        final ownerOffersCount = offers.where((o) => o.userId == owner.userId).length;
-        final productCategories =
-            categories.where((cat) => product.categoryIds.contains(cat.categoryId)).toList();
+        final productImages = images
+            .where((img) => img.productId == product.productId)
+            .toList();
+        final ownerOffersCount = offers
+            .where((o) => o.userId == owner.userId)
+            .length;
+        final productCategories = categories
+            .where((cat) => product.categoryIds.contains(cat.categoryId))
+            .toList();
 
         return Scaffold(
           extendBodyBehindAppBar: true,
@@ -79,14 +83,14 @@ class ProductDetailScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       height: 320,
-                      child: ImageSlider(
-                        images: productImages,
-                        height: 320,
-                      ),
+                      child: ImageSlider(images: productImages, height: 320),
                     ),
 
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 20,
+                      ),
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
@@ -107,7 +111,11 @@ class ProductDetailScreen extends StatelessWidget {
                               // Localisation
                               Row(
                                 children: [
-                                  const Icon(Icons.location_on, color: Colors.grey, size: 18),
+                                  const Icon(
+                                    Icons.location_on,
+                                    color: Colors.grey,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 4),
                                   Flexible(
                                     child: Text(
@@ -129,7 +137,9 @@ class ProductDetailScreen extends StatelessWidget {
                                 child: Row(
                                   children: productCategories.map((category) {
                                     return Padding(
-                                      padding: const EdgeInsets.only(right: 8.0),
+                                      padding: const EdgeInsets.only(
+                                        right: 8.0,
+                                      ),
                                       child: CategoryCard(
                                         name: category.label,
                                       ),
@@ -143,61 +153,85 @@ class ProductDetailScreen extends StatelessWidget {
                               // Description
                               Text(
                                 product.description,
-                                style: const TextStyle(fontSize: 15, height: 1.4),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  height: 1.4,
+                                ),
                               ),
                               const SizedBox(height: 20),
 
                               // Propriétaire
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 26,
-                                      backgroundImage:
-                                          const AssetImage('assets/images/user.jpg'),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            owner.firstName,
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const Row(
-                                            children: [
-                                              Icon(Icons.star, size: 16, color: Colors.amber),
-                                              SizedBox(width: 4),
-                                              Text("5"),
-                                            ],
-                                          ),
-                                          Text(
-                                            "$ownerOffersCount annonces",
-                                            style: const TextStyle(color: Colors.grey),
-                                          ),
-                                        ],
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/user',
+                                    arguments: owner.userId, 
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
                                       ),
-                                    ),
-                                    const Icon(Icons.chevron_right, color: Colors.grey),
-                                  ],
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 26,
+                                        backgroundImage: const AssetImage(
+                                          'assets/images/user.jpg',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              owner.firstName,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.star,
+                                                  size: 16,
+                                                  color: Colors.amber,
+                                                ),
+                                                SizedBox(width: 4),
+                                                Text("5"),
+                                              ],
+                                            ),
+                                            Text(
+                                              "$ownerOffersCount annonces",
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Icon(
+                                        Icons.chevron_right,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
+
                               const SizedBox(height: 100),
                             ],
                           ),
@@ -208,11 +242,15 @@ class ProductDetailScreen extends StatelessWidget {
                             top: 0,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 3),
+                                horizontal: 10,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 border: Border.all(
-                                    color: const Color(0xFF225A5D), width: 1.3),
+                                  color: const Color(0xFF225A5D),
+                                  width: 1.3,
+                                ),
                                 borderRadius: BorderRadius.circular(40),
                               ),
                               child: Text(

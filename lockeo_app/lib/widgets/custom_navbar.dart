@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -9,26 +10,23 @@ class CustomBottomNavBar extends StatelessWidget {
   });
 
   void _onItemTapped(BuildContext context, int index) {
-    // Liste des routes principales
     final List<String> routes = [
       '/',            // Accueil
-      '/calendar',    // Calendrier
+      '/calendar',    // Découvrir / Calendrier
       '/create',      // Créer
       '/messages',    // Messages
-      '/profile',     // Profil
+      '/userProfile', // Profil
     ];
 
-    // Empêche de recharger la page actuelle
     if (index == currentIndex) return;
 
-    // Navigation propre : remplace la route actuelle
     Navigator.pushReplacementNamed(context, routes[index]);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 20),
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -43,44 +41,40 @@ class CustomBottomNavBar extends StatelessWidget {
         alignment: Alignment.topCenter,
         clipBehavior: Clip.none,
         children: [
-          // Les 4 icônes avec espace pour le bouton central
+          // Ligne des 4 icônes
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildItem(context, Icons.home, "Accueil", 0),
-              _buildItem(context, Icons.calendar_today, "Calendrier", 1),
+              _buildItem(context, LucideIcons.home, "Accueil", 0),
+              _buildItem(context, LucideIcons.compass, "Découvrir", 1),
               const SizedBox(width: 60), // espace pour le bouton "+"
-              _buildItem(context, Icons.message_outlined, "Messages", 3),
-              _buildItem(context, Icons.person, "Profil", 4),
+              _buildItem(context, LucideIcons.messageCircle, "Message", 3),
+              _buildItem(context, LucideIcons.user, "Profil", 4),
             ],
           ),
 
           // Bouton central "+"
           Positioned(
-            top: -30,
+            top: -15,
             child: GestureDetector(
               onTap: () => _onItemTapped(context, 2),
               child: Container(
                 height: 60,
                 width: 60,
                 decoration: BoxDecoration(
-                  color: Colors.white,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
                 ),
                 child: Container(
                   margin: const EdgeInsets.all(5),
                   decoration: const BoxDecoration(
-                    color: Color(0xFF00616B),
+                    color: Color(0xFFF69F1D), // Ton jaune
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 30),
+                  child: const Icon(
+                    LucideIcons.plus,
+                    color: Colors.black,
+                    size: 30,
+                  ),
                 ),
               ),
             ),
@@ -90,8 +84,9 @@ class CustomBottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildItem(BuildContext context, IconData icon, String label, int index) {
-    final isActive = index == currentIndex;
+  Widget _buildItem(
+      BuildContext context, IconData icon, String label, int index) {
+    final bool isActive = index == currentIndex;
 
     return GestureDetector(
       onTap: () => _onItemTapped(context, index),
@@ -100,6 +95,7 @@ class CustomBottomNavBar extends StatelessWidget {
         children: [
           Icon(
             icon,
+            size: 22,
             color: isActive ? const Color(0xFF00616B) : Colors.black54,
           ),
           const SizedBox(height: 4),
@@ -108,6 +104,7 @@ class CustomBottomNavBar extends StatelessWidget {
             style: TextStyle(
               color: isActive ? const Color(0xFF00616B) : Colors.black87,
               fontSize: 12,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
         ],

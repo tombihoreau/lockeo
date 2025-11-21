@@ -1,6 +1,21 @@
-[
+[ 
   {
     "user_id": 1,
+    "last_name": "Bihoreau",
+    "first_name": "Tom",
+    "email": "tom.bihoreau@example.com",
+    "login": "tomB",
+    "phone_number": "+33601020306",
+    "longitude": -1.6833,
+    "latitude": 48.1167,
+    "postal_code": "35000",
+    "city": "Rennes",
+    "is_verified": true,
+    "created_at": "2025-01-25T15:00:00Z",
+    "updated_at": "2025-02-25T15:00:00Z"
+  },
+  {
+    "user_id": 2,
     "last_name": "Thouvenin",
     "first_name": "Océanne",
     "email": "oceanne.thouvenin@example.com",
@@ -15,7 +30,7 @@
     "updated_at": "2025-02-01T10:00:00Z"
   },
   {
-    "user_id": 2,
+    "user_id": 3,
     "last_name": "Berriet",
     "first_name": "Loïc",
     "email": "loic.berriet@example.com",
@@ -30,7 +45,7 @@
     "updated_at": "2025-02-05T11:00:00Z"
   },
   {
-    "user_id": 3,
+    "user_id": 4,
     "last_name": "Demai",
     "first_name": "Jules",
     "email": "jules.demai@example.com",
@@ -45,7 +60,7 @@
     "updated_at": "2025-02-10T12:00:00Z"
   },
   {
-    "user_id": 4,
+    "user_id": 5,
     "last_name": "Garçon",
     "first_name": "Nina",
     "email": "nina.garcon@example.com",
@@ -60,7 +75,7 @@
     "updated_at": "2025-02-15T13:00:00Z"
   },
   {
-    "user_id": 5,
+    "user_id": 6,
     "last_name": "Bourrée",
     "first_name": "Chloé",
     "email": "chloe.bourree@example.com",
@@ -73,20 +88,5 @@
     "is_verified": false,
     "created_at": "2025-01-20T14:00:00Z",
     "updated_at": "2025-02-20T14:00:00Z"
-  },
-  {
-    "user_id": 6,
-    "last_name": "Bihoreau",
-    "first_name": "Tom",
-    "email": "tom.bihoreau@example.com",
-    "login": "tomB",
-    "phone_number": "+33601020306",
-    "longitude": -1.6833,
-    "latitude": 48.1167,
-    "postal_code": "35000",
-    "city": "Rennes",
-    "is_verified": true,
-    "created_at": "2025-01-25T15:00:00Z",
-    "updated_at": "2025-02-25T15:00:00Z"
   }
 ]
