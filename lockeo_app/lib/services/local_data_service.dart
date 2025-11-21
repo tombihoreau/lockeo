@@ -49,4 +49,32 @@ class LocalDataService {
       return null;
     }
   }
+
+  Future<User?> getCurrentUser() async {
+    final users = await loadUsers();
+    return users.firstWhere((u) => u.userId == 1);
+  }
+
+  Future<List<Offer>> getOffersByUser(int userId) async {
+    final offers = await loadOffers();
+    return offers.where((o) => o.userId == userId).toList();
+  }
+
+  Future<List<Offer>> getFavoriteOffers(int userId) async {
+    final offers = await loadOffers();
+    final products = await loadProducts();
+
+    final favoriteProducts = products
+        .where((p) => p.isFavorite == true)
+        .toList();
+
+    return offers
+        .where((o) => favoriteProducts.any((p) => p.productId == o.productId))
+        .toList();
+  }
+
+  Future<List<Review>> getReviewsForUser(int userId) async {
+    final reviews = await loadReviews();
+    return reviews.where((r) => r.ownerId == userId).toList();
+  }
 }

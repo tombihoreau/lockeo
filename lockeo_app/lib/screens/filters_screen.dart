@@ -370,9 +370,6 @@ class _FiltersPageState extends State<FiltersPage> {
                               onChanged: (val) {
                                 setState(() {
                                   _enablePriceFilter = val;
-
-                                  // si le filtre est activé et que _priceRange est null (rare),
-                                  // on met une valeur par défaut
                                   if (val && _priceRange == null) {
                                     _priceRange = const RangeValues(0, 100);
                                   }
@@ -385,7 +382,7 @@ class _FiltersPageState extends State<FiltersPage> {
                         RangeSlider(
                           values:
                               _priceRange ??
-                              const RangeValues(0, 100), // toujours non-null
+                              const RangeValues(0, 100), 
                           min: 0,
                           max: 100,
                           divisions: 20,

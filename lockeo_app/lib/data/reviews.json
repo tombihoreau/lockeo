@@ -25,5 +25,14 @@
     "title": "Très serviable",
     "comment": "Très gentil et arrangeant.",
     "date": "2024-09-20"
+  },
+  {
+    "id": 3,
+    "owner_id": 1,
+    "author_id": 2,
+    "rating": 3,
+    "title": "Très serviable",
+    "comment": "Très gentil et arrangeant.",
+    "date": "2024-09-20"
   }
 ]
