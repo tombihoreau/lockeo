@@ -132,7 +132,6 @@ class ProductDetailScreen extends StatelessWidget {
                                       padding: const EdgeInsets.only(right: 8.0),
                                       child: CategoryCard(
                                         name: category.label,
-                                        iconName: category.iconName,
                                       ),
                                     );
                                   }).toList(),

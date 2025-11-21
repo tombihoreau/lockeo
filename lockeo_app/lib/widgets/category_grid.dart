@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../services/local_data_service.dart';
+import '../services/category_service.dart';
 import 'category_card.dart';
 
 class CategoryGrid extends StatelessWidget {
@@ -10,10 +11,23 @@ class CategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dataService = LocalDataService();
+    final remoteService = CategoryService();
+    final localService = LocalDataService();
+
+    Future<List<Category>> load() async {
+      try {
+        final remote = await remoteService.fetchCategories();
+        if (remote.isNotEmpty) return remote;
+        // Fallback si liste vide
+        return await localService.loadCategories();
+      } catch (_) {
+        // Fallback sur les données embarquées
+        return await localService.loadCategories();
+      }
+    }
 
     return FutureBuilder<List<Category>>(
-      future: dataService.loadCategories(),
+      future: load(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -33,7 +47,6 @@ class CategoryGrid extends StatelessWidget {
               width: (MediaQuery.of(context).size.width - 16 * 2 - 12) / 2,
               child: CategoryCard(
                 name: category.label,
-                iconName: category.iconName,
               ),
             );
           }).toList(),

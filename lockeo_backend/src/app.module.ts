@@ -14,6 +14,7 @@ import { MessageTemplate } from './entities/message-template.entity';
 import { Image } from './entities/image.entity';
 import { ProductUnavailability } from './entities/product-unavailability.entity';
 import { Category } from './entities/category.entity';
+import { CategoriesModule } from './categories/categories.module';
 import { ProductHasCategory } from './entities/product-has-category.entity';
 import { NotificationTemplate } from './entities/notification-template.entity';
 import { UserNotification } from './entities/user-notification.entity';
@@ -24,7 +25,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
 
 @Module({
-  imports: [UsersModule, ConfigModule.forRoot({ isGlobal: true }),
+  imports: [UsersModule, ConfigModule.forRoot({ isGlobal: true }), CategoriesModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

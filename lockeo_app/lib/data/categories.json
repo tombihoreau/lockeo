@@ -1,32 +1,8 @@
 [
-  {
-    "category_id": 1,
-    "label": "Vélo",
-    "iconName": "bike"
-  },
-  {
-    "category_id": 2,
-    "label": "Sports d'hiver",
-    "iconName": "snowflake"
-  },
-  {
-    "category_id": 3,
-    "label": "Natation",
-    "iconName": "waves"
-  },
-  {
-    "category_id": 4,
-    "label": "Randonnée",
-    "iconName": "mountain"
-  },
-  {
-    "category_id": 5,
-    "label": "Camping",
-    "iconName": "tent"
-  },
-  {
-    "category_id": 6,
-    "label": "Escalade",
-    "iconName": "hand"
-  }
+  { "category_id": 1, "label": "Vélo" },
+  { "category_id": 2, "label": "Sports d'hiver" },
+  { "category_id": 3, "label": "Natation" },
+  { "category_id": 4, "label": "Randonnée" },
+  { "category_id": 5, "label": "Camping" },
+  { "category_id": 6, "label": "Escalade" }
 ]
