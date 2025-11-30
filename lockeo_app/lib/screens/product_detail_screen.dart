@@ -8,6 +8,8 @@ import '../services/local_data_service.dart';
 import '../widgets/images_slider.dart';
 import '../widgets/category_card.dart';
 import '../widgets/button.dart';
+import '../widgets/product_grid.dart';
+import '../widgets/reservation_sheet.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Offer offer;
@@ -45,6 +47,7 @@ class ProductDetailScreen extends StatelessWidget {
         final users = snapshot.data![2] as List<User>;
         final offers = snapshot.data![3] as List<Offer>;
         final categories = snapshot.data![4] as List<Category>;
+        List<Offer> otherOffers = [];
 
         final product = products.firstWhere(
           (p) => p.productId == offer.productId,
@@ -56,6 +59,13 @@ class ProductDetailScreen extends StatelessWidget {
         final ownerOffersCount = offers
             .where((o) => o.userId == owner.userId)
             .length;
+
+        otherOffers = offers
+            .where(
+              (o) => o.userId == owner.userId && o.offerId != offer.offerId,
+            )
+            .toList();
+
         final productCategories = categories
             .where((cat) => product.categoryIds.contains(cat.categoryId))
             .toList();
@@ -140,9 +150,7 @@ class ProductDetailScreen extends StatelessWidget {
                                       padding: const EdgeInsets.only(
                                         right: 8.0,
                                       ),
-                                      child: CategoryCard(
-                                        name: category.label,
-                                      ),
+                                      child: CategoryCard(name: category.label),
                                     );
                                   }).toList(),
                                 ),
@@ -160,13 +168,30 @@ class ProductDetailScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 20),
 
+                              Text(
+                                'État',
+                                style: const TextStyle(
+                                  color: Color.fromRGBO(157, 160, 162, 1),
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                product.state,
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
                               // Propriétaire
                               GestureDetector(
                                 onTap: () {
                                   Navigator.pushNamed(
                                     context,
                                     '/user',
-                                    arguments: owner.userId, 
+                                    arguments: owner.userId,
                                   );
                                 },
                                 child: Container(
@@ -232,7 +257,20 @@ class ProductDetailScreen extends StatelessWidget {
                                 ),
                               ),
 
-                              const SizedBox(height: 100),
+                              const SizedBox(height: 20),
+                              const Text(
+                                "Autres annonces",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              ProductGrid(
+                                maxItems: 4,
+                                offers: otherOffers,
+                                shrinkWrap: true,
+                              ),
                             ],
                           ),
 
@@ -273,21 +311,22 @@ class ProductDetailScreen extends StatelessWidget {
           ),
 
           bottomNavigationBar: Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: CustomButton(
-              text: "Louer",
-              onPressed: () {
-                print("Louer !");
-              },
+            color: Colors.white,
+            alignment: Alignment.center,
+            height: 100,
+            child: SizedBox(
+              width: 300,
+              child: CustomButton(
+                text: "Louer",
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => const ReservationSheet(),
+                  );
+                },
+              ),
             ),
           ),
         );
