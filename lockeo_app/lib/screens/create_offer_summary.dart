@@ -91,7 +91,6 @@ class _CreateOfferSummaryState extends State<CreateOfferSummary> {
                       padding: const EdgeInsets.only(right: 8.0),
                       child: CategoryCard(
                         name: category.label,
-                        iconName: category.iconName,
                       ),
                     );
                   }).toList(),

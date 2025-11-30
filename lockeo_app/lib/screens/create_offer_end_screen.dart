@@ -162,7 +162,7 @@ class CreateOfferEndScreen extends StatelessWidget {
           width: 300,
           child: CustomButton(
             text: "Ajouter une nouvelle annonce",
-            onPressed: () {Navigator.pushNamed(context, '/createOffer');}
+            onPressed: () {Navigator.pushNamed(context, '/create');}
           ),
         ),
       ),
