@@ -5,6 +5,7 @@ import 'package:lockeo_app/screens/categories_screen.dart';
 import 'package:lockeo_app/screens/product_detail_screen.dart';
 import 'package:lockeo_app/screens/search_screen.dart';
 import 'package:lockeo_app/widgets/main_scaffold.dart';
+import 'package:lockeo_app/screens/create_offer_screen.dart';
 import 'package:lockeo_app/screens/public_profile_screen.dart';
 import 'package:lockeo_app/screens/user_profile_screen.dart';
 
@@ -47,7 +48,9 @@ class _MyAppState extends State<MyApp> {
         '/': (context) =>
             const MainScaffold(currentIndex: 0, child: HomeScreen()),
         '/categories': (context) =>
-            const MainScaffold(currentIndex: 1, child: CategoriesScreen()),
+            const MainScaffold(currentIndex: 2, child: CategoriesScreen()),
+        '/create': (context) =>
+            const MainScaffold(currentIndex: 3, child: CreateOfferScreen()),
         '/userProfile': (context) => 
             const MainScaffold(currentIndex: 1, child: UserProfileScreen(),),
       },
