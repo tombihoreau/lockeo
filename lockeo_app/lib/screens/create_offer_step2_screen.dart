@@ -3,7 +3,6 @@ import '../models/offerDraft.dart';
 import '../widgets/button.dart';
 import 'create_offer_summary.dart';
 
-
 class CreateOfferStep2Screen extends StatefulWidget {
   final OfferDraft draft;
 
@@ -60,17 +59,17 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
       return;
     }
 
-    final draft = OfferDraft(
-      pricePerDay: double.tryParse(pricePerDayController.text.trim()),
-      pricePerWeek: double.tryParse(pricePerWeekController.text.trim()),
-      startDate: selectedStartDate
+    widget.draft.pricePerDay = double.tryParse(
+      pricePerDayController.text.trim(),
     );
+    widget.draft.pricePerWeek = double.tryParse(
+      pricePerWeekController.text.trim(),
+    );
+    widget.draft.startDate = selectedStartDate;
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => CreateOfferSummary(draft: draft),
-      ),
+      MaterialPageRoute(builder: (_) => CreateOfferSummary(draft: widget.draft)),
     );
   }
 
@@ -89,8 +88,7 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide:
-            const BorderSide(color: Color(0xFF00434A), width: 1.8),
+        borderSide: const BorderSide(color: Color(0xFF00434A), width: 1.8),
       ),
     );
   }
@@ -138,10 +136,7 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
           children: [
             const Text(
               "Prix",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 20),
@@ -151,7 +146,7 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
             TextField(
               controller: pricePerDayController,
               keyboardType: TextInputType.number,
-              decoration: _inputDecoration("ex : 15€"),
+              decoration: _inputDecoration("ex : 15"),
             ),
 
             const SizedBox(height: 20),
@@ -161,16 +156,13 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
             TextField(
               controller: pricePerWeekController,
               keyboardType: TextInputType.number,
-              decoration: _inputDecoration("ex : 80€"),
+              decoration: _inputDecoration("ex : 80"),
             ),
 
             const SizedBox(height: 30),
             const Text(
               "Les disponibilités",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 20),
@@ -215,14 +207,9 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
         height: 100,
         child: SizedBox(
           width: 300,
-          child: CustomButton(
-            text: "Suivant",
-            onPressed: goToSummary,
-          ),
+          child: CustomButton(text: "Suivant", onPressed: goToSummary),
         ),
       ),
     );
   }
-
-  
 }

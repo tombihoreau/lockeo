@@ -3,14 +3,16 @@ import '../models/category.dart';
 
 class CategoriesSelector extends StatelessWidget {
   final List<Category> categories;
-  final List<String> selectedCategories;
-  final Function(List<String>) onChanged;
+  final List<int> selectedCategories;
+  final Function(List<int>) onChanged;
+  final bool selectable;
 
   const CategoriesSelector({
     super.key,
     required this.categories,
     required this.selectedCategories,
     required this.onChanged,
+    this.selectable = true,
   });
 
   @override
@@ -19,18 +21,17 @@ class CategoriesSelector extends StatelessWidget {
       spacing: 10,
       runSpacing: 10,
       children: categories.map((cat) {
-        final isSelected = selectedCategories.contains(
-          cat.categoryId.toString(),
-        );
+        final isSelected = selectedCategories.contains(cat.categoryId,);
 
         return GestureDetector(
           onTap: () {
-            final List<String> updated = List.from(selectedCategories);
+            if (!selectable) return;
+            final List<int> updated = List.from(selectedCategories);
 
             if (isSelected) {
-              updated.remove(cat.categoryId.toString());
+              updated.remove(cat.categoryId);
             } else {
-              updated.add(cat.categoryId.toString());
+              updated.add(cat.categoryId);
             }
 
             onChanged(updated);

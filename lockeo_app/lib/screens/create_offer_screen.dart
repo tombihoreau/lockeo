@@ -25,7 +25,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final dataService = LocalDataService();
 
   List<Category> _categories = [];
-  List<String> _selectedCategories = [];
+  List<int> _selectedCategories = [];
 
   List<String> photos = [];
 

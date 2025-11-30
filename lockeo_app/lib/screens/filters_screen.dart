@@ -19,7 +19,7 @@ class _FiltersPageState extends State<FiltersPage> {
   final dataService = LocalDataService();
 
   List<Category> _categories = [];
-  List<String> _selectedCategories = [];
+  List<int> _selectedCategories = [];
   double _maxDistance = 20;
   RangeValues? _priceRange;
   String _sortBy = "Prix";
@@ -35,7 +35,7 @@ class _FiltersPageState extends State<FiltersPage> {
 
     final f = widget.initialFilters;
     if (f != null) {
-      _selectedCategories = List<String>.from(f['categories'] ?? []);
+      _selectedCategories = List<int>.from(f['categories'] ?? []);
       _maxDistance = f['maxDistance'];
       _priceRange = f['priceRange'];
       _sortBy = f['sortBy'] ?? "Prix";
@@ -76,7 +76,6 @@ class _FiltersPageState extends State<FiltersPage> {
       backgroundColor: const Color(0xFFF5F7FA),
       body: Column(
         children: [
-          // 🟢 Header identique à la SearchScreen
           SearchHeader(
             initialQuery: widget.searchQuery,
             onBack: () => Navigator.pop(context),

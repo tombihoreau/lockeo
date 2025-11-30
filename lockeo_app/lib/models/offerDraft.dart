@@ -3,7 +3,7 @@ class OfferDraft {
   String? description;
   String? state;
   String? location;
-  List<String> categories;
+  List<int> categories;
   List<String> photos;
   double? pricePerDay;
   double? pricePerWeek;
