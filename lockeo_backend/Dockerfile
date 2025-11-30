@@ -25,6 +25,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY package*.json ./
 
+# Copy entrypoint
+COPY entrypoint.sh ./
+RUN chmod +x ./entrypoint.sh
+
 # Optionnel : healthcheck (assure-toi d'avoir une route /health)
 # HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1:3000/health || exit 1
 
@@ -33,4 +37,4 @@ RUN addgroup -S app && adduser -S app -G app
 USER app
 
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+ENTRYPOINT ["./entrypoint.sh"]

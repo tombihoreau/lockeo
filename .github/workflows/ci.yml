@@ -12,6 +12,19 @@ jobs:
     permissions:
       contents: read
       packages: write
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: lockeo_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=30
     steps:
       - uses: actions/checkout@v4
 
@@ -22,11 +35,44 @@ jobs:
           cache: 'npm'
           cache-dependency-path: lockeo_backend/package-lock.json
 
-      - name: Install & Test (backend)
+      - name: Install deps (backend)
         working-directory: lockeo_backend
         run: |
           npm ci
           npm run lint --if-present
+
+      - name: Wait for DB (MySQL)
+        run: |
+          for i in {1..60}; do
+            if mysqladmin ping -h 127.0.0.1 -proot --silent; then
+              echo "MySQL is up"; exit 0; fi; sleep 1; done; exit 1
+
+      - name: Run migrations
+        working-directory: lockeo_backend
+        env:
+          NODE_ENV: ci
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASS: root
+          DB_NAME: lockeo_ci
+          DB_SYNCHRONIZE: 'false'
+          DB_DROP_SCHEMA: 'false'
+        run: |
+          npm run migration:run
+
+      - name: Test (backend)
+        working-directory: lockeo_backend
+        env:
+          NODE_ENV: ci
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: root
+          DB_PASS: root
+          DB_NAME: lockeo_ci
+          DB_SYNCHRONIZE: 'false'
+          DB_DROP_SCHEMA: 'false'
+        run: |
           npm test --if-present -- --ci
 
       - name: Docker metadata (tags)

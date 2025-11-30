@@ -89,7 +89,7 @@ class ProductCard extends StatelessWidget {
                     ),
                   ),
                   const Text(
-                    "1/2 journée",
+                    "1 journée",
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   )
                 ],

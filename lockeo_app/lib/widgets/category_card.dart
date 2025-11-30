@@ -3,33 +3,23 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 class CategoryCard extends StatelessWidget {
   final String name;
-  final String iconName;
   final VoidCallback? onTap;
 
   const CategoryCard({
     super.key,
     required this.name,
-    required this.iconName,
     this.onTap,
   });
 
-  IconData _getIconByName(String iconName) { //voir si y'a besoin du switch
-    switch (iconName) {
-      case 'bike':
-        return LucideIcons.bike;
-      case 'snowflake':
-        return LucideIcons.snowflake;
-      case 'waves':
-        return LucideIcons.waves;
-      case 'mountain':
-        return LucideIcons.mountain;
-      case 'tent':
-        return LucideIcons.tent;
-      case 'hand':
-        return LucideIcons.hand;
-      default:
-        return LucideIcons.box; // icône par défaut
-    }
+  IconData _iconForLabel(String label) {
+    final normalized = label.toLowerCase();
+    if (normalized.contains('vélo') || normalized.contains('velo')) return LucideIcons.bike;
+    if (normalized.contains('hiver')) return LucideIcons.snowflake;
+    if (normalized.contains('nata') || normalized.contains('eau')) return LucideIcons.waves;
+    if (normalized.contains('randonn') || normalized.contains('mont')) return LucideIcons.mountain;
+    if (normalized.contains('camp')) return LucideIcons.tent;
+    if (normalized.contains('escala') || normalized.contains('grimpe')) return LucideIcons.hand;
+    return LucideIcons.box;
   }
 
   @override
@@ -54,7 +44,7 @@ class CategoryCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                _getIconByName(iconName),
+                _iconForLabel(name),
                 size: 18,
                 color: Colors.white,
               ),
