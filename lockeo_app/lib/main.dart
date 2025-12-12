@@ -5,6 +5,10 @@ import 'package:lockeo_app/screens/categories_screen.dart';
 import 'package:lockeo_app/screens/product_detail_screen.dart';
 import 'package:lockeo_app/screens/search_screen.dart';
 import 'package:lockeo_app/widgets/main_scaffold.dart';
+import 'package:lockeo_app/screens/create_offer_screen.dart';
+import 'package:lockeo_app/screens/public_profile_screen.dart';
+import 'package:lockeo_app/screens/user_profile_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +32,13 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: const Locale('fr', 'FR'),
+      supportedLocales: const [Locale('fr', 'FR')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       debugShowCheckedModeBanner: false,
       title: 'Lockeo',
       theme: ThemeData(
@@ -46,6 +57,10 @@ class _MyAppState extends State<MyApp> {
             const MainScaffold(currentIndex: 0, child: HomeScreen()),
         '/categories': (context) =>
             const MainScaffold(currentIndex: 2, child: CategoriesScreen()),
+        '/create': (context) =>
+            const MainScaffold(currentIndex: 3, child: CreateOfferScreen()),
+        '/userProfile': (context) =>
+            const MainScaffold(currentIndex: 1, child: UserProfileScreen()),
       },
 
       // ⚙️ Routes dynamiques (avec arguments)
@@ -73,6 +88,23 @@ class _MyAppState extends State<MyApp> {
               builder: (context) => MainScaffold(
                 currentIndex: 1,
                 child: SearchPage(initialQuery: query),
+              ),
+            );
+
+          case '/user':
+            final userId = settings.arguments as int;
+            if (userId <= 0) {
+              return MaterialPageRoute(
+                builder: (context) => const Scaffold(
+                  body: Center(child: Text('Utilisateur introuvable')),
+                ),
+              );
+            }
+            return MaterialPageRoute(
+              builder: (context) => MainScaffold(
+                showBottomBar: false,
+                currentIndex: 1,
+                child: PublicProfileScreen(userId: userId),
               ),
             );
 
