@@ -323,7 +323,7 @@ class ProductDetailScreen extends StatelessWidget {
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
-                    builder: (_) => const ReservationSheet(),
+                    builder: (_) => ReservationSheet(offerId : offer.offerId),
                   );
                 },
               ),

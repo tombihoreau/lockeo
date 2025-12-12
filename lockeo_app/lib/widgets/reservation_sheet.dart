@@ -3,7 +3,8 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:lockeo_app/screens/reservation_payment_screen.dart';
 
 class ReservationSheet extends StatefulWidget {
-  const ReservationSheet({super.key});
+  final int offerId;
+  const ReservationSheet({super.key, required this.offerId});
 
   @override
   State<ReservationSheet> createState() => _ReservationSheetState();
@@ -13,6 +14,7 @@ class _ReservationSheetState extends State<ReservationSheet> {
   DateTime? startDate;
   DateTime? endDate;
   DateTime focusedDay = DateTime.now();
+  int get offerId => widget.offerId;
 
   bool isPastDate(DateTime day) {
     final now = DateTime.now();
@@ -133,17 +135,20 @@ class _ReservationSheetState extends State<ReservationSheet> {
             const SizedBox(height: 20),
 
             // BOUTON
-            // BOUTON
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: (startDate != null && endDate != null)
                     ? () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) => const ReservationPaymentScreen(),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ReservationPaymentScreen(
+                              offerId: offerId,
+                              startDate: startDate!,
+                              endDate: endDate!,
+                            ),
+                          ),
                         );
                       }
                     : null,

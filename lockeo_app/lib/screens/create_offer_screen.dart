@@ -64,10 +64,10 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       return;
     }
 
-    if (photos.isEmpty) {
+    if (photos.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Veuillez ajouter au moins une photo."),
+          content: Text("Veuillez ajouter au moins trois photos."),
           backgroundColor: Colors.red,
         ),
       );

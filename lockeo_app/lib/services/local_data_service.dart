@@ -77,4 +77,14 @@ class LocalDataService {
     final reviews = await loadReviews();
     return reviews.where((r) => r.ownerId == userId).toList();
   }
+
+  Future<Offer?> getOfferById(int offerId) async {
+    final offers = await loadOffers();
+
+    try {
+      return offers.firstWhere((o) => o.offerId == offerId);
+    } catch (_) {
+      return null;
+    }
+  }
 }

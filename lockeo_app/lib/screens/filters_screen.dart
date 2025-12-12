@@ -27,11 +27,13 @@ class _FiltersPageState extends State<FiltersPage> {
   DateTimeRange? _selectedDateRange;
   bool _isLoading = true;
   bool _enablePriceFilter = false;
+  late TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
     _loadCategories();
+    _controller = TextEditingController(text: widget.searchQuery ?? '');
 
     final f = widget.initialFilters;
     if (f != null) {
@@ -77,6 +79,7 @@ class _FiltersPageState extends State<FiltersPage> {
       body: Column(
         children: [
           SearchHeader(
+            controller: _controller,
             initialQuery: widget.searchQuery,
             onBack: () => Navigator.pop(context),
           ),
@@ -316,9 +319,7 @@ class _FiltersPageState extends State<FiltersPage> {
                         ),
                         const SizedBox(height: 10),
                         RangeSlider(
-                          values:
-                              _priceRange ??
-                              const RangeValues(0, 100), 
+                          values: _priceRange ?? const RangeValues(0, 100),
                           min: 0,
                           max: 100,
                           divisions: 20,
