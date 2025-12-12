@@ -3,6 +3,7 @@ import '../widgets/product_grid.dart';
 import '../widgets/suggestions_grid.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/header.dart';
+import '../widgets/favorites_section.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -119,37 +120,8 @@ class HomeScreen extends StatelessWidget {
                   const ProductGrid(maxItems: 4, randomize: true, shrinkWrap: true),
                   const SizedBox(height: 40),
 
-                  // 🔵 Section favoris
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          "Vos favoris",
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          softWrap: true,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/products');
-                        },
-                        child: const Text(
-                          "Tout voir",
-                          style: TextStyle(
-                            color: Color(0xFF225A5D),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const ProductGrid(maxItems: 4, favoritesOnly: true, shrinkWrap: true),
-                  const SizedBox(height: 40),
+                  // 🔵 Section favoris (masquée si l'utilisateur n'a pas de favoris)
+                  const FavoritesSection(maxItems: 4),
 
                 ],
               ),
