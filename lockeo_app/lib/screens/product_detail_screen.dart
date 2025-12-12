@@ -276,7 +276,7 @@ class ProductDetailScreen extends StatelessWidget {
                                         // TODO: navigation page assurance
                                       },
                                       child: Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.end,
                                         children: const [
                                           Text(
                                             "Découvrir notre assurance",
@@ -286,7 +286,6 @@ class ProductDetailScreen extends StatelessWidget {
                                               color: Color(0xFF2E6F75),
                                             ),
                                           ),
-                                          SizedBox(width: 6),
                                           Icon(
                                             Icons.chevron_right,
                                             color: Color(0xFF2E6F75),

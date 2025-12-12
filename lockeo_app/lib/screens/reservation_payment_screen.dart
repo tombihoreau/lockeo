@@ -3,6 +3,7 @@ import '../models/offer.dart';
 import '../services/local_data_service.dart';
 import '../models/product.dart';
 import '../widgets/button.dart';
+import 'confirmation_reservation_screen.dart';
 
 class ReservationPaymentScreen extends StatefulWidget {
   final int offerId;
@@ -205,7 +206,17 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
         height: 100,
         child: SizedBox(
           width: 300,
-          child: CustomButton(text: "Demande de location", onPressed: () {}),
+          child: CustomButton(
+            text: "Demande de location",
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ReservationConfirmationScreen(),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
