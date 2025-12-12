@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import '../widgets/product_grid.dart';
+import '../widgets/suggestions_grid.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/header.dart';
 import '../theme/app_colors.dart';
@@ -130,11 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(height: 20),
-                  const ProductGrid(
-                    maxItems: 4,
-                    randomize: true,
-                    shrinkWrap: true,
-                  ),
+                  const SuggestionsGrid(maxItems: 4, shrinkWrap: true),
                   const SizedBox(height: 40),
 
                   Row(
