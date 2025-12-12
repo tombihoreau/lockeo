@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/product_grid.dart';
+import '../widgets/suggestions_grid.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/header.dart';
 
@@ -83,7 +84,7 @@ class HomeScreen extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 20),
-                  const ProductGrid(maxItems: 4, randomize: true, shrinkWrap: true),
+                  const SuggestionsGrid(maxItems: 4, shrinkWrap: true),
                   const SizedBox(height: 40),
 
                   // 🟠 Section populaires

@@ -30,6 +30,15 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    double _toDouble(dynamic v, [double fallback = 0.0]) {
+      if (v == null) return fallback;
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final d = double.tryParse(v.trim());
+        return d ?? fallback;
+      }
+      return fallback;
+    }
     return User(
       userId: json['user_id'],
       lastName: json['last_name'],
@@ -37,8 +46,8 @@ class User {
       email: json['email'],
       login: json['login'],
       phoneNumber: json['phone_number'],
-      longitude: json['longitude']?.toDouble() ?? 0.0,
-      latitude: json['latitude']?.toDouble() ?? 0.0,
+  longitude: _toDouble(json['longitude'], 0.0),
+  latitude: _toDouble(json['latitude'], 0.0),
       postalCode: json['postal_code'],
       city: json['city'],
       isVerified: json['is_verified'],

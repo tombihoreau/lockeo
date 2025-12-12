@@ -34,15 +34,26 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    double? _toDouble(dynamic v) {
+      if (v == null) return null;
+      if (v is num) return v.toDouble();
+      if (v is String) {
+        final s = v.trim();
+        if (s.isEmpty) return null;
+        return double.tryParse(s);
+      }
+      return null;
+    }
+
     return Product(
       productId: json['product_id'],
       name: json['name'],
       description: json['description'],
-      price: json['price'] != null ? json['price'].toDouble() : null,
-      priceEstimate: json['price_estimate'] != null ? json['price_estimate'].toDouble() : null,
+      price: _toDouble(json['price']),
+      priceEstimate: _toDouble(json['price_estimate']),
       state: json['state'],
-      longitude: json['longitude']?.toDouble(),
-      latitude: json['latitude']?.toDouble(),
+      longitude: _toDouble(json['longitude']),
+      latitude: _toDouble(json['latitude']),
       city: json['city'],
       postalCode: json['postal_code'],
       isAvailable: json['is_available'],
