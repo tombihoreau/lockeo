@@ -16,6 +16,7 @@ import { ProductUnavailability } from './entities/product-unavailability.entity'
 import { Category } from './entities/category.entity';
 import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
+import { FavoritesModule } from './favorites/favorites.module';
 import { ProductHasCategory } from './entities/product-has-category.entity';
 import { NotificationTemplate } from './entities/notification-template.entity';
 import { UserNotification } from './entities/user-notification.entity';
@@ -26,7 +27,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
 
 @Module({
-  imports: [UsersModule, ConfigModule.forRoot({ isGlobal: true }), CategoriesModule, ProductsModule,
+  imports: [UsersModule, ConfigModule.forRoot({ isGlobal: true }), CategoriesModule, ProductsModule, FavoritesModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

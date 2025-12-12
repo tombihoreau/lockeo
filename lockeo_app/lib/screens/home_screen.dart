@@ -4,6 +4,7 @@ import '../widgets/product_grid.dart';
 import '../widgets/suggestions_grid.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/header.dart';
+import '../widgets/favorites_section.dart';
 import '../theme/app_colors.dart';
 import '../widgets/complete_profile_card.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
@@ -222,6 +223,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     shrinkWrap: true,
                   ),
                   const SizedBox(height: 40),
+                  // 🔵 Section favoris (masquée si l'utilisateur n'a pas de favoris)
+                  const FavoritesSection(maxItems: 4),
+
                 ],
               ),
             ),

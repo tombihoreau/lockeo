@@ -9,6 +9,12 @@ class ApiClient {
   final http.Client _client;
   final String _baseUrl;
 
+  String? _bearerToken;
+
+  void setBearerToken(String? token) {
+    _bearerToken = token;
+  }
+
   // Adapte localhost pour les émulateurs
   static String _normalizeBaseUrl(String raw) {
     final uri = Uri.parse(raw);
@@ -28,7 +34,10 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> getJson(String path, {Map<String, dynamic>? query}) async {
-    final res = await _client.get(_uri(path, query));
+    final res = await _client.get(
+      _uri(path, query),
+      headers: _bearerToken != null ? {'Authorization': 'Bearer $_bearerToken'} : null,
+    );
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final body = res.body.trim();
       final decoded = json.decode(body);
@@ -39,7 +48,10 @@ class ApiClient {
   }
 
   Future<List<dynamic>> getJsonList(String path, {Map<String, dynamic>? query}) async {
-    final res = await _client.get(_uri(path, query));
+    final res = await _client.get(
+      _uri(path, query),
+      headers: _bearerToken != null ? {'Authorization': 'Bearer $_bearerToken'} : null,
+    );
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final body = res.body.trim();
       final decoded = json.decode(body);
