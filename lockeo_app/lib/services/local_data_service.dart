@@ -6,6 +6,7 @@ import '../models/offer.dart';
 import '../models/user.dart';
 import '../models/category.dart';
 import '../models/review.dart';
+import '../models/reservation.dart';
 
 class LocalDataService {
   Future<List<Product>> loadProducts() async {
@@ -30,6 +31,10 @@ class LocalDataService {
 
   Future<List<Review>> loadReviews() async {
     return loadJson<Review>("reviews", (json) => Review.fromJson(json));
+  }
+
+  Future<List<Reservation>> loadReservations() async {
+    return loadJson<Reservation>("reservations", (json) => Reservation.fromJson(json));
   }
 
   Future<List<T>> loadJson<T>(
