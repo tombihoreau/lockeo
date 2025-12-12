@@ -5,6 +5,7 @@ class SearchHeader extends StatelessWidget {
   final VoidCallback? onBack;
   final ValueChanged<String>? onChanged;
   final bool showBackButton;
+  final TextEditingController controller;
 
   const SearchHeader({
     super.key,
@@ -12,12 +13,12 @@ class SearchHeader extends StatelessWidget {
     this.onBack,
     this.onChanged,
     this.showBackButton = true,
+    required this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
     final double statusBarHeight = MediaQuery.of(context).padding.top;
-    final controller = TextEditingController(text: initialQuery ?? '');
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, statusBarHeight + 12, 20, 24),
@@ -67,6 +68,7 @@ class SearchHeader extends StatelessWidget {
           TextField(
             controller: controller,
             onChanged: onChanged,
+            textDirection: TextDirection.ltr,
             decoration: InputDecoration(
               hintText: "Objets, mot-clé...",
               filled: true,

@@ -8,6 +8,7 @@ import 'package:lockeo_app/widgets/main_scaffold.dart';
 import 'package:lockeo_app/screens/create_offer_screen.dart';
 import 'package:lockeo_app/screens/public_profile_screen.dart';
 import 'package:lockeo_app/screens/user_profile_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +32,13 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: const Locale('fr', 'FR'),
+      supportedLocales: const [Locale('fr', 'FR')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       debugShowCheckedModeBanner: false,
       title: 'Lockeo',
       theme: ThemeData(
@@ -51,8 +59,8 @@ class _MyAppState extends State<MyApp> {
             const MainScaffold(currentIndex: 2, child: CategoriesScreen()),
         '/create': (context) =>
             const MainScaffold(currentIndex: 3, child: CreateOfferScreen()),
-        '/userProfile': (context) => 
-            const MainScaffold(currentIndex: 1, child: UserProfileScreen(),),
+        '/userProfile': (context) =>
+            const MainScaffold(currentIndex: 1, child: UserProfileScreen()),
       },
 
       // ⚙️ Routes dynamiques (avec arguments)

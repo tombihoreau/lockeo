@@ -19,7 +19,7 @@ class _SearchPageState extends State<SearchPage> {
   List<String> _selectedCategories = [];
   double _maxDistance = 20;
   RangeValues? _priceRange;
-  String _sortBy = "Prix"; 
+  String _sortBy = "Prix";
 
   @override
   void initState() {
@@ -40,6 +40,7 @@ class _SearchPageState extends State<SearchPage> {
       body: Column(
         children: [
           SearchHeader(
+            controller: _controller,
             initialQuery: _query,
             onChanged: (value) => setState(() => _query = value),
             onBack: () => Navigator.pop(context),
@@ -101,7 +102,9 @@ class _SearchPageState extends State<SearchPage> {
 
                           if (result != null) {
                             setState(() {
-                              _selectedCategories = List<String>.from(result['categories'] ?? []);
+                              _selectedCategories = List<String>.from(
+                                result['categories'] ?? [],
+                              );
                               _maxDistance = result['maxDistance'];
                               _priceRange = result['priceRange'];
                               _sortBy = result['sortBy'];
@@ -129,7 +132,9 @@ class _SearchPageState extends State<SearchPage> {
                   // 🧩 Grille
                   Expanded(
                     child: ProductGrid(
-                      key: ValueKey("$_query-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy"),
+                      key: ValueKey(
+                        "$_query-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy",
+                      ),
                       searchQuery: _query,
                       selectedCategories: _selectedCategories,
                       maxDistance: _maxDistance,

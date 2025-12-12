@@ -8,6 +8,9 @@ import '../services/local_data_service.dart';
 import '../widgets/images_slider.dart';
 import '../widgets/category_card.dart';
 import '../widgets/button.dart';
+import '../widgets/product_grid.dart';
+import '../widgets/reservation_sheet.dart';
+import '../models/reservation.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Offer offer;
@@ -25,6 +28,7 @@ class ProductDetailScreen extends StatelessWidget {
         dataService.loadUsers(),
         dataService.loadOffers(),
         dataService.loadCategories(),
+        dataService.loadReservations(),
       ]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -45,6 +49,8 @@ class ProductDetailScreen extends StatelessWidget {
         final users = snapshot.data![2] as List<User>;
         final offers = snapshot.data![3] as List<Offer>;
         final categories = snapshot.data![4] as List<Category>;
+        final reservations = snapshot.data![5] as List<Reservation>;
+        List<Offer> otherOffers = [];
 
         final product = products.firstWhere(
           (p) => p.productId == offer.productId,
@@ -56,9 +62,20 @@ class ProductDetailScreen extends StatelessWidget {
         final ownerOffersCount = offers
             .where((o) => o.userId == owner.userId)
             .length;
+
+        otherOffers = offers
+            .where(
+              (o) => o.userId == owner.userId && o.offerId != offer.offerId,
+            )
+            .toList();
+
         final productCategories = categories
             .where((cat) => product.categoryIds.contains(cat.categoryId))
             .toList();
+
+        final rentalCount = reservations
+            .where((r) => r.productId == product!.productId)
+            .length;
 
         return Scaffold(
           extendBodyBehindAppBar: true,
@@ -140,9 +157,7 @@ class ProductDetailScreen extends StatelessWidget {
                                       padding: const EdgeInsets.only(
                                         right: 8.0,
                                       ),
-                                      child: CategoryCard(
-                                        name: category.label,
-                                      ),
+                                      child: CategoryCard(name: category.label),
                                     );
                                   }).toList(),
                                 ),
@@ -160,13 +175,137 @@ class ProductDetailScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 20),
 
+                              Text(
+                                'État',
+                                style: const TextStyle(
+                                  color: Color.fromRGBO(157, 160, 162, 1),
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                product.state,
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              if (rentalCount > 0)
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFFFFE7C2,
+                                    ), // beige/orange doux
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    "Cet objet a été loué $rentalCount fois.",
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+
+                              const SizedBox(height: 20),
+
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // 🔹 Ligne titre + logo
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        const Expanded(
+                                          child: Text(
+                                            "Notre protection avec la MAAF",
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          child: Image.asset(
+                                            "assets/icons/logo_maaf.png",
+                                            width: 48,
+                                            height: 48,
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 12),
+
+                                    // 🔹 Texte pleine largeur
+                                    const Text(
+                                      "Nous utilisons un système de caution via assurance pour vous protéger en cas de dommage.",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        height: 1.4,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 16),
+
+                                    // 🔹 Lien
+                                    GestureDetector(
+                                      onTap: () {
+                                        // TODO: navigation page assurance
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: const [
+                                          Text(
+                                            "Découvrir notre assurance",
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF2E6F75),
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.chevron_right,
+                                            color: Color(0xFF2E6F75),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 20),
+
                               // Propriétaire
                               GestureDetector(
                                 onTap: () {
                                   Navigator.pushNamed(
                                     context,
                                     '/user',
-                                    arguments: owner.userId, 
+                                    arguments: owner.userId,
                                   );
                                 },
                                 child: Container(
@@ -232,7 +371,20 @@ class ProductDetailScreen extends StatelessWidget {
                                 ),
                               ),
 
-                              const SizedBox(height: 100),
+                              const SizedBox(height: 20),
+                              const Text(
+                                "Autres annonces",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              ProductGrid(
+                                maxItems: 4,
+                                offers: otherOffers,
+                                shrinkWrap: true,
+                              ),
                             ],
                           ),
 
@@ -273,21 +425,22 @@ class ProductDetailScreen extends StatelessWidget {
           ),
 
           bottomNavigationBar: Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: CustomButton(
-              text: "Louer",
-              onPressed: () {
-                print("Louer !");
-              },
+            color: Colors.white,
+            alignment: Alignment.center,
+            height: 100,
+            child: SizedBox(
+              width: 300,
+              child: CustomButton(
+                text: "Louer",
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => ReservationSheet(offerId: offer.offerId),
+                  );
+                },
+              ),
             ),
           ),
         );
