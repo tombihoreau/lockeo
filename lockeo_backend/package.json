@@ -21,7 +21,7 @@
     "openapi:gen": "ts-node src/main.ts && echo 'openapi.json generated'",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/database/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate src/database/migrations/auto",
-    "migration:run": "npm run typeorm -- migration:run",
+    "migration:run": "node ./node_modules/typeorm/cli.js -d dist/database/data-source.js migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts"
   },
