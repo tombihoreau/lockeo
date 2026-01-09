@@ -9,6 +9,8 @@ import 'package:lockeo_app/screens/create_offer_screen.dart';
 import 'package:lockeo_app/screens/public_profile_screen.dart';
 import 'package:lockeo_app/screens/user_profile_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:lockeo_app/screens/search_screen.dart';
+import 'package:lockeo_app/screens/conversations_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +63,10 @@ class _MyAppState extends State<MyApp> {
             const MainScaffold(currentIndex: 3, child: CreateOfferScreen()),
         '/userProfile': (context) =>
             const MainScaffold(currentIndex: 1, child: UserProfileScreen()),
+        '/discover': (context) =>
+            const MainScaffold(currentIndex: 1, child: SearchPage()),
+        '/messaging': (context) =>
+            const MainScaffold(currentIndex: 1, child: ConversationsScreen()),
       },
 
       // ⚙️ Routes dynamiques (avec arguments)

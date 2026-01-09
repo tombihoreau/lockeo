@@ -12,9 +12,9 @@ class CustomBottomNavBar extends StatelessWidget {
   void _onItemTapped(BuildContext context, int index) {
     final List<String> routes = [
       '/',            // Accueil
-      '/calendar',    // Découvrir / Calendrier
+      '/discover',    // Découvrir / Calendrier
       '/create',      // Créer
-      '/messages',    // Messages
+      '/messaging',    // Messages
       '/userProfile', // Profil
     ];
 
@@ -47,8 +47,8 @@ class CustomBottomNavBar extends StatelessWidget {
             children: [
               _buildItem(context, LucideIcons.home, "Accueil", 0),
               _buildItem(context, LucideIcons.compass, "Découvrir", 1),
-              const SizedBox(width: 60), // espace pour le bouton "+"
-              _buildItem(context, LucideIcons.messageCircle, "Message", 3),
+              const SizedBox(width: 60), 
+              _buildItem(context, LucideIcons.messageCircle, "Messages", 3),
               _buildItem(context, LucideIcons.user, "Profil", 4),
             ],
           ),
