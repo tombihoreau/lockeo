@@ -2,9 +2,9 @@ name: CI - Build & Push (backend)
 
 on:
   push:
-    branches: [ develop, main ]
+    branches: [ main ]
   pull_request:
-    branches: [ develop, main ]
+    branches: [ main ]
 
 jobs:
   build-backend:
@@ -81,7 +81,6 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}/lockeo-backend
           tags: |
-            type=sha,format=short,prefix=develop-,enable=${{ github.ref == 'refs/heads/develop' }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Setup Buildx
