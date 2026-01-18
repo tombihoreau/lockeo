@@ -29,9 +29,6 @@ COPY package*.json ./
 COPY entrypoint.sh ./
 RUN chmod +x ./entrypoint.sh
 
-# Optionnel : healthcheck (assure-toi d'avoir une route /health)
-# HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1:3000/health || exit 1
-
 # Sécurité basique : user non-root
 RUN addgroup -S app && adduser -S app -G app
 USER app

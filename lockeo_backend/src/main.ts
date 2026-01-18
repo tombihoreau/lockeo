@@ -7,7 +7,7 @@ import 'reflect-metadata';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-// Sécurité/CORS (optionnel)
+// Sécurité/CORS
   app.enableCors();
 
   // Validation globale des DTOs
@@ -18,8 +18,8 @@ async function bootstrap() {
     .setTitle('Lockeo API')
     .setDescription('Documentation OpenAPI pour le backend Lockeo')
     .setVersion('1.1.0')
-    .addBearerAuth() // si tu utilises JWT
-    .addTag('Users') // tu peux ajouter des tags (groupes d’endpoints)
+    .addBearerAuth() // JWT
+    .addTag('Users') 
     .build();
 
     const document = SwaggerModule.createDocument(app, config);
