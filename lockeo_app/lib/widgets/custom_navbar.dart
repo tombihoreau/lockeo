@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../theme/app_colors.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -67,12 +68,12 @@ class CustomBottomNavBar extends StatelessWidget {
                 child: Container(
                   margin: const EdgeInsets.all(5),
                   decoration: const BoxDecoration(
-                    color: Color(0xFFF69F1D), // Ton jaune
+                    color: AppColors.primaryBlue,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     LucideIcons.plus,
-                    color: Colors.black,
+                    color: Colors.white,
                     size: 30,
                   ),
                 ),
@@ -96,13 +97,13 @@ class CustomBottomNavBar extends StatelessWidget {
           Icon(
             icon,
             size: 22,
-            color: isActive ? const Color(0xFF00616B) : Colors.black54,
+            color: isActive ? AppColors.primaryBlue : Colors.black54,
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFF00616B) : Colors.black87,
+              color: isActive ? AppColors.primaryBlue : Colors.black87,
               fontSize: 12,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
             ),

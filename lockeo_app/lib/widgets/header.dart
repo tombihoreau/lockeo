@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/search_screen.dart';
+import '../theme/app_colors.dart';
 
 class Header extends StatefulWidget {
   final String? userName; // 🔹 optionnel
@@ -37,13 +38,17 @@ class _HeaderState extends State<Header> {
         // 🟩 Fond principal
         SizedBox(
           width: double.infinity,
-          height: widget.isHome ? 300 + statusBarHeight : 180 + statusBarHeight,
+          height: widget.isHome ? 280 + statusBarHeight : 180 + statusBarHeight,
           child: DecoratedBox(
             decoration: const BoxDecoration(
-              color: Color(0xFF00616B),
+              color: AppColors.background,
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(32),
                 bottomRight: Radius.circular(32),
+              ),
+              image: DecorationImage(
+                image: AssetImage('assets/images/fond_bleu_header.png'),
+                fit: BoxFit.cover,
               ),
             ),
           ),
@@ -88,7 +93,7 @@ class _HeaderState extends State<Header> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: AppColors.secondaryBlue,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -104,36 +109,7 @@ class _HeaderState extends State<Header> {
                   (widget.location?.isNotEmpty ?? false))
                 const SizedBox(height: 16),
 
-              // 📍 Localisation (affiché seulement si isHome ET location défini)
-              if (widget.isHome && (widget.location?.isNotEmpty ?? false))
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.location_on,
-                      color: Colors.white70,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      widget.location!,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.expand_more,
-                      color: Colors.white70,
-                      size: 18,
-                    ),
-                  ],
-                ),
-
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
 
               // 🔍 Titre de recherche
               const Text(
@@ -145,7 +121,7 @@ class _HeaderState extends State<Header> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
 
               // 🔎 Barre de recherche
               Container(
@@ -173,7 +149,7 @@ class _HeaderState extends State<Header> {
                   decoration: InputDecoration(
                     hintText: 'Objets, mot-clé...',
                     hintStyle: const TextStyle(
-                      color: Colors.grey,
+                      color: AppColors.blue800,
                       fontSize: 13,
                     ),
                     border: InputBorder.none,
@@ -181,10 +157,43 @@ class _HeaderState extends State<Header> {
                       horizontal: 20,
                       vertical: 14,
                     ),
-                    suffixIcon: const Icon(Icons.search, color: Colors.grey),
+                    suffixIcon: const Icon(
+                      Icons.search,
+                      color: AppColors.blue800,
+                    ),
                   ),
                 ),
               ),
+
+              const SizedBox(height: 10),
+
+              if (widget.isHome && (widget.location?.isNotEmpty ?? false))
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.location!,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.expand_more,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
+                  ],
+                ),
             ],
           ),
         ),

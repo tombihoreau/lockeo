@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../models/image.dart';
+import '../theme/app_colors.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -21,9 +22,7 @@ class ProductCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Card(
         color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -57,7 +56,10 @@ class ProductCard extends StatelessWidget {
                   ),
                   Text(
                     "${product.city}, ${product.postalCode}",
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    style: const TextStyle(
+                      color: AppColors.textGrey,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -70,28 +72,18 @@ class ProductCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(
-                          color: const Color(0xFF225A5D), width: 1.3),
-                      borderRadius: BorderRadius.circular(40),
-                    ),
-                    child: Text(
-                      "${product.price?.toStringAsFixed(0)}€",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF225A5D),
-                        fontSize: 14,
-                      ),
+                  Text(
+                    "${product.price?.toStringAsFixed(0)}€",
+                    style: const TextStyle(
+                      color: AppColors.textGrey,
+                      fontSize: 14,
                     ),
                   ),
+
                   const Text(
                     "1 journée",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  )
+                    style: TextStyle(fontSize: 12, color: AppColors.textGrey),
+                  ),
                 ],
               ),
             ),

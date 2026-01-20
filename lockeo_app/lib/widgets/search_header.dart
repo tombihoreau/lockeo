@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class SearchHeader extends StatelessWidget {
   final String? initialQuery;
@@ -23,10 +24,13 @@ class SearchHeader extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(20, statusBarHeight + 12, 20, 24),
       decoration: const BoxDecoration(
-        color: Color(0xFF00434A),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
+        ),
+        image: DecorationImage(
+          image: AssetImage('assets/images/fond_bleu_header.png'),
+          fit: BoxFit.cover,
         ),
       ),
       child: Column(
@@ -71,12 +75,16 @@ class SearchHeader extends StatelessWidget {
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(
               hintText: "Objets, mot-clé...",
+              hintStyle: const TextStyle(
+                color: AppColors.blue800,
+                fontSize: 13,
+              ),
               filled: true,
               fillColor: Colors.white,
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              prefixIcon: const Icon(Icons.search, color: AppColors.blue900),
               suffixIcon: (controller.text.isNotEmpty)
                   ? IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
+                      icon: const Icon(Icons.close, color: AppColors.blue900),
                       onPressed: () {
                         controller.clear();
                         onChanged?.call('');
@@ -87,8 +95,10 @@ class SearchHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
               ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
           ),
         ],
