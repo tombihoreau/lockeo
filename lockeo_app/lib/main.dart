@@ -4,7 +4,7 @@ import 'package:lockeo_app/models/offer.dart';
 import 'package:lockeo_app/screens/home_screen.dart';
 import 'package:lockeo_app/screens/categories_screen.dart';
 import 'package:lockeo_app/screens/product_detail_screen.dart';
-import 'package:lockeo_app/screens/register_welcome_screen.dart';
+import 'package:lockeo_app/screens/register/register_welcome_screen.dart';
 import 'package:lockeo_app/screens/search_screen.dart';
 import 'package:lockeo_app/widgets/main_scaffold.dart';
 import 'package:lockeo_app/screens/create_offer_screen.dart';
@@ -13,8 +13,12 @@ import 'package:lockeo_app/screens/user_profile_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:lockeo_app/screens/conversations_screen.dart';
 import 'package:lockeo_app/screens/login_screen.dart';
-import 'package:lockeo_app/screens/register_welcome_pages_screen.dart';
-import 'package:lockeo_app/screens/register_1_screen.dart';
+import 'package:lockeo_app/screens/register/register_welcome_pages_screen.dart';
+import 'package:lockeo_app/screens/register/register_1_screen.dart';
+import 'package:lockeo_app/screens/register/register_2_screen.dart';
+import 'package:lockeo_app/screens/register/register_3_screen.dart';
+import 'package:lockeo_app/screens/register/register_4_screen.dart';
+import 'package:lockeo_app/screens/register/register_5_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,6 +84,14 @@ class _MyAppState extends State<MyApp> {
             const MainScaffold(showBottomBar: false, currentIndex: 1, child: RegisterWelcomePagesScreen()),
         '/register_1': (context) =>
             const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register1Screen()),
+        '/register_2': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register2Screen()),
+        '/register_3': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register3Screen()),
+        '/register_4': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register4Screen()),
+        '/register_5': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register5Screen()),
       },
 
       // ⚙️ Routes dynamiques (avec arguments)
