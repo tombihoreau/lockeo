@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class RegisterWelcomePage3Screen extends StatelessWidget {
   const RegisterWelcomePage3Screen();
@@ -7,19 +8,15 @@ class RegisterWelcomePage3Screen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
           const SizedBox(height: 50),
 
-          const Text(
+          Text(
             "Créer votre compte\nen 3 étapes",
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-            ),
+            style: AppTextStyles.hero.copyWith(color: Colors.white),
           ),
 
           const SizedBox(height: 40),
@@ -28,13 +25,9 @@ class RegisterWelcomePage3Screen extends StatelessWidget {
 
           const SizedBox(height: 32),
 
-          const Text(
+          Text(
             "Tous nos avantages !",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-            ),
+            style: AppTextStyles.h1.copyWith(color: Colors.white),
           ),
           const SizedBox(height: 14),
           SizedBox(
@@ -42,12 +35,7 @@ class RegisterWelcomePage3Screen extends StatelessWidget {
             child: Text(
               "Retrouver notre paiement sécurisé, une messagerie instantanée, les avis et nos assurances.",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                height: 1.3,
-              ),
+              style: AppTextStyles.body.copyWith(color: Colors.white),
             ),
           ),
 
@@ -56,12 +44,10 @@ class RegisterWelcomePage3Screen extends StatelessWidget {
           Center(
             child: GestureDetector(
               onTap: () => Navigator.pushNamed(context, '/login'),
-              child: const Text(
+              child: Text(
                 "J’ai déjà un compte",
-                style: TextStyle(
+                style: AppTextStyles.link.copyWith(
                   color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
                   decoration: TextDecoration.underline,
                   decorationColor: Colors.white,
                 ),
@@ -75,7 +61,7 @@ class RegisterWelcomePage3Screen extends StatelessWidget {
             height: 56,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, "/register");
+                Navigator.pushNamed(context, "/register_1");
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,

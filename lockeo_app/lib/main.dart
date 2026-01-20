@@ -14,6 +14,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:lockeo_app/screens/conversations_screen.dart';
 import 'package:lockeo_app/screens/login_screen.dart';
 import 'package:lockeo_app/screens/register_welcome_pages_screen.dart';
+import 'package:lockeo_app/screens/register_1_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +48,7 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       title: 'Lockeo',
       theme: ThemeData(
-        textTheme: GoogleFonts.montserratTextTheme(),
+        fontFamily: 'Montserrat',
         scaffoldBackgroundColor: const Color(0xFFF0F2F5),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
@@ -77,6 +78,8 @@ class _MyAppState extends State<MyApp> {
             const MainScaffold(showBottomBar: false, currentIndex: 1, child: RegisterWelcomeScreen()),
         '/welcome_pages': (context) =>
             const MainScaffold(showBottomBar: false, currentIndex: 1, child: RegisterWelcomePagesScreen()),
+        '/register_1': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register1Screen()),
       },
 
       // ⚙️ Routes dynamiques (avec arguments)

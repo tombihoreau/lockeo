@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class RegisterWelcomePage1Screen extends StatelessWidget {
   const RegisterWelcomePage1Screen({super.key});
@@ -8,7 +9,7 @@ class RegisterWelcomePage1Screen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -23,15 +24,14 @@ class RegisterWelcomePage1Screen extends StatelessWidget {
                 height: 1.3,
               ),
               children: [
-                const TextSpan(
+                TextSpan(
                   text: "Économiser, partager et\nconsommer autrement\navec ",
+                  style: AppTextStyles.h1.copyWith(color: Colors.white),
                 ),
+
                 WidgetSpan(
                   alignment: PlaceholderAlignment.middle,
-                  child: SvgPicture.asset(
-                    'assets/icons/logo.svg',
-                    height: 20,
-                  ),
+                  child: SvgPicture.asset('assets/icons/logo.svg', height: 20),
                 ),
               ],
             ),
@@ -68,16 +68,12 @@ class RegisterWelcomePage1Screen extends StatelessWidget {
                     children: [
                       Text(
                         "Louer plutôt qu’acheter",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppTextStyles.h2.copyWith(color: Colors.white),
                       ),
                       SizedBox(height: 4),
                       Text(
                         "Accédez à ce dont vous avez besoin sans dépenser plus.",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: AppTextStyles.body.copyWith(color: Colors.white),
                       ),
                     ],
                   ),
@@ -116,16 +112,12 @@ class RegisterWelcomePage1Screen extends StatelessWidget {
                     children: [
                       Text(
                         "Agissez pour la planète",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppTextStyles.h2.copyWith(color: Colors.white),
                       ),
                       SizedBox(height: 4),
                       Text(
                         "Moins d’objets inutilisés, plus de réutilisation.",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: AppTextStyles.body.copyWith(color: Colors.white),
                       ),
                     ],
                   ),
@@ -165,16 +157,12 @@ class RegisterWelcomePage1Screen extends StatelessWidget {
                     children: [
                       Text(
                         "Rencontrez vos voisins",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppTextStyles.h2.copyWith(color: Colors.white),
                       ),
                       SizedBox(height: 4),
                       Text(
                         "Une communauté de confiance, locale et active.",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: AppTextStyles.body.copyWith(color: Colors.white),
                       ),
                     ],
                   ),

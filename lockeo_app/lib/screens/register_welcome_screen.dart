@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class RegisterWelcomeScreen extends StatelessWidget {
   const RegisterWelcomeScreen({super.key});
@@ -12,33 +13,27 @@ class RegisterWelcomeScreen extends StatelessWidget {
           // Fond (asset)
           Positioned.fill(
             child: Image.asset(
-              "assets/images/fond_bleu_page.png", 
+              "assets/images/fond_bleu_page.png",
               fit: BoxFit.cover,
             ),
           ),
 
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
                   const SizedBox(height: 40),
                   const Spacer(),
 
-                  const Text(
+                  Text(
                     "Bienvenue sur",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                    ),
+                    style: AppTextStyles.hero.copyWith(color: Colors.white),
                   ),
                   const SizedBox(height: 10),
 
                   // Logo (asset)
-                   Center(
+                  Center(
                     child: SvgPicture.asset(
                       'assets/icons/logo.svg',
                       height: 60,
@@ -47,26 +42,18 @@ class RegisterWelcomeScreen extends StatelessWidget {
 
                   const SizedBox(height: 44),
 
-                  const Text(
+                  Text(
                     "Votre nouvelle solution pour\n"
                     "louer et faire louer des\n"
                     "équipements sportifs en toute\n"
                     "simplicité, près de chez vous.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      height: 1.25,
-                    ),
+                    style: AppTextStyles.h2.copyWith(color: Colors.white),
                   ),
-
                   const Spacer(),
 
                   Padding(
-                    padding: EdgeInsets.only(
-                      bottom: 32,
-                    ),
+                    padding: EdgeInsets.only(bottom: 32),
                     child: SizedBox(
                       width: double.infinity,
                       height: 64,

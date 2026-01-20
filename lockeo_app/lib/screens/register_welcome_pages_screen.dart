@@ -23,11 +23,7 @@ class _RegisterWelcomePagesScreenState
   }
 
   void _skip() {
-    _controller.animateToPage(
-      2,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    Navigator.pushNamed(context, "/register_1");
   }
 
   @override
@@ -57,6 +53,7 @@ class _RegisterWelcomePagesScreenState
                 ),
 
                 // Passer cette étape
+                if (_index < 2)
                 Positioned(
                   top: 10,
                   right: 18,
