@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class CategoryCard extends StatelessWidget {
   final String name;
@@ -54,11 +55,7 @@ class CategoryCard extends StatelessWidget {
             Flexible(
               child: Text(
                 name,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.blue900,
-                ),
+                style: AppTextStyles.caption.copyWith(color: AppColors.blue900),
                 softWrap: true,
                 overflow: TextOverflow.visible,
               ),

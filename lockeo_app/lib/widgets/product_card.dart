@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../models/image.dart';
 import '../theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -36,7 +37,6 @@ class ProductCard extends StatelessWidget {
               fit: BoxFit.cover,
             ),
 
-            // Padding uniquement en bas
             const SizedBox(height: 12),
 
             // Infos produit
@@ -49,16 +49,13 @@ class ProductCard extends StatelessWidget {
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                    style: AppTextStyles.h3.copyWith(color: Colors.black),
                   ),
+                  const SizedBox(height: 10),
                   Text(
                     "${product.city}, ${product.postalCode}",
-                    style: const TextStyle(
+                    style: AppTextStyles.label.copyWith(
                       color: AppColors.textGrey,
-                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -74,15 +71,12 @@ class ProductCard extends StatelessWidget {
                 children: [
                   Text(
                     "${product.price?.toStringAsFixed(0)}€",
-                    style: const TextStyle(
-                      color: AppColors.textGrey,
-                      fontSize: 14,
-                    ),
+                    style: AppTextStyles.label.copyWith(color: Colors.black),
                   ),
 
-                  const Text(
+                  Text(
                     "1 journée",
-                    style: TextStyle(fontSize: 12, color: AppColors.textGrey),
+                    style: AppTextStyles.label.copyWith(color: AppColors.textGrey),
                   ),
                 ],
               ),

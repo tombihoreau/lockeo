@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class CompleteProfileCard extends StatelessWidget {
   final VoidCallback onPressed;
@@ -22,40 +23,25 @@ class CompleteProfileCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Background image
-            Image.asset(
-              backgroundAsset,
-              fit: BoxFit.cover,
-            ),
-
-            // Optional: slight dark overlay (si besoin de lisibilité)
-            // Container(color: Colors.black.withOpacity(0.05)),
+            Image.asset(backgroundAsset, fit: BoxFit.cover),
 
             Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "Personnalise ton profil",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      height: 1.05,
-                    ),
+                    style: AppTextStyles.h2.copyWith(color: Colors.white),
                   ),
                   const SizedBox(height: 14),
                   RichText(
-                    text: const TextSpan(
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        height: 1.25,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    text: TextSpan(
+                      style: AppTextStyles.body.copyWith(color: Colors.white),
                       children: [
-                        TextSpan(text: "Finalise ton profil pour débloquer le\nbadge "),
+                        TextSpan(
+                          text: "Finalise ton profil pour débloquer le\nbadge ",
+                        ),
                         TextSpan(
                           text: "“Loueur certifié”",
                           style: TextStyle(fontWeight: FontWeight.w800),
@@ -71,19 +57,15 @@ class CompleteProfileCard extends StatelessWidget {
                     child: TextButton.icon(
                       onPressed: onPressed,
                       icon: const SizedBox.shrink(),
-                      // petit hack pour mettre l'icône à droite via "label + icon"
                       label: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Text(
                             "Finaliser mon profil",
-                            style: TextStyle(
+                            style: AppTextStyles.link.copyWith(
                               color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
                               decoration: TextDecoration.underline,
                               decorationColor: Colors.white,
-                              decorationThickness: 2,
                             ),
                           ),
                           SizedBox(width: 10),

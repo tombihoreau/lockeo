@@ -4,6 +4,7 @@ import '../widgets/category_grid.dart';
 import '../widgets/header.dart';
 import '../theme/app_colors.dart';
 import '../widgets/complete_profile_card.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -17,7 +18,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             // 🟢 Header en plein écran
             const Header(
-              userName: "Tom Bihoreau",
+              userName: "Tom",
               location: "Rennes, France",
               isHome: true,
             ),
@@ -31,12 +32,9 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         "Nos catégories",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTextStyles.h2.copyWith(color: Colors.black),
                       ),
                       TextButton(
                         onPressed: () {
@@ -44,12 +42,13 @@ class HomeScreen extends StatelessWidget {
                         },
                         child: Row(
                           mainAxisSize: MainAxisSize.min, // important
-                          children: const [
+                          children: [
                             Text(
                               "Tout voir",
-                              style: TextStyle(
-                                color: AppColors.primaryBlue,
+                              style: AppTextStyles.link.copyWith(
                                 fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.none,
+                                color: AppColors.primaryBlue,
                               ),
                             ),
                             SizedBox(width: 4),
@@ -80,12 +79,9 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         "Nos suggestions",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTextStyles.h2.copyWith(color: Colors.black),
                       ),
                       TextButton(
                         onPressed: () {
@@ -93,12 +89,13 @@ class HomeScreen extends StatelessWidget {
                         },
                         child: Row(
                           mainAxisSize: MainAxisSize.min, // important
-                          children: const [
+                          children: [
                             Text(
                               "Tout voir",
-                              style: TextStyle(
-                                color: AppColors.primaryBlue,
+                              style: AppTextStyles.link.copyWith(
                                 fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.none,
+                                color: AppColors.primaryBlue,
                               ),
                             ),
                             SizedBox(width: 4),
@@ -128,10 +125,8 @@ class HomeScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           "Les plus populaires près de chez vous",
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTextStyles.h2.copyWith(color: Colors.black),
+
                           softWrap: true,
                         ),
                       ),
@@ -140,13 +135,14 @@ class HomeScreen extends StatelessWidget {
                           Navigator.pushNamed(context, '/products');
                         },
                         child: Row(
-                          mainAxisSize: MainAxisSize.min, // important
-                          children: const [
+                          mainAxisSize: MainAxisSize.min, 
+                          children: [
                             Text(
                               "Tout voir",
-                              style: TextStyle(
-                                color: AppColors.primaryBlue,
+                              style: AppTextStyles.link.copyWith(
                                 fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.none,
+                                color: AppColors.primaryBlue,
                               ),
                             ),
                             SizedBox(width: 4),
@@ -175,10 +171,7 @@ class HomeScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           "Vos favoris",
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTextStyles.h2.copyWith(color: Colors.black),
                           softWrap: true,
                         ),
                       ),
@@ -188,12 +181,13 @@ class HomeScreen extends StatelessWidget {
                         },
                         child: Row(
                           mainAxisSize: MainAxisSize.min, // important
-                          children: const [
+                          children: [
                             Text(
                               "Tout voir",
-                              style: TextStyle(
-                                color: AppColors.primaryBlue,
+                              style: AppTextStyles.link.copyWith(
                                 fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.none,
+                                color: AppColors.primaryBlue,
                               ),
                             ),
                             SizedBox(width: 4),
