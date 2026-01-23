@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lockeo_app/services/auth_service.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 
@@ -11,15 +12,21 @@ class Register2Screen extends StatefulWidget {
 }
 
 class _Register2ScreenState extends State<Register2Screen> {
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _pwdCtrl = TextEditingController();
   final _pwdConfirmCtrl = TextEditingController();
+
+  bool _submitting = false;
 
   bool _obscurePwd = true;
   bool _obscureConfirm = true;
 
   @override
   void dispose() {
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
     _emailCtrl.dispose();
     _pwdCtrl.dispose();
     _pwdConfirmCtrl.dispose();
@@ -27,15 +34,54 @@ class _Register2ScreenState extends State<Register2Screen> {
   }
 
   void _submit() {
-    // TODO: branche ton inscription
-    // Pour l’instant, tu peux naviguer vers une prochaine page si tu veux :
-    // Navigator.pushNamed(context, "/register_3");
+    if (_submitting) return;
+
+    final firstName = _firstNameCtrl.text.trim();
+    final lastName = _lastNameCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
+    final pwd = _pwdCtrl.text;
+    final pwdConfirm = _pwdConfirmCtrl.text;
+
+    if (firstName.isEmpty || lastName.isEmpty || email.isEmpty || pwd.isEmpty || pwdConfirm.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Merci de remplir tous les champs.')),
+      );
+      return;
+    }
+
+    if (pwd != pwdConfirm) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Les mots de passe ne correspondent pas.')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+
+    AuthService()
+        .register(
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+          password: pwd,
+          passwordConfirm: pwdConfirm,
+        )
+        .then((_) {
+      if (!mounted) return;
+      Navigator.pushNamed(context, '/register_3');
+    }).catchError((e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Inscription impossible: $e')),
+      );
+    }).whenComplete(() {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-
     return Scaffold(
       body: Stack(
         children: [
@@ -107,7 +153,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                           ),
                         ),
 
-                        const SizedBox(height: 70),
+                        const SizedBox(height: 40),
 
                         Text(
                           "Créer votre compte",
@@ -118,15 +164,32 @@ class _Register2ScreenState extends State<Register2Screen> {
 
                         const SizedBox(height: 10),
 
-                        Text(
-                          "Lorem ipsum dolor sit amet consectetur.\n"
-                          "Sit viverra donec quis dignissim. Fames.",
-                          style: AppTextStyles.number.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
 
                         const SizedBox(height: 22),
+
+                        _Label("Votre prénom"),
+                        const SizedBox(height: 8),
+                        _TextFieldWhite(
+                          controller: _firstNameCtrl,
+                          hintText: "Prénom",
+                          keyboardType: TextInputType.name,
+                          textInputAction: TextInputAction.next,
+                          obscureText: false,
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        _Label("Votre nom"),
+                        const SizedBox(height: 8),
+                        _TextFieldWhite(
+                          controller: _lastNameCtrl,
+                          hintText: "Nom",
+                          keyboardType: TextInputType.name,
+                          textInputAction: TextInputAction.next,
+                          obscureText: false,
+                        ),
+
+                        const SizedBox(height: 18),
 
                         _Label("Votre e-mail"),
                         const SizedBox(height: 8),
@@ -207,9 +270,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                     width: double.infinity,
                     height: 64,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/register_3');
-                      },
+                      onPressed: _submitting ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xFFD1380D),
@@ -218,12 +279,21 @@ class _Register2ScreenState extends State<Register2Screen> {
                           borderRadius: BorderRadius.circular(22),
                         ),
                       ),
-                      child: Text(
-                        "CRÉER MON COMPTE",
-                        style: AppTextStyles.button.copyWith(
-                          color: const Color(0xFFD1380D),
-                        ),
-                      ),
+                      child: _submitting
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Color(0xFFD1380D),
+                              ),
+                            )
+                          : Text(
+                              "CRÉER MON COMPTE",
+                              style: AppTextStyles.button.copyWith(
+                                color: const Color(0xFFD1380D),
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -274,7 +344,7 @@ class _TextFieldWhite extends StatelessWidget {
         keyboardType: keyboardType,
         textInputAction: textInputAction,
         obscureText: obscureText,
-        style: AppTextStyles.body.copyWith(color: Colors.black),
+        style: AppTextStyles.caption.copyWith(color: Colors.black),
         decoration: InputDecoration(
           filled: true,
           fillColor: Colors.white,

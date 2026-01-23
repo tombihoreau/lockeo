@@ -61,6 +61,25 @@ class ApiClient {
     throw HttpException('GET $path status=${res.statusCode} body=${res.body}');
   }
 
+  Future<Map<String, dynamic>> postJson(String path, {Object? body, Map<String, dynamic>? query}) async {
+    final res = await _client.post(
+      _uri(path, query),
+      headers: {
+        'Content-Type': 'application/json',
+        if (_bearerToken != null) 'Authorization': 'Bearer $_bearerToken',
+      },
+      body: body == null ? null : json.encode(body),
+    );
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      final decoded = json.decode(res.body);
+      if (decoded is Map<String, dynamic>) return decoded;
+      throw FormatException('Réponse inattendue (objet JSON attendu)');
+    }
+
+    throw HttpException('POST $path status=${res.statusCode} body=${res.body}');
+  }
+
   void dispose() => _client.close();
 }
 

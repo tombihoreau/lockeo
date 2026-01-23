@@ -19,7 +19,8 @@ async function bootstrap() {
     .setDescription('Documentation OpenAPI pour le backend Lockeo')
     .setVersion('1.0.0')
     .addBearerAuth() // si tu utilises JWT
-    .addTag('Users') // tu peux ajouter des tags (groupes d’endpoints)
+    .addTag('auth')
+    .addTag('users')
     .build();
 
     const document = SwaggerModule.createDocument(app, config);
