@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../../theme/app_colors.dart';
 
 class Register5Screen extends StatelessWidget {
   const Register5Screen({super.key});
@@ -140,7 +141,7 @@ class Register5Screen extends StatelessWidget {
                           fontSize: 16,
                           fontStyle: FontStyle.italic,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFFD1380D),
+                          color: AppColors.primaryRed,
                           letterSpacing: 0.8,
                         ),
                       ),
@@ -280,7 +281,7 @@ class _RefuseLocationDialogState extends State<_RefuseLocationDialog> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(
-                  color: Color(0xFFD1380D),
+                  color: AppColors.primaryRed,
                   width: 1.5,
                 ),
               ),
@@ -295,7 +296,7 @@ class _RefuseLocationDialogState extends State<_RefuseLocationDialog> {
             child: OutlinedButton(
               onPressed: widget.onContinue,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFD1380D), width: 1.5),
+                side: const BorderSide(color: AppColors.primaryRed, width: 1.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -303,7 +304,7 @@ class _RefuseLocationDialogState extends State<_RefuseLocationDialog> {
               child: Text(
                 "CONTINUER",
                 style: AppTextStyles.button.copyWith(
-                  color: const Color(0xFFD1380D),
+                  color: AppColors.primaryRed,
                 ),
               ),
             ),

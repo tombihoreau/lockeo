@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../../theme/app_colors.dart';
 
 class RegisterWelcomePage3Screen extends StatelessWidget {
   const RegisterWelcomePage3Screen();
@@ -65,7 +66,7 @@ class RegisterWelcomePage3Screen extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFFD1380D),
+                foregroundColor: AppColors.primaryRed,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),

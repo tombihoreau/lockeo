@@ -10,4 +10,5 @@ class AppColors {
   static const Color blue900 = Color(0xFF001856);
   static const Color textPrimary = Colors.black;
   static const Color textGrey = Color(0xFF9DA0A2);
+  static const Color primaryRed = Color(0xFFD0390D);
 }

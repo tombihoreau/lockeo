@@ -40,8 +40,8 @@ class CategoryGrid extends StatelessWidget {
         final categories = maxItems != null ? snapshot.data!.take(maxItems!).toList() : snapshot.data!;
 
         return Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 8,
+          runSpacing: 8,
           children: categories.map((category) {
             return SizedBox(
               width: (MediaQuery.of(context).size.width - 16 * 2 - 12) / 2,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../../theme/app_colors.dart';
 
 class Register4Screen extends StatelessWidget {
   const Register4Screen({super.key});
@@ -87,7 +88,7 @@ class Register4Screen extends StatelessWidget {
                       child: Text(
                         "DÉCOUVRIR LOCKEO",
                         style: AppTextStyles.button.copyWith(
-                          color: const Color(0xFFD1380D),
+                          color: AppColors.primaryRed,
                         ),
                       ),
                     ),

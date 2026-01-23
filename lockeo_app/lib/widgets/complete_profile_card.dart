@@ -31,7 +31,7 @@ class CompleteProfileCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Personnalise ton profil",
+                    "Personnalisez votre profil",
                     style: AppTextStyles.h2.copyWith(color: Colors.white),
                   ),
                   const SizedBox(height: 14),

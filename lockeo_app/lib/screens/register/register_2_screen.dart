@@ -212,7 +212,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFFD1380D),
+                        foregroundColor: AppColors.primaryRed,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(22),
@@ -221,7 +221,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                       child: Text(
                         "CRÉER MON COMPTE",
                         style: AppTextStyles.button.copyWith(
-                          color: const Color(0xFFD1380D),
+                          color: AppColors.primaryRed,
                         ),
                       ),
                     ),

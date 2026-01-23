@@ -7,7 +7,8 @@ import 'package:lockeo_app/theme/app_colors.dart';
 
 class SearchPage extends StatefulWidget {
   final String? initialQuery;
-  const SearchPage({super.key, this.initialQuery});
+  final List<int>? initialCategoryIds;
+  const SearchPage({super.key, this.initialQuery, this.initialCategoryIds});
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -34,6 +35,7 @@ class _SearchPageState extends State<SearchPage> {
     super.initState();
     _controller = TextEditingController(text: widget.initialQuery ?? '');
     _query = widget.initialQuery ?? '';
+    _selectedCategories = widget.initialCategoryIds ?? [];
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNode);
