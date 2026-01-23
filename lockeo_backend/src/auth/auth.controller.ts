@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller,Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
@@ -22,7 +22,18 @@ export class AuthController {
   @ApiOperation({ summary: 'Créer un compte (hash bcrypt)' })
   @ApiCreatedResponse({ type: AuthResponseDto })
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
-    const user = await this.users.create({ email: dto.email, password: dto.password });
+    if (dto.passwordConfirm != null && dto.passwordConfirm !== dto.password) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    const user = await this.users.create({
+      email: dto.email,
+      password: dto.password,
+      login: dto.login,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      phoneNumber: dto.phoneNumber,
+    });
     return this.auth.signToken(user);
   }
 

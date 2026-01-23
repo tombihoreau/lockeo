@@ -23,8 +23,8 @@ export class User {
   @Column({ length: 100, unique: true })
   email: string;
 
-  @Column({ length: 100, unique: true })
-  login: string;
+  @Column({ type: 'varchar', length: 100, unique: true, nullable: true })
+  login: string | null;
 
   @Column({ length: 255 })
   password_hash: string;
