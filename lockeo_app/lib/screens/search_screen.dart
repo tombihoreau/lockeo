@@ -65,7 +65,7 @@ class _SearchPageState extends State<SearchPage> {
                           const Text(
                             "Nos résultats",
                             style: TextStyle(
-                              fontSize: 23,
+                              fontSize: 20,
                               fontWeight: FontWeight.w700,
                               color: Colors.black87,
                             ),

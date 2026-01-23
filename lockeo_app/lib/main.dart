@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lockeo_app/models/offer.dart';
 import 'package:lockeo_app/screens/home_screen.dart';
 import 'package:lockeo_app/screens/categories_screen.dart';
 import 'package:lockeo_app/screens/product_detail_screen.dart';
+import 'package:lockeo_app/screens/register/register_welcome_screen.dart';
 import 'package:lockeo_app/screens/search_screen.dart';
 import 'package:lockeo_app/widgets/main_scaffold.dart';
 import 'package:lockeo_app/screens/create_offer_screen.dart';
 import 'package:lockeo_app/screens/public_profile_screen.dart';
 import 'package:lockeo_app/screens/user_profile_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:lockeo_app/screens/conversations_screen.dart';
+import 'package:lockeo_app/screens/login_screen.dart';
+import 'package:lockeo_app/screens/register/register_welcome_pages_screen.dart';
+import 'package:lockeo_app/screens/register/register_1_screen.dart';
+import 'package:lockeo_app/screens/register/register_2_screen.dart';
+import 'package:lockeo_app/screens/register/register_3_screen.dart';
+import 'package:lockeo_app/screens/register/register_4_screen.dart';
+import 'package:lockeo_app/screens/register/register_5_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +52,7 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       title: 'Lockeo',
       theme: ThemeData(
+        fontFamily: 'Montserrat',
         scaffoldBackgroundColor: const Color(0xFFF0F2F5),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
@@ -49,7 +60,7 @@ class _MyAppState extends State<MyApp> {
           elevation: 0,
         ),
       ),
-      initialRoute: '/',
+      initialRoute: '/welcome',
 
       // 🧱 Routes statiques
       routes: {
@@ -61,6 +72,26 @@ class _MyAppState extends State<MyApp> {
             const MainScaffold(currentIndex: 3, child: CreateOfferScreen()),
         '/userProfile': (context) =>
             const MainScaffold(currentIndex: 1, child: UserProfileScreen()),
+        '/discover': (context) =>
+            const MainScaffold(currentIndex: 1, child: SearchPage()),
+        '/messaging': (context) =>
+            const MainScaffold(currentIndex: 1, child: ConversationsScreen()),
+        '/login': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: LoginScreen()),
+        '/welcome': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: RegisterWelcomeScreen()),
+        '/welcome_pages': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: RegisterWelcomePagesScreen()),
+        '/register_1': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register1Screen()),
+        '/register_2': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register2Screen()),
+        '/register_3': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register3Screen()),
+        '/register_4': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register4Screen()),
+        '/register_5': (context) =>
+            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register5Screen()),
       },
 
       // ⚙️ Routes dynamiques (avec arguments)

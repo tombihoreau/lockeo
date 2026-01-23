@@ -1,0 +1,125 @@
+[
+  {
+    "message_id": 1,
+    "conversation_id": 1,
+    "sender_user_id": 2,
+    "text": "Salut, le produit est-il disponible ce week-end ?",
+    "status": "read",
+    "created_at": "2026-01-08T10:58:00Z",
+    "read_at": "2026-01-08T11:00:10Z"
+  },
+  {
+    "message_id": 2,
+    "conversation_id": 1,
+    "sender_user_id": 1,
+    "text": "Oui, aucun souci. Tu pensais à quelles dates exactement ?",
+    "status": "read",
+    "created_at": "2026-01-08T11:01:00Z",
+    "read_at": "2026-01-08T11:01:30Z"
+  },
+  {
+    "message_id": 3,
+    "conversation_id": 1,
+    "sender_user_id": 2,
+    "text": "Du vendredi soir au dimanche après-midi.",
+    "status": "delivered",
+    "created_at": "2026-01-08T11:10:00Z"
+  },
+  {
+    "message_id": 4,
+    "conversation_id": 1,
+    "sender_user_id": 2,
+    "text": "Est-ce que tu fournis des accessoires avec ?",
+    "status": "sent",
+    "created_at": "2026-01-08T11:12:30Z"
+  },
+
+  {
+    "message_id": 5,
+    "conversation_id": 2,
+    "sender_user_id": 3,
+    "text": "Bonjour ! Est-ce que je peux venir le récupérer demain matin ?",
+    "status": "read",
+    "created_at": "2026-01-07T18:56:00Z",
+    "read_at": "2026-01-07T18:57:10Z"
+  },
+  {
+    "message_id": 6,
+    "conversation_id": 2,
+    "sender_user_id": 1,
+    "text": "Oui, demain matin c’est bon. Vers 10h ça t’irait ?",
+    "status": "read",
+    "created_at": "2026-01-07T18:59:00Z",
+    "read_at": "2026-01-07T19:00:00Z"
+  },
+  {
+    "message_id": 7,
+    "conversation_id": 2,
+    "sender_user_id": 3,
+    "text": "Parfait, à demain 10h alors !",
+    "status": "delivered",
+    "created_at": "2026-01-07T19:05:10Z"
+  },
+
+  {
+    "message_id": 8,
+    "conversation_id": 3,
+    "sender_user_id": 4,
+    "text": "Salut, est-ce que l’objet est toujours disponible cette semaine ?",
+    "status": "read",
+    "created_at": "2026-01-06T14:12:00Z",
+    "read_at": "2026-01-06T14:15:00Z"
+  },
+  {
+    "message_id": 9,
+    "conversation_id": 3,
+    "sender_user_id": 1,
+    "text": "Oui, il est dispo jusqu’à vendredi inclus.",
+    "status": "read",
+    "created_at": "2026-01-06T14:18:00Z",
+    "read_at": "2026-01-06T14:20:00Z"
+  },
+  {
+    "message_id": 10,
+    "conversation_id": 3,
+    "sender_user_id": 4,
+    "text": "Super, je te confirme rapidement.",
+    "status": "sent",
+    "created_at": "2026-01-06T14:22:00Z"
+  },
+
+  {
+    "message_id": 11,
+    "conversation_id": 4,
+    "sender_user_id": 5,
+    "text": "Bonjour, est-ce que la location est possible pour une journée seulement ?",
+    "status": "delivered",
+    "created_at": "2026-01-04T09:22:00Z",
+    "read_at": "2026-01-07T19:00:00Z"
+  },
+  {
+    "message_id": 12,
+    "conversation_id": 4,
+    "sender_user_id": 1,
+    "text": "Oui bien sûr, la location à la journée est possible.",
+    "status": "sent",
+    "created_at": "2026-01-04T09:25:00Z"
+  },
+
+  {
+    "message_id": 13,
+    "conversation_id": 5,
+    "sender_user_id": 6,
+    "text": "Salut ! Est-ce que je peux réserver pour ce soir ?",
+    "status": "delivered",
+    "created_at": "2026-01-08T08:47:00Z"
+  },
+  {
+    "message_id": 14,
+    "conversation_id": 5,
+    "sender_user_id": 6,
+    "text": "Je peux me déplacer rapidement si besoin.",
+    "status": "sent",
+    "created_at": "2026-01-08T08:49:00Z"
+  }
+]
