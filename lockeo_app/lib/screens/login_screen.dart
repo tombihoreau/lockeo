@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import 'package:lockeo_app/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +15,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _pwdCtrl = TextEditingController();
 
+  bool _submitting = false;
+
   @override
   void dispose() {
     _emailCtrl.dispose();
@@ -22,7 +25,36 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _onLogin() {
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    if (_submitting) return;
+
+    final email = _emailCtrl.text.trim();
+    final password = _pwdCtrl.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Merci de renseigner votre e-mail et votre mot de passe.')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+
+    AuthService()
+        .login(email: email, password: password)
+        .then((_) {
+          if (!mounted) return;
+          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+        })
+        .catchError((e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Connexion impossible: $e')),
+          );
+        })
+        .whenComplete(() {
+          if (!mounted) return;
+          setState(() => _submitting = false);
+        });
   }
 
   @override
@@ -173,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 64,
                       child: ElevatedButton(
-                        onPressed: _onLogin,
+                        onPressed: _submitting ? null : _onLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.primaryRed,
@@ -182,15 +214,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(22),
                           ),
                         ),
-                        child: const Text(
-                          "SE CONNECTER",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            fontStyle: FontStyle.italic,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Color(0xFFD1380D),
+                                ),
+                              )
+                            : const Text(
+                                "SE CONNECTER",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  fontStyle: FontStyle.italic,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
                       ),
                     ),
                   ),

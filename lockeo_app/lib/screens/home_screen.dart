@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import '../widgets/product_grid.dart';
-import '../widgets/suggestions_grid.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/header.dart';
 import '../widgets/favorites_section.dart';
@@ -9,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../widgets/complete_profile_card.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/services/location_service.dart';
+import '../services/auth_session.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,7 +44,12 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Header(userName: "Tom", location: _locationLabel, isHome: true),
+            // 🟢 Header en plein écran
+            Header(
+              userName: AuthSession.instance.displayName,
+              location: "Rennes, France",
+              isHome: true,
+            ),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),

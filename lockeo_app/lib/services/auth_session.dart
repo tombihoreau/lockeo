@@ -6,4 +6,17 @@ class AuthSession {
   AuthSession._();
 
   String? accessToken;
+
+  /// Profil minimal en mémoire pour afficher le prénom/nom dans l’UI.
+  /// (À persister plus tard si nécessaire.)
+  String? firstName;
+  String? lastName;
+
+  String get displayName {
+    final parts = [firstName, lastName]
+        .where((e) => e != null && e.trim().isNotEmpty)
+        .map((e) => e!.trim())
+        .toList();
+    return parts.isEmpty ? '' : parts.join(' ');
+  }
 }
