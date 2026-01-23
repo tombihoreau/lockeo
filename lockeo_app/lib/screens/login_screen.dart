@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lockeo_app/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,6 +13,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _pwdCtrl = TextEditingController();
 
+  bool _submitting = false;
+
   @override
   void dispose() {
     _emailCtrl.dispose();
@@ -20,7 +23,36 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _onLogin() {
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    if (_submitting) return;
+
+    final email = _emailCtrl.text.trim();
+    final password = _pwdCtrl.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Merci de renseigner votre e-mail et votre mot de passe.')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+
+    AuthService()
+        .login(email: email, password: password)
+        .then((_) {
+          if (!mounted) return;
+          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+        })
+        .catchError((e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Connexion impossible: $e')),
+          );
+        })
+        .whenComplete(() {
+          if (!mounted) return;
+          setState(() => _submitting = false);
+        });
   }
 
   @override
@@ -173,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 64,
                       child: ElevatedButton(
-                        onPressed: _onLogin,
+                        onPressed: _submitting ? null : _onLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: const Color(0xFFD1380D),
@@ -182,15 +214,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(22),
                           ),
                         ),
-                        child: const Text(
-                          "SE CONNECTER",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            fontStyle: FontStyle.italic,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Color(0xFFD1380D),
+                                ),
+                              )
+                            : const Text(
+                                "SE CONNECTER",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  fontStyle: FontStyle.italic,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -219,7 +260,6 @@ class _Input extends StatelessWidget {
   final TextInputAction? textInputAction;
   final bool obscureText;
   final ValueChanged<String>? onSubmitted;
-  final double fontSize;
 
   const _Input({
     required this.controller,
@@ -228,7 +268,6 @@ class _Input extends StatelessWidget {
     this.textInputAction,
     this.obscureText = false,
     this.onSubmitted,
-    this.fontSize = 12,
   });
 
   @override
@@ -240,14 +279,14 @@ class _Input extends StatelessWidget {
       obscureText: obscureText,
       onSubmitted: onSubmitted,
       style: TextStyle(
-        fontSize: fontSize,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
         color: Colors.black,
       ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: TextStyle(
-          fontSize: fontSize,
+          fontSize: 12,
           fontWeight: FontWeight.w500,
           color: Colors.black.withOpacity(0.35),
         ),

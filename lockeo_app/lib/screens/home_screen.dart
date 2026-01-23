@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../widgets/product_grid.dart';
-import '../widgets/suggestions_grid.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/header.dart';
 import '../theme/app_colors.dart';
 import '../widgets/complete_profile_card.dart';
-import '../widgets/favorites_section.dart';
+import '../services/auth_session.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,8 +17,8 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 🟢 Header en plein écran
-            const Header(
-              userName: "Tom Bihoreau",
+            Header(
+              userName: AuthSession.instance.displayName,
               location: "Rennes, France",
               isHome: true,
             ),

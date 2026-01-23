@@ -6,7 +6,9 @@ import type { Request } from 'express';
 export interface JwtPayload {
   sub: number;
   email: string;
-  role: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  role?: string;
   iat?: number;
   exp?: number;
 }
@@ -14,7 +16,9 @@ export interface JwtPayload {
 export interface AuthenticatedUser {
   userId: number;
   email: string;
-  role: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  role?: string;
 }
 
 @Injectable()
@@ -31,11 +35,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload): AuthenticatedUser {
-    const { sub, email, role } = payload;
+    const { sub, email, role, firstName, lastName } = payload;
 
     return {
       userId: sub,
       email,
+      firstName,
+      lastName,
       role,
     };
   }
