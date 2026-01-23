@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lockeo_app/models/offer.dart';
 import 'package:lockeo_app/screens/home_screen.dart';
 import 'package:lockeo_app/screens/categories_screen.dart';

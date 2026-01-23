@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/category.dart';
+import '../theme/app_colors.dart';
 
 class CategoriesSelector extends StatelessWidget {
   final List<Category> categories;
@@ -21,7 +22,7 @@ class CategoriesSelector extends StatelessWidget {
       spacing: 10,
       runSpacing: 10,
       children: categories.map((cat) {
-        final isSelected = selectedCategories.contains(cat.categoryId,);
+        final isSelected = selectedCategories.contains(cat.categoryId);
 
         return GestureDetector(
           onTap: () {
@@ -37,19 +38,10 @@ class CategoriesSelector extends StatelessWidget {
             onChanged(updated);
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 10,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF00434A)
-                    : Colors.grey.shade300,
-                width: 1.5,
-              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -60,7 +52,7 @@ class CategoriesSelector extends StatelessWidget {
                     width: 18,
                     height: 18,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF00434A),
+                      color: AppColors.primaryBlue,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -73,8 +65,8 @@ class CategoriesSelector extends StatelessWidget {
                   cat.label,
                   style: TextStyle(
                     color: isSelected
-                        ? const Color(0xFF00434A)
-                        : Colors.black87,
+                        ? AppColors.primaryBlue
+                        : AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/product_grid.dart';
 import '../screens/filters_screen.dart';
 import '../widgets/search_header.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
+import 'package:lockeo_app/theme/app_colors.dart';
 
 class SearchPage extends StatefulWidget {
   final String? initialQuery;
@@ -16,10 +18,16 @@ class _SearchPageState extends State<SearchPage> {
   final FocusNode _focusNode = FocusNode();
   String _query = '';
   int _resultCount = 0;
-  List<String> _selectedCategories = [];
+  List<int> _selectedCategories = [];
   double _maxDistance = 20;
   RangeValues? _priceRange;
   String _sortBy = "Prix";
+  bool get _hasActiveFilters {
+    return _selectedCategories.isNotEmpty ||
+        _maxDistance != 20 ||
+        _priceRange != null ||
+        _sortBy != "Prix";
+  }
 
   @override
   void initState() {
@@ -61,21 +69,18 @@ class _SearchPageState extends State<SearchPage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 30), // 👈 Décalage ciblé
-                          const Text(
+                          const SizedBox(height: 30),
+                          Text(
                             "Nos résultats",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87,
+                            style: AppTextStyles.h2.copyWith(
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             "$_resultCount résultat${_resultCount > 1 ? 's' : ''}",
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
+                            style: AppTextStyles.label.copyWith(
+                              color: AppColors.textGrey,
                             ),
                           ),
                         ],
@@ -102,25 +107,31 @@ class _SearchPageState extends State<SearchPage> {
 
                           if (result != null) {
                             setState(() {
-                              _selectedCategories = List<String>.from(
+                              _selectedCategories = List<int>.from(
                                 result['categories'] ?? [],
                               );
-                              _maxDistance = result['maxDistance'];
-                              _priceRange = result['priceRange'];
-                              _sortBy = result['sortBy'];
-                            });
+                              _maxDistance = (result['maxDistance'] as num)
+                                  .toDouble();
+                              _priceRange =
+                                  result['priceRange'] as RangeValues?;
 
-                            // 🔄 ici tu pourras filtrer ta ProductGrid
+                              _sortBy = (result['sortBy'] ?? "Prix").toString();
+                            });
                           }
                         },
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "Filtres",
-                              style: TextStyle(color: Color(0xFF00434A)),
+                              _hasActiveFilters
+                                  ? "Modifier mes filtres"
+                                  : "Nos filtres",
+                              style: AppTextStyles.link.copyWith(
+                                color: AppColors.blue800,
+                                decoration: TextDecoration.none,
+                              ),
                             ),
-                            Icon(Icons.chevron_right, color: Color(0xFF00434A)),
+                            Icon(Icons.chevron_right, color: AppColors.blue800),
                           ],
                         ),
                       ),

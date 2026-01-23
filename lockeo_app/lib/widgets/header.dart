@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../screens/search_screen.dart';
 import '../theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 
