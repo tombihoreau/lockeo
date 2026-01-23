@@ -41,6 +41,11 @@ jobs:
           npm ci
           npm run lint --if-present
 
+      - name: Build (backend)
+        working-directory: lockeo_backend
+        run: |
+          npm run build
+
       - name: Wait for DB (MySQL)
         run: |
           for i in {1..60}; do
