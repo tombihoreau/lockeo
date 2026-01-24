@@ -18,6 +18,7 @@ import 'package:lockeo_app/screens/register/register_2_screen.dart';
 import 'package:lockeo_app/screens/register/register_3_screen.dart';
 import 'package:lockeo_app/screens/register/register_4_screen.dart';
 import 'package:lockeo_app/screens/register/register_5_screen.dart';
+import 'package:lockeo_app/screens/conversation_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,22 +76,46 @@ class _MyAppState extends State<MyApp> {
             const MainScaffold(currentIndex: 1, child: SearchPage()),
         '/messaging': (context) =>
             const MainScaffold(currentIndex: 1, child: ConversationsScreen()),
-        '/login': (context) =>
-            const MainScaffold(showBottomBar: false, currentIndex: 1, child: LoginScreen()),
-        '/welcome': (context) =>
-            const MainScaffold(showBottomBar: false, currentIndex: 1, child: RegisterWelcomeScreen()),
-        '/welcome_pages': (context) =>
-            const MainScaffold(showBottomBar: false, currentIndex: 1, child: RegisterWelcomePagesScreen()),
-        '/register_1': (context) =>
-            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register1Screen()),
-        '/register_2': (context) =>
-            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register2Screen()),
-        '/register_3': (context) =>
-            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register3Screen()),
-        '/register_4': (context) =>
-            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register4Screen()),
-        '/register_5': (context) =>
-            const MainScaffold(showBottomBar: false, currentIndex: 1, child: Register5Screen()),
+        '/login': (context) => const MainScaffold(
+          showBottomBar: false,
+          currentIndex: 1,
+          child: LoginScreen(),
+        ),
+        '/welcome': (context) => const MainScaffold(
+          showBottomBar: false,
+          currentIndex: 1,
+          child: RegisterWelcomeScreen(),
+        ),
+        '/welcome_pages': (context) => const MainScaffold(
+          showBottomBar: false,
+          currentIndex: 1,
+          child: RegisterWelcomePagesScreen(),
+        ),
+        '/register_1': (context) => const MainScaffold(
+          showBottomBar: false,
+          currentIndex: 1,
+          child: Register1Screen(),
+        ),
+        '/register_2': (context) => const MainScaffold(
+          showBottomBar: false,
+          currentIndex: 1,
+          child: Register2Screen(),
+        ),
+        '/register_3': (context) => const MainScaffold(
+          showBottomBar: false,
+          currentIndex: 1,
+          child: Register3Screen(),
+        ),
+        '/register_4': (context) => const MainScaffold(
+          showBottomBar: false,
+          currentIndex: 1,
+          child: Register4Screen(),
+        ),
+        '/register_5': (context) => const MainScaffold(
+          showBottomBar: false,
+          currentIndex: 1,
+          child: Register5Screen(),
+        ),
       },
 
       // ⚙️ Routes dynamiques (avec arguments)
@@ -107,6 +132,7 @@ class _MyAppState extends State<MyApp> {
             }
             return MaterialPageRoute(
               builder: (context) => MainScaffold(
+                showBottomBar: false,
                 currentIndex: 1,
                 child: ProductDetailScreen(offer: offer),
               ),
@@ -135,6 +161,25 @@ class _MyAppState extends State<MyApp> {
                 showBottomBar: false,
                 currentIndex: 1,
                 child: PublicProfileScreen(userId: userId),
+              ),
+            );
+
+          case '/conversation':
+            final conversationId = settings.arguments as int?;
+
+            if (conversationId == null) {
+              return MaterialPageRoute(
+                builder: (context) => const Scaffold(
+                  body: Center(child: Text('Conversation introuvable')),
+                ),
+              );
+            }
+
+            return MaterialPageRoute(
+              builder: (context) => MainScaffold(
+                showBottomBar: false,
+                currentIndex: 1,
+                child: ConversationScreen(conversationId: conversationId),
               ),
             );
 

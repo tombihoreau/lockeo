@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:lockeo_app/screens/reservation_payment_screen.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
+import 'package:lockeo_app/theme/app_colors.dart';
+import '../widgets/button.dart';
 
 class ReservationSheet extends StatefulWidget {
   final int offerId;
@@ -14,160 +17,210 @@ class _ReservationSheetState extends State<ReservationSheet> {
   DateTime? startDate;
   DateTime? endDate;
   DateTime focusedDay = DateTime.now();
+
   int get offerId => widget.offerId;
+  bool get hasRange => startDate != null && endDate != null;
 
   bool isPastDate(DateTime day) {
     final now = DateTime.now();
     return day.isBefore(DateTime(now.year, now.month, now.day));
   }
 
+  // ✅ ne sélectionner que start/end (sinon cercles partout)
   bool isSelected(DateTime day) {
     if (startDate == null) return false;
+    if (endDate == null) return isSameDay(day, startDate);
+    return isSameDay(day, startDate) || isSameDay(day, endDate);
+  }
 
-    // sélection du start uniquement
-    if (endDate == null) {
-      return isSameDay(day, startDate);
-    }
+  void _onDaySelected(DateTime day, DateTime _) {
+    setState(() {
+      if (startDate == null || (startDate != null && endDate != null)) {
+        startDate = day;
+        endDate = null;
+      } else if (day.isAfter(startDate!)) {
+        endDate = day;
+      } else {
+        startDate = day;
+        endDate = null;
+      }
+      focusedDay = day;
+    });
+  }
 
-    // sélection du range
-    return day.isAfter(startDate!.subtract(const Duration(days: 1))) &&
-        day.isBefore(endDate!.add(const Duration(days: 1)));
+  CalendarStyle get _calendarStyle {
+    return CalendarStyle(
+      // ✅ supprime les petits espaces entre cellules
+      cellMargin: EdgeInsets.zero,
+      cellPadding: EdgeInsets.zero,
+
+      // ✅ barre continue (le fond du range)
+      rangeHighlightColor: AppColors.primaryBlue.withOpacity(0.15),
+      rangeHighlightScale: 1.0,
+
+      // ✅ on évite les rectangles “par case”
+      withinRangeDecoration: const BoxDecoration(
+        color: Colors.transparent,
+        shape: BoxShape.rectangle,
+      ),
+
+      rangeStartDecoration: const BoxDecoration(
+        color: AppColors.primaryBlue,
+        shape: BoxShape.circle,
+      ),
+      rangeEndDecoration: const BoxDecoration(
+        color: AppColors.primaryBlue,
+        shape: BoxShape.circle,
+      ),
+
+      selectedDecoration: const BoxDecoration(
+        color: AppColors.primaryBlue,
+        shape: BoxShape.circle,
+      ),
+
+      todayDecoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        shape: BoxShape.circle,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    double bottomSize = 140;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Color(0xFFE6E6E6),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
       ),
       child: SafeArea(
+        bottom: false,
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // HEADER
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
               children: [
-                const SizedBox(width: 40),
-                const Text(
-                  "Réservation",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                // CONTENU (scroll) — on met un padding bas pour ne pas passer sous le footer
+                SingleChildScrollView(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                      bottom:
+                          80 + bottomSize, // réserve pour le footer (simple)
+                    ),
+                    child: Column(
+                      children: [
+                        // HEADER
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Choisir la durée de location",
+                              style: AppTextStyles.h2.copyWith(
+                                color: Colors.black,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // CALENDRIER
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                          child: TableCalendar(
+                            locale: 'fr_FR',
+                            firstDay: DateTime.now(),
+                            lastDay: DateTime(2035),
+                            focusedDay: focusedDay,
+                            headerStyle: const HeaderStyle(
+                              formatButtonVisible: false,
+                              titleCentered: true,
+                              titleTextStyle:  AppTextStyles.h2
+                            ),
+                            daysOfWeekStyle: const DaysOfWeekStyle(
+                              weekendStyle: AppTextStyles.label,
+                              weekdayStyle: AppTextStyles.label
+                            ),
+                            enabledDayPredicate: (day) => !isPastDate(day),
+                            rangeSelectionMode: RangeSelectionMode.toggledOn,
+                            rangeStartDay: startDate,
+                            rangeEndDay: endDate,
+                            selectedDayPredicate: isSelected,
+                            onDaySelected: _onDaySelected,
+                            calendarStyle: _calendarStyle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
+
+                // FOOTER — collé en bas, pleine largeur
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    height: bottomSize,
+                    // ✅ collé au bas de l'écran (pas de padding parent)
+                    padding: EdgeInsets.fromLTRB(24, 20, 20, 32),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      // ✅ bloc “collé bas” : coins arrondis uniquement en haut (optionnel)
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          hasRange
+                              ? "Votre coût initial sera de 10€"
+                              : "Sélectionnez une plage de dates",
+                          style: const TextStyle(color: Colors.black54),
+                        ),
+                        const SizedBox(height: 12),
+                        CustomButton(
+                          text: "Suivant",
+                          onPressed: hasRange
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ReservationPaymentScreen(
+                                        offerId: offerId,
+                                        startDate: startDate!,
+                                        endDate: endDate!,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
-            ),
-
-            // CALENDRIER
-            TableCalendar(
-              firstDay: DateTime.now(), // interdit dates passées
-              lastDay: DateTime(2035),
-              focusedDay: focusedDay,
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-              ),
-              enabledDayPredicate: (day) =>
-                  !isPastDate(day), // bloque dates passées
-              selectedDayPredicate: isSelected, // sélection custom
-              onDaySelected: (day, _) {
-                setState(() {
-                  // Si on n'a pas encore choisi la 1ère date
-                  if (startDate == null ||
-                      (startDate != null && endDate != null)) {
-                    startDate = day;
-                    endDate = null;
-                  }
-                  // Sinon, on choisit la 2ème date
-                  else if (day.isAfter(startDate!)) {
-                    endDate = day;
-                  }
-                  // Si l’utilisateur clique une date avant la startDate → on remplace
-                  else {
-                    startDate = day;
-                    endDate = null;
-                  }
-                });
-              },
-              calendarStyle: CalendarStyle(
-                todayDecoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  shape: BoxShape.circle,
-                ),
-                selectedDecoration: const BoxDecoration(
-                  color: Color(0xFF00434A),
-                  shape: BoxShape.circle,
-                ),
-                rangeHighlightColor: const Color(0x33405E6E),
-                rangeStartDecoration: const BoxDecoration(
-                  color: Color(0xFF00434A),
-                  shape: BoxShape.circle,
-                ),
-                rangeEndDecoration: const BoxDecoration(
-                  color: Color(0xFF00434A),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // TEXTE DU PRIX
-            if (startDate != null && endDate != null)
-              Text(
-                "Votre coût initial sera de 10€", // logiques pricing ici
-                style: const TextStyle(color: Colors.black54),
-              )
-            else
-              const Text(
-                "Sélectionnez une plage de dates",
-                style: TextStyle(color: Colors.black54),
-              ),
-
-            const SizedBox(height: 20),
-
-            // BOUTON
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: (startDate != null && endDate != null)
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ReservationPaymentScreen(
-                              offerId: offerId,
-                              startDate: startDate!,
-                              endDate: endDate!,
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00434A),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  "Louer maintenant",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

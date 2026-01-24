@@ -14,6 +14,8 @@ class Product {
   final String updatedAt;
   final List<int> categoryIds; 
   final bool isFavorite;
+  final double? price3Days; 
+  final double? price7Days; 
 
   Product({
     required this.productId,
@@ -31,6 +33,8 @@ class Product {
     required this.updatedAt,
     required this.categoryIds,
     this.isFavorite = false,
+    this.price3Days,
+    this.price7Days,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -50,6 +54,8 @@ class Product {
       updatedAt: json['updated_at'],
       categoryIds: List<int>.from(json['category_ids'] ?? []),
       isFavorite: json['is_favorite'] ?? false,
+      price3Days: json['price_3_days'] != null ? json['price_3_days'].toDouble() : null,
+      price7Days: json['price_7_days'] != null ? json['price_7_days'].toDouble() : null,
     );
   }
 }
