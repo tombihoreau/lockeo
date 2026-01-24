@@ -42,8 +42,8 @@ class Product {
       productId: json['product_id'],
       name: json['name'],
       description: json['description'],
-      price: json['price'] != null ? json['price'].toDouble() : null,
-      priceEstimate: json['price_estimate'] != null ? json['price_estimate'].toDouble() : null,
+      price: json['price']?.toDouble(),
+      priceEstimate: json['price_estimate']?.toDouble(),
       state: json['state'],
       longitude: json['longitude']?.toDouble(),
       latitude: json['latitude']?.toDouble(),
@@ -54,8 +54,8 @@ class Product {
       updatedAt: json['updated_at'],
       categoryIds: List<int>.from(json['category_ids'] ?? []),
       isFavorite: json['is_favorite'] ?? false,
-      price3Days: json['price_3_days'] != null ? json['price_3_days'].toDouble() : null,
-      price7Days: json['price_7_days'] != null ? json['price_7_days'].toDouble() : null,
+      price3Days: json['price_3_days']?.toDouble(),
+      price7Days: json['price_7_days']?.toDouble(),
     );
   }
 }

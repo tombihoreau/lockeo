@@ -61,7 +61,7 @@ class ProductGrid extends StatelessWidget {
 
         if (selectedCategories != null && selectedCategories!.isNotEmpty) {
           products = products.where((p) {
-            final productCategories = p.categoryIds ?? [];
+            final productCategories = p.categoryIds;
             return productCategories.any(
               (id) => selectedCategories!.contains(id),
             );

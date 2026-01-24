@@ -368,14 +368,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            "${ownerRatingAverage.toStringAsFixed(0)}", // si tu as rating
+                                            ownerRatingAverage.toStringAsFixed(0), // si tu as rating
                                             style: AppTextStyles.label.copyWith(
                                               color: Colors.black,
                                             ),
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
-                                            "(${ownerReviewsCount} avis)", // ✅ vrai chiffre
+                                            "($ownerReviewsCount avis)", // ✅ vrai chiffre
                                             style: AppTextStyles.label.copyWith(
                                               color: Colors.black.withOpacity(
                                                 0.6,

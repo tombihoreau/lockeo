@@ -91,7 +91,7 @@ class _ReservationSheetState extends State<ReservationSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFE6E6E6),
+        color: AppColors.cape300,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -149,11 +149,11 @@ class _ReservationSheetState extends State<ReservationSheet> {
                             headerStyle: const HeaderStyle(
                               formatButtonVisible: false,
                               titleCentered: true,
-                              titleTextStyle:  AppTextStyles.h2
+                              titleTextStyle: AppTextStyles.h2,
                             ),
                             daysOfWeekStyle: const DaysOfWeekStyle(
                               weekendStyle: AppTextStyles.label,
-                              weekdayStyle: AppTextStyles.label
+                              weekdayStyle: AppTextStyles.label,
                             ),
                             enabledDayPredicate: (day) => !isPastDate(day),
                             rangeSelectionMode: RangeSelectionMode.toggledOn,

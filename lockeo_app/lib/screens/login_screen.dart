@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -167,9 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Bottom button (with bottom safe area spacing)
                   Padding(
-                    padding: EdgeInsets.only(
-                      bottom: 32
-                    ),
+                    padding: EdgeInsets.only(bottom: 32),
                     child: SizedBox(
                       width: double.infinity,
                       height: 64,
@@ -220,7 +219,6 @@ class _Input extends StatelessWidget {
   final TextInputAction? textInputAction;
   final bool obscureText;
   final ValueChanged<String>? onSubmitted;
-  final double fontSize;
 
   const _Input({
     required this.controller,
@@ -229,7 +227,6 @@ class _Input extends StatelessWidget {
     this.textInputAction,
     this.obscureText = false,
     this.onSubmitted,
-    this.fontSize = 12,
   });
 
   @override
@@ -240,18 +237,10 @@ class _Input extends StatelessWidget {
       textInputAction: textInputAction,
       obscureText: obscureText,
       onSubmitted: onSubmitted,
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: FontWeight.w600,
-        color: Colors.black,
-      ),
+          style: AppTextStyles.label.copyWith(color: AppColors.textPrimary),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.w500,
-          color: Colors.black.withOpacity(0.35),
-        ),
+        hintStyle: AppTextStyles.label.copyWith(color: AppColors.textGrey),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(

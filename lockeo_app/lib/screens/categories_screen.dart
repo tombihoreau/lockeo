@@ -144,7 +144,7 @@ class CategoriesScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
               itemCount: itemCount,
               separatorBuilder: (_, __) =>
-                  const Divider(height: 1, color: Color(0xFFE6E6E6)),
+                  const Divider(height: 1, color: AppColors.cape300),
               itemBuilder: (context, index) {
                 if (isChildrenPage && index == 0) {
                   return InkWell(

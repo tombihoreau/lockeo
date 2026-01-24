@@ -4,7 +4,7 @@ import 'package:lockeo_app/theme/app_text_styles.dart';
 import '../../theme/app_colors.dart';
 
 class RegisterWelcomePage3Screen extends StatelessWidget {
-  const RegisterWelcomePage3Screen();
+  const RegisterWelcomePage3Screen({super.key});
 
   @override
   Widget build(BuildContext context) {

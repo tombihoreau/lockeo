@@ -44,7 +44,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.2.1
   lucide_icons: ^0.257.0
-  intl: ^0.18.0
 
 
 dev_dependencies:

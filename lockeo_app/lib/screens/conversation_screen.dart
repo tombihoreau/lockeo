@@ -4,6 +4,15 @@ import '../models/conversation.dart';
 import '../models/message.dart';
 import '../models/offer.dart';
 import '../models/product.dart';
+import '../models/user.dart';
+import '../models/image.dart';
+import '../models/reservation.dart';
+import '../models/inventory.dart';
+import 'package:intl/intl.dart';
+
+import '../widgets/conversation_header.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 import '../widgets/button.dart';
 
 class ConversationScreen extends StatefulWidget {
@@ -20,11 +29,15 @@ class _ConversationScreenState extends State<ConversationScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
 
-  String _contactLogin = "Utilisateur";
   int _currentUserId = 1;
+
   Conversation? _conversation;
   Offer? _offer;
   Product? _product;
+  User? _owner;
+  ImageModel? _productImage;
+  Reservation? _reservation;
+  Inventory? _inventory;
 
   List<Message> _messages = [];
   bool _loading = true;
@@ -52,55 +65,87 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final currentUserId = currentUser?.userId ?? 1;
 
     final conversations = await _dataService.loadConversations();
-    final users = await _dataService.loadUsers();
     final messages = await _dataService.loadMessages();
     final offers = await _dataService.loadOffers();
     final products = await _dataService.loadProducts();
+    final users = await _dataService.loadUsers();
+    final images = await _dataService.loadImages();
+    final reservations = await _dataService.loadReservations();
+    final inventories = await _dataService.loadInventories();
 
-    final Conversation? conversation =
-        conversations
-            .where((c) => c.conversationId == widget.conversationId)
-            .isNotEmpty
-        ? conversations.firstWhere(
-            (c) => c.conversationId == widget.conversationId,
-          )
-        : null;
-
-    // utilisateur "en face" (login)
-    String contactLogin = "Utilisateur";
-    if (conversation != null) {
-      final otherUserId = conversation.userIds.firstWhere(
-        (id) => id != currentUserId,
-        orElse: () => currentUserId,
+    Conversation? conversation;
+    try {
+      conversation = conversations.firstWhere(
+        (c) => c.conversationId == widget.conversationId,
       );
-
-      try {
-        final otherUser = users.firstWhere((u) => u.userId == otherUserId);
-        contactLogin =
-            otherUser.login; // adapte si ton champ s'appelle username
-      } catch (_) {
-        contactLogin = "Utilisateur";
-      }
-    }
-
-    Product? product;
-    if (conversation != null) {
-      try {
-        product = products.firstWhere(
-          (p) => p.productId == conversation.productId,
-        );
-      } catch (_) {
-        product = null;
-      }
+    } catch (_) {
+      conversation = null;
     }
 
     Offer? offer;
+    Product? product;
+    User? owner;
+    ImageModel? productImage;
+
     if (conversation != null) {
-      try {
-        offer = offers.firstWhere((o) => o.productId == conversation.productId);
-      } catch (_) {
-        offer = null;
+      // Produit
+      product = products.cast<Product?>().firstWhere(
+        (p) => p?.productId == conversation?.productId,
+        orElse: () => null,
+      );
+
+      // Offre liée au produit (si 1 offre / produit dans tes données)
+      offer = offers.cast<Offer?>().firstWhere(
+        (o) => o?.productId == conversation?.productId,
+        orElse: () => null,
+      );
+
+      // Proprio = offer.userId
+      if (offer != null) {
+        owner = users.cast<User?>().firstWhere(
+          (u) => u?.userId == offer!.userId,
+          orElse: () => null,
+        );
       }
+
+      // Image produit
+      if (product != null) {
+        productImage = images.cast<ImageModel?>().firstWhere(
+          (img) => img?.productId == product!.productId,
+          orElse: () => null,
+        );
+      }
+    }
+
+    Reservation? reservation;
+
+    if (conversation != null && product != null && offer != null) {
+      final ownerId = offer.userId;
+
+      // l’autre participant = locataire
+      final renterId = conversation.userIds.firstWhere(
+        (id) => id != ownerId,
+        orElse: () => currentUserId,
+      );
+
+      reservation = _findReservationBetweenUsers(
+        reservations: reservations,
+        productId: product.productId,
+        ownerId: ownerId,
+        renterId: renterId,
+      );
+    }
+
+    Inventory? inventory;
+    if (reservation != null) {
+      inventory = _findInventoryForReservation(
+        inventories: inventories,
+        reservationId: reservation.reservationId,
+      );
+
+      print(
+        "reservationId: ${reservation.reservationId} inventory: ${inventory?.inventoryId} status: ${inventory?.status}",
+      );
     }
 
     final convoMessages =
@@ -114,9 +159,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
       _conversation = conversation;
       _offer = offer;
       _product = product;
+      _owner = owner;
+      _productImage = productImage;
       _messages = convoMessages;
-      _contactLogin = contactLogin; // <= ajoute ce champ dans ton State
       _loading = false;
+      _reservation = reservation;
+      _inventory = inventory;
     });
 
     _markAllIncomingAsRead();
@@ -181,6 +229,253 @@ class _ConversationScreenState extends State<ConversationScreen> {
     _scrollToBottom();
   }
 
+  // -------------------------
+  // Header logic (role/status)
+  // -------------------------
+  String _formatRangeLabel(Reservation? r) {
+    if (r == null) return "";
+    final df = DateFormat("d MMMM y", "fr_FR");
+
+    String cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+    final start = cap(df.format(r.startDate));
+    final end = cap(df.format(r.endDate));
+    return "Du $start au $end";
+  }
+
+  ConversationRole get _role {
+    final ownerId = _offer?.userId;
+    if (ownerId != null && ownerId == _currentUserId) {
+      return ConversationRole.owner;
+    }
+    return ConversationRole.renter;
+  }
+
+  ReservationStatus get _reservationStatus {
+    return _mapReservationStatus(_reservation?.status);
+  }
+
+  Reservation? _findReservationBetweenUsers({
+    required List<Reservation> reservations,
+    required int productId,
+    required int ownerId,
+    required int renterId,
+  }) {
+    final matches = reservations.where((r) {
+      return r.productId == productId &&
+          r.ownerId == ownerId &&
+          r.renterId == renterId;
+    }).toList();
+
+    if (matches.isEmpty) return null;
+
+    matches.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return matches.first;
+  }
+
+  ReservationStatus _mapReservationStatus(String? status) {
+    final s = (status ?? '').trim().toLowerCase();
+
+    switch (s) {
+      case 'pending':
+        return ReservationStatus.requestPending;
+
+      case 'accepted':
+        return ReservationStatus.accepted;
+
+      case 'exchange_pending':
+        return ReservationStatus.exchangePending;
+
+      case 'completed':
+        return ReservationStatus.completed;
+
+      default:
+        return ReservationStatus.none;
+    }
+  }
+
+  Inventory? _findInventoryForReservation({
+    required List<Inventory> inventories,
+    required int reservationId,
+  }) {
+    final matches = inventories
+        .where((i) => i.reservationId == reservationId)
+        .toList();
+    if (matches.isEmpty) return null;
+
+    // si plusieurs inventaires (submitted puis validated), on prend le plus récent
+    matches.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return matches.first;
+  }
+
+  // Callbacks header (tu brancheras sur tes écrans/bottomsheet)
+  void _openOfferSheet() {
+    // TODO: ouvrir ta bottom sheet "ReservationSheet" ou une page d’offre
+    // showModalBottomSheet(...);
+  }
+
+  void _acceptReservation() {
+    // TODO: setState + update status si tu persistes côté backend
+  }
+
+  void _declineReservation() {
+    // TODO
+  }
+
+  bool _inventoryDialogOpen = false;
+
+  void _openInventory() {
+    if (_inventoryDialogOpen) return;
+    _inventoryDialogOpen = true;
+    final comment = (_inventory?.comment ?? "").trim();
+    final hasComment = comment.isNotEmpty;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 24,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: Text(
+                        "L’état des lieux",
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.h1.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Placeholder photos
+                Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.cape200,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    hasComment ? comment : "Aucun commentaire.",
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                CustomButton(
+                  text: "Valider l’état des lieux",
+                  onPressed: () {
+                    Navigator.pop(context); // ferme état des lieux
+                    _showCongratsDialog();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).then((_) => _inventoryDialogOpen = false);
+  }
+
+  void _showCongratsDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 32,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                Text(
+                  "Félicitations !",
+                  style: AppTextStyles.h1.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "L’état des lieux a été validé.\nVous pouvez procéder à l’échange !",
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+
+                Image.asset(
+                  'assets/images/handshake.png',
+                  width: 174,
+                  height: 174,
+                  fit: BoxFit.cover,
+                ),
+
+                const SizedBox(height: 20),
+                Text(
+                  "Merci pour votre confiance.",
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _validateInventory() {
+    // TODO
+  }
+
   @override
   Widget build(BuildContext context) {
     final teal = const Color(0xFF0F4C4C);
@@ -197,16 +492,41 @@ class _ConversationScreenState extends State<ConversationScreen> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  _OfferHeaderCard(
-                    teal: teal,
-                    contactLogin: _contactLogin,
-                    onBack: () => Navigator.pop(context, _hasReadChanges),
-                    offerTitle: _product?.name ?? "Produit",
-                    priceLabel: _product != null ? "${_product!.price}€" : "—",
-                    durationLabel: "1/2 journée",
-                    locationLabel: _product?.city ?? "Ville, quartier",
-                    onRentTap: () {},
-                    onOfferTap: () {},
+                  // ✅ HEADER full-bleed (fond jusqu'en haut) + contenu safe + flèche retour
+                  Container(
+                    color: Colors.white,
+                    child: Stack(
+                      children: [
+                        // contenu du header avec un padding top "safe"
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top:
+                                MediaQuery.of(context).padding.top +
+                                8, // ✅ espace sous notch
+                          ),
+                          child: ConversationHeader(
+                            role: _role,
+                            status: _reservationStatus,
+                            productTitle: _product!.name,
+                            priceLabel:
+                                "${(_product!.price ?? 0).toStringAsFixed(0)}€/jour",
+                            dateLabel: _formatRangeLabel(_reservation),
+                            ownerName: _owner!.firstName,
+                            imagePath:
+                                _productImage?.url ??
+                                'assets/images/default.jpg',
+                            cityLabel: _product!.city,
+                            postalCodeLabel: _product!.postalCode,
+                            pricePerDay: _product!.price ?? 0,
+                            onAccept: _acceptReservation,
+                            onDecline: _declineReservation,
+                            onOpenInventory: _openInventory,
+                            onValidateInventory: _validateInventory,
+                            onMakeOffer: _openOfferSheet,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
                   Expanded(
@@ -224,15 +544,16 @@ class _ConversationScreenState extends State<ConversationScreen> {
                           isMe: isMe,
                           text: m.text,
                           timeLabel: _formatTime(m.createdAt),
-                          teal: teal,
+                          teal: AppColors.blue100,
                         );
                       },
                     ),
                   ),
+
                   _ComposerBar(
                     controller: _controller,
                     onSend: _sendMessage,
-                    teal: teal,
+                    teal: const Color(0xFF0F4C4C),
                   ),
                 ],
               ),
@@ -245,182 +566,6 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final h = local.hour.toString().padLeft(2, '0');
     final min = local.minute.toString().padLeft(2, '0');
     return "$h:$min";
-  }
-}
-
-class _OfferHeaderCard extends StatelessWidget {
-  final Color teal;
-
-  // Top bar
-  final String contactLogin;
-  final VoidCallback onBack;
-
-  // Card content
-  final String offerTitle;
-  final String priceLabel;
-  final String durationLabel;
-  final String locationLabel;
-  final VoidCallback onRentTap;
-  final VoidCallback onOfferTap;
-
-  const _OfferHeaderCard({
-    required this.teal,
-    required this.contactLogin,
-    required this.onBack,
-    required this.offerTitle,
-    required this.priceLabel,
-    required this.durationLabel,
-    required this.locationLabel,
-    required this.onRentTap,
-    required this.onOfferTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(22),
-            bottomRight: Radius.circular(22),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x14000000),
-              blurRadius: 16,
-              offset: Offset(0, 8),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // TOP BAR (back + login)
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: onBack,
-                      borderRadius: BorderRadius.circular(999),
-                      child: const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Icon(Icons.arrow_back_ios_new, size: 18),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        contactLogin,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // OFFER CARD
-                Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 150,
-                        height: 110,
-                        color: const Color(0xFFE9EEF3),
-                        child: const Icon(
-                          Icons.image,
-                          color: Color(0xFF9AA6B2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            offerTitle,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            priceLabel,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF5B6672),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            durationLabel,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF5B6672),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            locationLabel,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF5B6672),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: CustomButton(
-                          text: "Louer",
-                          onPressed: onRentTap,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: CustomButton(
-                          text: "Faire une offre",
-                          outlined: true,
-                          onPressed: onOfferTap,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -439,8 +584,8 @@ class _MessageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bubbleColor = isMe ? teal : Colors.white;
-    final textColor = isMe ? Colors.white : const Color(0xFF263238);
+    final bubbleColor = isMe ? Colors.white : teal;
+    final textColor = AppColors.textPrimary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -456,6 +601,7 @@ class _MessageRow extends StatelessWidget {
               child: _Avatar(isMe: false),
             ),
           if (!isMe) const SizedBox(width: 10),
+
           Flexible(
             child: Column(
               crossAxisAlignment: isMe
@@ -463,10 +609,7 @@ class _MessageRow extends StatelessWidget {
                   : CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: bubbleColor,
                     borderRadius: BorderRadius.only(
@@ -474,19 +617,15 @@ class _MessageRow extends StatelessWidget {
                       topRight: const Radius.circular(16),
                       bottomLeft: isMe
                           ? const Radius.circular(16)
-                          : const Radius.circular(0),
+                          : Radius.zero,
                       bottomRight: isMe
-                          ? const Radius.circular(0)
+                          ? Radius.zero
                           : const Radius.circular(16),
                     ),
                   ),
                   child: Text(
                     text,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppTextStyles.body.copyWith(color: textColor),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -500,6 +639,7 @@ class _MessageRow extends StatelessWidget {
               ],
             ),
           ),
+
           if (isMe) const SizedBox(width: 10),
           if (isMe)
             Padding(
@@ -520,8 +660,8 @@ class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 35,
-      height: 35,
+      width: 45,
+      height: 45,
       decoration: BoxDecoration(
         color: isMe ? const Color(0xFFE9EEF3) : const Color(0xFFEDE7F6),
         shape: BoxShape.circle,
@@ -548,48 +688,47 @@ class _ComposerBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-      color: Colors.transparent,
+    return SafeArea(
+      top: false,
+      bottom: false,
       child: Container(
-        height: 46,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x12000000),
-              blurRadius: 14,
-              offset: Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 14),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                decoration: const InputDecoration(
-                  hintText: "Envoyer un message",
-                  border: InputBorder.none,
+        color: Colors.white, // 🔹 BARRE BLANCHE
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+        child: Container(
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.cape300, width: 1),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    hintText: "Envoyer un message",
+                    hintStyle: AppTextStyles.label.copyWith(
+                      color: AppColors.textGrey,
+                    ),
+                    border: InputBorder.none,
+                    isCollapsed: true,
+                  ),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => onSend(),
                 ),
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => onSend(),
               ),
-            ),
-            InkWell(
-              onTap: onSend,
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
+              GestureDetector(
+                onTap: onSend,
+                child: Icon(
+                  Icons.send_outlined,
+                  color: AppColors.primaryBlue,
+                  size: 21,
                 ),
-                child: Icon(Icons.send, color: teal),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

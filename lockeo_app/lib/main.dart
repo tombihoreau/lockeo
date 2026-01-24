@@ -67,53 +67,45 @@ class _MyAppState extends State<MyApp> {
         '/': (context) =>
             const MainScaffold(currentIndex: 0, child: HomeScreen()),
         '/categories': (context) =>
-            const MainScaffold(currentIndex: 2, child: CategoriesScreen()),
+            const MainScaffold(currentIndex: 0, child: CategoriesScreen()),
         '/create': (context) =>
             const MainScaffold(currentIndex: 3, child: CreateOfferScreen()),
         '/userProfile': (context) =>
-            const MainScaffold(currentIndex: 1, child: UserProfileScreen()),
+            const MainScaffold(currentIndex: 4, child: UserProfileScreen()),
         '/discover': (context) =>
             const MainScaffold(currentIndex: 1, child: SearchPage()),
         '/messaging': (context) =>
-            const MainScaffold(currentIndex: 1, child: ConversationsScreen()),
+            const MainScaffold(currentIndex: 3, child: ConversationsScreen()),
         '/login': (context) => const MainScaffold(
           showBottomBar: false,
-          currentIndex: 1,
           child: LoginScreen(),
         ),
         '/welcome': (context) => const MainScaffold(
           showBottomBar: false,
-          currentIndex: 1,
           child: RegisterWelcomeScreen(),
         ),
         '/welcome_pages': (context) => const MainScaffold(
           showBottomBar: false,
-          currentIndex: 1,
           child: RegisterWelcomePagesScreen(),
         ),
         '/register_1': (context) => const MainScaffold(
           showBottomBar: false,
-          currentIndex: 1,
           child: Register1Screen(),
         ),
         '/register_2': (context) => const MainScaffold(
           showBottomBar: false,
-          currentIndex: 1,
           child: Register2Screen(),
         ),
         '/register_3': (context) => const MainScaffold(
           showBottomBar: false,
-          currentIndex: 1,
           child: Register3Screen(),
         ),
         '/register_4': (context) => const MainScaffold(
           showBottomBar: false,
-          currentIndex: 1,
           child: Register4Screen(),
         ),
         '/register_5': (context) => const MainScaffold(
           showBottomBar: false,
-          currentIndex: 1,
           child: Register5Screen(),
         ),
       },
@@ -133,7 +125,6 @@ class _MyAppState extends State<MyApp> {
             return MaterialPageRoute(
               builder: (context) => MainScaffold(
                 showBottomBar: false,
-                currentIndex: 1,
                 child: ProductDetailScreen(offer: offer),
               ),
             );
@@ -159,7 +150,6 @@ class _MyAppState extends State<MyApp> {
             return MaterialPageRoute(
               builder: (context) => MainScaffold(
                 showBottomBar: false,
-                currentIndex: 1,
                 child: PublicProfileScreen(userId: userId),
               ),
             );
