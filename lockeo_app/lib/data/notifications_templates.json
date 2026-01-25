@@ -1,0 +1,20 @@
+[
+  {
+    "template_id": 1,
+    "code": "welcome",
+    "title": "Bienvenue sur Lockeo",
+    "content": "Continuez à compléter votre profil !"
+  },
+  {
+    "template_id": 2,
+    "code": "generic",
+    "title": "{{title}}",
+    "content": "{{body}}"
+  },
+  {
+    "template_id": 3,
+    "code": "reservation_accepted",
+    "title": "Réservation acceptée",
+    "content": "Votre demande pour {{product_name}} a été acceptée."
+  }
+]

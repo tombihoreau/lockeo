@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../models/offerDraft.dart';
-import '../widgets/button.dart';
-import '../services/local_data_service.dart';
-import '../models/category.dart';
-import '../widgets/category_card.dart';
+import '../../models/offerDraft.dart';
+import '../../widgets/button.dart';
+import '../../services/local_data_service.dart';
+import '../../models/category.dart';
+import '../../widgets/category_card.dart';
 import 'create_offer_end_screen.dart';
 
 class CreateOfferSummary extends StatefulWidget {

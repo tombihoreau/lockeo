@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:lockeo_app/models/offer.dart';
 import 'package:lockeo_app/screens/home_screen.dart';
 import 'package:lockeo_app/screens/categories_screen.dart';
+import 'package:lockeo_app/screens/notifications_screen.dart';
 import 'package:lockeo_app/screens/product_detail_screen.dart';
 import 'package:lockeo_app/screens/register/register_welcome_screen.dart';
 import 'package:lockeo_app/screens/search_screen.dart';
 import 'package:lockeo_app/widgets/main_scaffold.dart';
-import 'package:lockeo_app/screens/create_offer_screen.dart';
+import 'package:lockeo_app/screens/create_offer/create_offer_screen.dart';
 import 'package:lockeo_app/screens/public_profile_screen.dart';
 import 'package:lockeo_app/screens/user_profile_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -107,6 +108,11 @@ class _MyAppState extends State<MyApp> {
         '/register_5': (context) => const MainScaffold(
           showBottomBar: false,
           child: Register5Screen(),
+        ),
+        '/notifications': (context) => const MainScaffold(
+          showBottomBar: true,
+          currentIndex: 0,
+          child: NotificationsScreen(),
         ),
       },
 

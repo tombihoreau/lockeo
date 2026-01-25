@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../widgets/button.dart';
-import '../widgets/categories_selector.dart';
-import '../models/category.dart';
-import '../services/local_data_service.dart';
+import '../../widgets/button.dart';
+import '../../widgets/categories_selector.dart';
+import '../../models/category.dart';
+import '../../services/local_data_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../models/offerDraft.dart';
+import '../../models/offerDraft.dart';
 import 'create_offer_step2_screen.dart';
 
 class CreateOfferScreen extends StatefulWidget {

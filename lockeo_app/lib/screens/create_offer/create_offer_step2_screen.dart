@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/offerDraft.dart';
-import '../widgets/button.dart';
+import '../../models/offerDraft.dart';
+import '../../widgets/button.dart';
 import 'create_offer_summary.dart';
 
 class CreateOfferStep2Screen extends StatefulWidget {
