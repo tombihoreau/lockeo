@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
 import '../services/local_data_service.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
@@ -8,12 +10,11 @@ import '../models/user.dart';
 import '../models/image.dart';
 import '../models/reservation.dart';
 import '../models/inventory.dart';
-import 'package:intl/intl.dart';
 
 import '../widgets/conversation_header.dart';
+import '../widgets/inventory_dialog.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import '../widgets/button.dart';
 
 class ConversationScreen extends StatefulWidget {
   final int conversationId;
@@ -34,16 +35,18 @@ class _ConversationScreenState extends State<ConversationScreen> {
   Conversation? _conversation;
   Offer? _offer;
   Product? _product;
-  User? _owner;
   ImageModel? _productImage;
+
   Reservation? _reservation;
   Inventory? _inventory;
+
+  User? _otherUser;
 
   List<Message> _messages = [];
   bool _loading = true;
 
-  // Permet de dire à l’écran précédent "j’ai marqué des messages en read"
   bool _hasReadChanges = false;
+  bool _checkoutCongratsShown = false;
 
   @override
   void initState() {
@@ -73,6 +76,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final reservations = await _dataService.loadReservations();
     final inventories = await _dataService.loadInventories();
 
+    // 1) conversation
     Conversation? conversation;
     try {
       conversation = conversations.firstWhere(
@@ -82,33 +86,22 @@ class _ConversationScreenState extends State<ConversationScreen> {
       conversation = null;
     }
 
-    Offer? offer;
+    // 2) produit / offre / image
     Product? product;
-    User? owner;
+    Offer? offer;
     ImageModel? productImage;
 
     if (conversation != null) {
-      // Produit
       product = products.cast<Product?>().firstWhere(
-        (p) => p?.productId == conversation?.productId,
+        (p) => p?.productId == conversation!.productId,
         orElse: () => null,
       );
 
-      // Offre liée au produit (si 1 offre / produit dans tes données)
       offer = offers.cast<Offer?>().firstWhere(
-        (o) => o?.productId == conversation?.productId,
+        (o) => o?.productId == conversation!.productId,
         orElse: () => null,
       );
 
-      // Proprio = offer.userId
-      if (offer != null) {
-        owner = users.cast<User?>().firstWhere(
-          (u) => u?.userId == offer!.userId,
-          orElse: () => null,
-        );
-      }
-
-      // Image produit
       if (product != null) {
         productImage = images.cast<ImageModel?>().firstWhere(
           (img) => img?.productId == product!.productId,
@@ -117,37 +110,43 @@ class _ConversationScreenState extends State<ConversationScreen> {
       }
     }
 
-    Reservation? reservation;
-
-    if (conversation != null && product != null && offer != null) {
-      final ownerId = offer.userId;
-
-      // l’autre participant = locataire
-      final renterId = conversation.userIds.firstWhere(
-        (id) => id != ownerId,
+    // 3) autre user (celui qui n'est pas moi)
+    User? otherUser;
+    if (conversation != null) {
+      final otherUserId = conversation.userIds.firstWhere(
+        (id) => id != currentUserId,
         orElse: () => currentUserId,
       );
 
-      reservation = _findReservationBetweenUsers(
-        reservations: reservations,
-        productId: product.productId,
-        ownerId: ownerId,
-        renterId: renterId,
+      otherUser = users.cast<User?>().firstWhere(
+        (u) => u?.userId == otherUserId,
+        orElse: () => null,
       );
     }
 
+    // 4) reservation via conversation.reservationId
+    Reservation? reservation;
+    final convoReservationId = conversation?.reservationId;
+    if (convoReservationId != null) {
+      try {
+        reservation = reservations.firstWhere(
+          (r) => r.reservationId == convoReservationId,
+        );
+      } catch (_) {
+        reservation = null;
+      }
+    }
+
+    // 5) inventory (le plus récent)
     Inventory? inventory;
     if (reservation != null) {
       inventory = _findInventoryForReservation(
         inventories: inventories,
         reservationId: reservation.reservationId,
       );
-
-      print(
-        "reservationId: ${reservation.reservationId} inventory: ${inventory?.inventoryId} status: ${inventory?.status}",
-      );
     }
 
+    // 6) messages
     final convoMessages =
         messages
             .where((m) => m.conversationId == widget.conversationId)
@@ -156,20 +155,123 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
     setState(() {
       _currentUserId = currentUserId;
+
       _conversation = conversation;
-      _offer = offer;
       _product = product;
-      _owner = owner;
+      _offer = offer;
       _productImage = productImage;
-      _messages = convoMessages;
-      _loading = false;
+
+      _otherUser = otherUser;
+
       _reservation = reservation;
       _inventory = inventory;
+
+      _messages = convoMessages;
+      _loading = false;
     });
 
+    _maybeShowCheckoutCongrats();
     _markAllIncomingAsRead();
     _scrollToBottom();
   }
+
+  // -------------------------
+  // Header computed
+  // -------------------------
+
+  ConversationRole get _role {
+    final ownerId = _offer?.userId;
+    if (ownerId != null && ownerId == _currentUserId) {
+      return ConversationRole.owner;
+    }
+    return ConversationRole.renter;
+  }
+
+  ReservationStatus get _reservationStatus {
+    return _mapReservationStatus(_reservation?.status);
+  }
+
+  String _formatRangeLabel(Reservation? r) {
+    if (r == null) return "";
+    final df = DateFormat("d MMMM y", "fr_FR");
+    String cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+    return "Du ${cap(df.format(r.startDate))} au ${cap(df.format(r.endDate))}";
+  }
+
+  // -------------------------
+  // Popup checkout_validated
+  // -------------------------
+
+  void _maybeShowCheckoutCongrats() {
+    if (_checkoutCongratsShown) return;
+
+    final mapped = _mapReservationStatus(_reservation?.status);
+    if (mapped != ReservationStatus.checkoutValidated) return;
+
+    _checkoutCongratsShown = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_loading) return;
+      _showCheckoutValidatedDialog();
+    });
+  }
+
+  void _showCheckoutValidatedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                Text(
+                  "Félicitations !",
+                  style: AppTextStyles.h1.copyWith(color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "L’état des lieux de sortie a été validé.\nVous pouvez procéder à la restitution du matériel.",
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 20),
+                Image.asset(
+                  'assets/images/handshake.png',
+                  width: 174,
+                  height: 174,
+                  fit: BoxFit.cover,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Merci pour votre confiance.",
+                  style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // -------------------------
+  // Read / scroll / send
+  // -------------------------
 
   void _markAllIncomingAsRead() {
     final now = DateTime.now().toUtc();
@@ -187,9 +289,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     }).toList();
 
     if (changed) {
-      setState(() {
-        _messages = updated;
-      });
+      setState(() => _messages = updated);
       _hasReadChanges = true;
     }
   }
@@ -230,255 +330,80 @@ class _ConversationScreenState extends State<ConversationScreen> {
   }
 
   // -------------------------
-  // Header logic (role/status)
+  // Inventory helpers + callbacks header
   // -------------------------
-  String _formatRangeLabel(Reservation? r) {
-    if (r == null) return "";
-    final df = DateFormat("d MMMM y", "fr_FR");
 
-    String cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-
-    final start = cap(df.format(r.startDate));
-    final end = cap(df.format(r.endDate));
-    return "Du $start au $end";
-  }
-
-  ConversationRole get _role {
-    final ownerId = _offer?.userId;
-    if (ownerId != null && ownerId == _currentUserId) {
-      return ConversationRole.owner;
-    }
-    return ConversationRole.renter;
-  }
-
-  ReservationStatus get _reservationStatus {
-    return _mapReservationStatus(_reservation?.status);
-  }
-
-  Reservation? _findReservationBetweenUsers({
-    required List<Reservation> reservations,
-    required int productId,
-    required int ownerId,
-    required int renterId,
+  Inventory? _findInventoryForReservation({
+    required List<Inventory> inventories,
+    required int reservationId,
   }) {
-    final matches = reservations.where((r) {
-      return r.productId == productId &&
-          r.ownerId == ownerId &&
-          r.renterId == renterId;
-    }).toList();
-
+    final matches = inventories.where((i) => i.reservationId == reservationId).toList();
     if (matches.isEmpty) return null;
-
     matches.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return matches.first;
   }
 
   ReservationStatus _mapReservationStatus(String? status) {
     final s = (status ?? '').trim().toLowerCase();
-
     switch (s) {
       case 'pending':
         return ReservationStatus.requestPending;
-
       case 'accepted':
         return ReservationStatus.accepted;
-
       case 'exchange_pending':
         return ReservationStatus.exchangePending;
-
       case 'completed':
         return ReservationStatus.completed;
-
+      case 'in_progress':
+        return ReservationStatus.inProgress;
+      case 'return_soon':
+        return ReservationStatus.returnSoon;
+      case 'checkout_validated':
+        return ReservationStatus.checkoutValidated;
       default:
         return ReservationStatus.none;
     }
   }
 
-  Inventory? _findInventoryForReservation({
-    required List<Inventory> inventories,
-    required int reservationId,
-  }) {
-    final matches = inventories
-        .where((i) => i.reservationId == reservationId)
-        .toList();
-    if (matches.isEmpty) return null;
+  void _openOfferSheet() {}
+  void _acceptReservation() {}
+  void _declineReservation() {}
 
-    // si plusieurs inventaires (submitted puis validated), on prend le plus récent
-    matches.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return matches.first;
-  }
+  Future<void> _openInventory() async {
+    if (_reservation == null) return;
 
-  // Callbacks header (tu brancheras sur tes écrans/bottomsheet)
-  void _openOfferSheet() {
-    // TODO: ouvrir ta bottom sheet "ReservationSheet" ou une page d’offre
-    // showModalBottomSheet(...);
-  }
+    // Si déjà fait => lecture seule
+    final readOnly = _inventory != null;
 
-  void _acceptReservation() {
-    // TODO: setState + update status si tu persistes côté backend
-  }
-
-  void _declineReservation() {
-    // TODO
-  }
-
-  bool _inventoryDialogOpen = false;
-
-  void _openInventory() {
-    if (_inventoryDialogOpen) return;
-    _inventoryDialogOpen = true;
-    final comment = (_inventory?.comment ?? "").trim();
-    final hasComment = comment.isNotEmpty;
-
-    showDialog(
+    final result = await showDialog<Inventory?>(
       context: context,
       barrierDismissible: true,
-      builder: (_) {
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 24,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: Text(
-                        "L’état des lieux",
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.h1.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Placeholder photos
-                Container(
-                  height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.cape200,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: Text(
-                    hasComment ? comment : "Aucun commentaire.",
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                CustomButton(
-                  text: "Valider l’état des lieux",
-                  onPressed: () {
-                    Navigator.pop(context); // ferme état des lieux
-                    _showCongratsDialog();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ).then((_) => _inventoryDialogOpen = false);
-  }
-
-  void _showCongratsDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) {
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 32,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-                Text(
-                  "Félicitations !",
-                  style: AppTextStyles.h1.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "L’état des lieux a été validé.\nVous pouvez procéder à l’échange !",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-
-                Image.asset(
-                  'assets/images/handshake.png',
-                  width: 174,
-                  height: 174,
-                  fit: BoxFit.cover,
-                ),
-
-                const SizedBox(height: 20),
-                Text(
-                  "Merci pour votre confiance.",
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (_) => InventoryDialog(
+        reservationId: _reservation!.reservationId,
+        initialInventory: _inventory,
+        readOnly: readOnly,
+      ),
     );
+
+    // En lecture seule => result = null (on ferme)
+    if (readOnly) return;
+
+    // Si création => result est l’inventory envoyé
+    if (result == null) return;
+
+    setState(() {
+      _inventory = result;
+    });
   }
 
-  void _validateInventory() {
-    // TODO
-  }
+  void _validateInventory() {}
+
+  // -------------------------
+  // UI
+  // -------------------------
 
   @override
   Widget build(BuildContext context) {
-    final teal = const Color(0xFF0F4C4C);
     final lightBg = const Color(0xFFF5F7FA);
 
     return WillPopScope(
@@ -492,50 +417,37 @@ class _ConversationScreenState extends State<ConversationScreen> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  // ✅ HEADER full-bleed (fond jusqu'en haut) + contenu safe + flèche retour
                   Container(
                     color: Colors.white,
-                    child: Stack(
-                      children: [
-                        // contenu du header avec un padding top "safe"
-                        Padding(
-                          padding: EdgeInsets.only(
-                            top:
-                                MediaQuery.of(context).padding.top +
-                                8, // ✅ espace sous notch
-                          ),
-                          child: ConversationHeader(
-                            role: _role,
-                            status: _reservationStatus,
-                            productTitle: _product!.name,
-                            priceLabel:
-                                "${(_product!.price ?? 0).toStringAsFixed(0)}€/jour",
-                            dateLabel: _formatRangeLabel(_reservation),
-                            ownerName: _owner!.firstName,
-                            imagePath:
-                                _productImage?.url ??
-                                'assets/images/default.jpg',
-                            cityLabel: _product!.city,
-                            postalCodeLabel: _product!.postalCode,
-                            pricePerDay: _product!.price ?? 0,
-                            onAccept: _acceptReservation,
-                            onDecline: _declineReservation,
-                            onOpenInventory: _openInventory,
-                            onValidateInventory: _validateInventory,
-                            onMakeOffer: _openOfferSheet,
-                          ),
-                        ),
-                      ],
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).padding.top + 8,
+                      ),
+                      child: ConversationHeader(
+                        role: _role,
+                        status: _reservationStatus,
+                        productTitle: _product?.name ?? "",
+                        priceLabel: "${(_product?.price ?? 0).toStringAsFixed(0)}€/jour",
+                        dateLabel: _formatRangeLabel(_reservation),
+                        otherUserName: _otherUser?.firstName ?? "",
+                        imagePath: _productImage?.url ?? 'assets/images/default.jpg',
+                        cityLabel: _product?.city ?? "",
+                        postalCodeLabel: _product?.postalCode ?? "",
+                        pricePerDay: _product?.price ?? 0,
+                        onAccept: _acceptReservation,
+                        onDecline: _declineReservation,
+                        onOpenInventory: _openInventory,
+                        onValidateInventory: _validateInventory,
+                        onMakeOffer: _openOfferSheet,
+                        rentalEndDate: _reservation?.endDate,
+                      ),
                     ),
                   ),
 
                   Expanded(
                     child: ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
                         final m = _messages[index];
@@ -553,7 +465,6 @@ class _ConversationScreenState extends State<ConversationScreen> {
                   _ComposerBar(
                     controller: _controller,
                     onSend: _sendMessage,
-                    teal: const Color(0xFF0F4C4C),
                   ),
                 ],
               ),
@@ -591,22 +502,17 @@ class _MessageRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          if (!isMe)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 18),
-              child: _Avatar(isMe: false),
-            ),
+          if (!isMe) const Padding(
+            padding: EdgeInsets.only(bottom: 18),
+            child: _Avatar(isMe: false),
+          ),
           if (!isMe) const SizedBox(width: 10),
 
           Flexible(
             child: Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -615,12 +521,8 @@ class _MessageRow extends StatelessWidget {
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
-                      bottomLeft: isMe
-                          ? const Radius.circular(16)
-                          : Radius.zero,
-                      bottomRight: isMe
-                          ? Radius.zero
-                          : const Radius.circular(16),
+                      bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
+                      bottomRight: isMe ? Radius.zero : const Radius.circular(16),
                     ),
                   ),
                   child: Text(
@@ -631,21 +533,17 @@ class _MessageRow extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   timeLabel,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF7A8794),
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF7A8794)),
                 ),
               ],
             ),
           ),
 
           if (isMe) const SizedBox(width: 10),
-          if (isMe)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: _Avatar(isMe: true),
-            ),
+          if (isMe) const Padding(
+            padding: EdgeInsets.only(bottom: 20),
+            child: _Avatar(isMe: true),
+          ),
         ],
       ),
     );
@@ -678,12 +576,10 @@ class _Avatar extends StatelessWidget {
 class _ComposerBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
-  final Color teal;
 
   const _ComposerBar({
     required this.controller,
     required this.onSend,
-    required this.teal,
   });
 
   @override
@@ -692,7 +588,7 @@ class _ComposerBar extends StatelessWidget {
       top: false,
       bottom: false,
       child: Container(
-        color: Colors.white, // 🔹 BARRE BLANCHE
+        color: Colors.white,
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         child: Container(
           height: 52,
@@ -709,9 +605,7 @@ class _ComposerBar extends StatelessWidget {
                   controller: controller,
                   decoration: InputDecoration(
                     hintText: "Envoyer un message",
-                    hintStyle: AppTextStyles.label.copyWith(
-                      color: AppColors.textGrey,
-                    ),
+                    hintStyle: AppTextStyles.label.copyWith(color: AppColors.textGrey),
                     border: InputBorder.none,
                     isCollapsed: true,
                   ),

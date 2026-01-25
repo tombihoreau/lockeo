@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
+
 import '../widgets/button.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -11,6 +14,12 @@ enum ReservationStatus {
   accepted,
   exchangePending,
   completed,
+  cancelled,
+
+  // ✅ Objet chez le locataire
+  inProgress, // tu l'as jusqu'à...
+  returnSoon, // rendu dans moins de 24h
+  checkoutValidated, // état des lieux de sortie validé
 }
 
 class ConversationHeader extends StatelessWidget {
@@ -20,7 +29,7 @@ class ConversationHeader extends StatelessWidget {
   final String productTitle;
   final String priceLabel;
   final String dateLabel;
-  final String ownerName;
+  final String otherUserName;
   final String imagePath;
 
   final VoidCallback? onAccept;
@@ -33,6 +42,9 @@ class ConversationHeader extends StatelessWidget {
   final String postalCodeLabel;
   final double pricePerDay;
 
+  // ✅ Pour “tu l'as jusqu'au …”
+  final DateTime? rentalEndDate;
+
   const ConversationHeader({
     super.key,
     required this.role,
@@ -40,11 +52,12 @@ class ConversationHeader extends StatelessWidget {
     required this.productTitle,
     required this.priceLabel,
     required this.dateLabel,
-    required this.ownerName,
+    required this.otherUserName,
     required this.imagePath,
     required this.cityLabel,
     required this.postalCodeLabel,
     required this.pricePerDay,
+    this.rentalEndDate,
     this.onAccept,
     this.onDecline,
     this.onMakeOffer,
@@ -68,22 +81,21 @@ class ConversationHeader extends StatelessWidget {
                 child: Container(
                   width: 27,
                   height: 27,
-                  decoration: BoxDecoration(
-                    color: AppColors.cape200, // gris clair
+                  decoration: const BoxDecoration(
+                    color: AppColors.cape200,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
                   child: const Icon(
                     Icons.arrow_back_ios_new,
-                    size: 8,
+                    size: 10,
                     color: AppColors.textPrimary,
                   ),
                 ),
               ),
-
               const SizedBox(width: 12),
               Text(
-                ownerName,
+                otherUserName,
                 style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
               ),
             ],
@@ -91,7 +103,7 @@ class ConversationHeader extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          // 🔹 CARD PRODUIT (inchangée)
+          // 🔹 CARD PRODUIT
           Row(
             children: [
               ClipRRect(
@@ -117,7 +129,6 @@ class ConversationHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-
                     Row(
                       children: [
                         const Icon(
@@ -162,7 +173,7 @@ class ConversationHeader extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          // 🔹 STATUS / ACTIONS (inchangé)
+          // 🔹 STATUS / ACTIONS
           _buildStatusArea(context),
           const SizedBox(height: 24),
         ],
@@ -170,8 +181,14 @@ class ConversationHeader extends StatelessWidget {
     );
   }
 
+  // -------------------------
+  // BANNERS
+  // -------------------------
+
   Widget _buildBanner({
-    required String text,
+    Widget? leading,
+    String? title,
+    String? body,
     String? linkText,
     VoidCallback? onLinkTap,
   }) {
@@ -186,40 +203,91 @@ class ConversationHeader extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            text,
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w500,
+          if (leading != null) ...[leading, const SizedBox(width: 10)],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (title != null && title.trim().isNotEmpty)
+                  Text(
+                    title,
+                    style: AppTextStyles.h3.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                if (body != null && body.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    body,
+                    style: AppTextStyles.label.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+                if (linkText != null && linkText.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: onLinkTap,
+                    child: Text(
+                      linkText,
+                      style: AppTextStyles.link.copyWith(
+                        color: AppColors.primaryBlue,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (linkText != null && linkText.trim().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: onLinkTap,
-              child: Text(
-                linkText,
-                style: AppTextStyles.link.copyWith(
-                  color: AppColors.primaryBlue,
-                  decoration: TextDecoration.none,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget _buildStatusArea(BuildContext context) {
-    // 1) Locataire
+  Widget _buildAcceptedBanner(role) {
+    String title = "";
+    String body = "";
+    if (role == 'loc') {
+      title = "Votre demande a été validée";
+      body =
+          "Le jour de l’échange, vous pourrez consulter et valider l’état des lieux.";
+    } else {
+      title = "Vous avez validé la demande";
+      body =
+          "Au moment de l’échange, vous pourrez réaliser l’état des lieux du matériel.";
+    }
+    return _buildBanner(
+      leading: SvgPicture.asset(
+        'assets/icons/icon_check.svg',
+        width: 27,
+        height: 27,
+      ),
+      title: title,
+      body: body,
+    );
+  }
 
+  String _untilLabel(DateTime? endDate) {
+    if (endDate == null) return "";
+    final df = DateFormat("d MMMM y", "fr_FR");
+    String cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+    return "Location active jusqu’au ${cap(df.format(endDate))}.";
+  }
+
+  // -------------------------
+  // STATUS LOGIC
+  // -------------------------
+
+  Widget _buildStatusArea(BuildContext context) {
+    // ✅ Locataire
     if (role == ConversationRole.renter) {
       switch (status) {
         case ReservationStatus.none:
+        case ReservationStatus.checkoutValidated:
           return Row(
             children: [
               Expanded(
@@ -238,28 +306,43 @@ class ConversationHeader extends StatelessWidget {
 
         case ReservationStatus.requestPending:
           return _buildBanner(
-            text: "En attente de la validation du propriétaire",
+            title: "En attente de la validation du propriétaire",
           );
 
         case ReservationStatus.accepted:
-          return _buildBanner(
-            text:
-                "Votre demande a été validée. Le jour de l’échange, vous pourrez consulter et valider l’état des lieux.",
-          );
+          return _buildAcceptedBanner('loc');
 
         case ReservationStatus.exchangePending:
           return _buildBanner(
-            text: "Valider l’état des lieux pour procéder à l’échange.",
+            body: "Valider l’état des lieux pour procéder à l’échange.",
             linkText: "Cliquez ici pour consulter l’état des lieux",
             onLinkTap: onOpenInventory,
           );
 
+        // ✅ OBJET CHEZ LE LOCATAIRE
+        case ReservationStatus.inProgress:
+          return _buildBanner(
+            title: "Location en cours",
+            body:
+                "${_untilLabel(rentalEndDate)} \nUn état des lieux sera réalisé au moment de la remise.",
+          );
+
+        case ReservationStatus.returnSoon:
+          return _buildBanner(
+            title: "Votre rendu est dans moins de 24h",
+            body:
+                "Lors de l’échange, le propriétaire va vérifier l’état du matériel.",
+          );
+
         case ReservationStatus.completed:
-          return _buildBanner(text: "Échange terminé.");
+          return _buildBanner(title: "Échange terminé.");
+
+        case ReservationStatus.cancelled:
+          return _buildBanner(title: "Réservation annulée.");
       }
     }
 
-    // 2) Propriétaire
+    // ✅ Propriétaire
     switch (status) {
       case ReservationStatus.requestPending:
         return Column(
@@ -281,17 +364,14 @@ class ConversationHeader extends StatelessWidget {
         );
 
       case ReservationStatus.accepted:
-        return _buildBanner(
-          text:
-              "Vous avez validé la demande. Au moment de l’échange, vous pourrez réaliser l’état des lieux.",
-        );
+        return _buildAcceptedBanner('proprietaire');
 
       case ReservationStatus.exchangePending:
         return Column(
           children: [
             _buildBanner(
-              text:
-                  "Votre échange est dans moins de 24h. Contrôlez l’état du matériel, photos à l’appui.",
+              title: "Votre échange est dans moins de 24h.",
+              body: "Contrôlez l’état du matériel, photos à l’appui.",
             ),
             const SizedBox(height: 10),
             CustomButton(
@@ -301,8 +381,22 @@ class ConversationHeader extends StatelessWidget {
           ],
         );
 
+      case ReservationStatus.inProgress:
+        return _buildBanner(
+          title: "Location en cours",
+          body: "Le locataire a l’objet jusqu’à la fin de la période.",
+        );
+
+      case ReservationStatus.returnSoon:
+        return _buildBanner(
+          title: "Rendu dans moins de 24h",
+          body: "Prépare l’état des lieux de sortie.",
+        );
+
       case ReservationStatus.none:
       case ReservationStatus.completed:
+      case ReservationStatus.cancelled:
+      case ReservationStatus.checkoutValidated:
         return const SizedBox.shrink();
     }
   }

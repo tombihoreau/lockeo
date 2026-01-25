@@ -1,6 +1,7 @@
 class Conversation {
   final int conversationId;
   final int productId;
+  final int reservationId;
   final List<int> userIds; // expected: 2 ids
 
   final int? lastMessageId;
@@ -10,6 +11,7 @@ class Conversation {
   Conversation({
     required this.conversationId,
     required this.productId,
+    required this.reservationId,
     required this.userIds,
     this.lastMessageId,
     required this.lastMessageAt,
@@ -20,6 +22,7 @@ class Conversation {
     return Conversation(
       conversationId: json['conversation_id'] ?? json['conversationId'] ?? 0,
       productId: json['product_id'] ?? json['productId'] ?? 0,
+      reservationId: json['reservation_id'] ?? json['reservationId'] ?? 0,
       userIds: List<int>.from(json['user_ids'] ?? json['userIds'] ?? []),
       lastMessageId: json['last_message_id'] ?? json['lastMessageId'],
       lastMessageAt: json['last_message_at'] ?? json['lastMessageAt'] ?? '',
@@ -30,6 +33,7 @@ class Conversation {
   Map<String, dynamic> toJson() => {
         'conversation_id': conversationId,
         'product_id': productId,
+        'reservation_id': reservationId,
         'user_ids': userIds,
         'last_message_id': lastMessageId,
         'last_message_at': lastMessageAt,
