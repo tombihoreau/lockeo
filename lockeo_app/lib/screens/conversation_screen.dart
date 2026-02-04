@@ -15,6 +15,7 @@ import '../widgets/conversation_header.dart';
 import '../widgets/inventory_dialog.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../widgets/reservation_sheet.dart';
 
 class ConversationScreen extends StatefulWidget {
   final int conversationId;
@@ -223,8 +224,13 @@ class _ConversationScreenState extends State<ConversationScreen> {
       barrierDismissible: true,
       builder: (_) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 24,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -241,13 +247,17 @@ class _ConversationScreenState extends State<ConversationScreen> {
                 ),
                 Text(
                   "Félicitations !",
-                  style: AppTextStyles.h1.copyWith(color: AppColors.textPrimary),
+                  style: AppTextStyles.h1.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   "L’état des lieux de sortie a été validé.\nVous pouvez procéder à la restitution du matériel.",
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Image.asset(
@@ -259,7 +269,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
                 const SizedBox(height: 20),
                 Text(
                   "Merci pour votre confiance.",
-                  style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),
@@ -337,7 +349,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
     required List<Inventory> inventories,
     required int reservationId,
   }) {
-    final matches = inventories.where((i) => i.reservationId == reservationId).toList();
+    final matches = inventories
+        .where((i) => i.reservationId == reservationId)
+        .toList();
     if (matches.isEmpty) return null;
     matches.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return matches.first;
@@ -365,7 +379,17 @@ class _ConversationScreenState extends State<ConversationScreen> {
     }
   }
 
-  void _openOfferSheet() {}
+  void _openOfferSheet() {
+    if (_offer == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ReservationSheet(offerId: _offer!.offerId),
+    );
+  }
+
   void _acceptReservation() {}
   void _declineReservation() {}
 
@@ -427,10 +451,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
                         role: _role,
                         status: _reservationStatus,
                         productTitle: _product?.name ?? "",
-                        priceLabel: "${(_product?.price ?? 0).toStringAsFixed(0)}€/jour",
+                        priceLabel:
+                            "${(_product?.price ?? 0).toStringAsFixed(0)}€/jour",
                         dateLabel: _formatRangeLabel(_reservation),
                         otherUserName: _otherUser?.firstName ?? "",
-                        imagePath: _productImage?.url ?? 'assets/images/default.jpg',
+                        imagePath:
+                            _productImage?.url ?? 'assets/images/default.jpg',
                         cityLabel: _product?.city ?? "",
                         postalCodeLabel: _product?.postalCode ?? "",
                         pricePerDay: _product?.price ?? 0,
@@ -447,7 +473,10 @@ class _ConversationScreenState extends State<ConversationScreen> {
                   Expanded(
                     child: ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
                         final m = _messages[index];
@@ -462,10 +491,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                     ),
                   ),
 
-                  _ComposerBar(
-                    controller: _controller,
-                    onSend: _sendMessage,
-                  ),
+                  _ComposerBar(controller: _controller, onSend: _sendMessage),
                 ],
               ),
       ),
@@ -502,17 +528,22 @@ class _MessageRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
-          if (!isMe) const Padding(
-            padding: EdgeInsets.only(bottom: 18),
-            child: _Avatar(isMe: false),
-          ),
+          if (!isMe)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 18),
+              child: _Avatar(isMe: false),
+            ),
           if (!isMe) const SizedBox(width: 10),
 
           Flexible(
             child: Column(
-              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -521,8 +552,12 @@ class _MessageRow extends StatelessWidget {
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
-                      bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
-                      bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+                      bottomLeft: isMe
+                          ? const Radius.circular(16)
+                          : Radius.zero,
+                      bottomRight: isMe
+                          ? Radius.zero
+                          : const Radius.circular(16),
                     ),
                   ),
                   child: Text(
@@ -533,17 +568,21 @@ class _MessageRow extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   timeLabel,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF7A8794)),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF7A8794),
+                  ),
                 ),
               ],
             ),
           ),
 
           if (isMe) const SizedBox(width: 10),
-          if (isMe) const Padding(
-            padding: EdgeInsets.only(bottom: 20),
-            child: _Avatar(isMe: true),
-          ),
+          if (isMe)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 20),
+              child: _Avatar(isMe: true),
+            ),
         ],
       ),
     );
@@ -577,10 +616,7 @@ class _ComposerBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
 
-  const _ComposerBar({
-    required this.controller,
-    required this.onSend,
-  });
+  const _ComposerBar({required this.controller, required this.onSend});
 
   @override
   Widget build(BuildContext context) {
@@ -605,7 +641,9 @@ class _ComposerBar extends StatelessWidget {
                   controller: controller,
                   decoration: InputDecoration(
                     hintText: "Envoyer un message",
-                    hintStyle: AppTextStyles.label.copyWith(color: AppColors.textGrey),
+                    hintStyle: AppTextStyles.label.copyWith(
+                      color: AppColors.textGrey,
+                    ),
                     border: InputBorder.none,
                     isCollapsed: true,
                   ),

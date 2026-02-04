@@ -384,13 +384,24 @@ class ConversationHeader extends StatelessWidget {
       case ReservationStatus.inProgress:
         return _buildBanner(
           title: "Location en cours",
-          body: "Le locataire a l’objet jusqu’à la fin de la période.",
+          body:
+              "${_untilLabel(rentalEndDate)} \nUn état des lieux sera réalisé au moment de la remise.",
         );
 
       case ReservationStatus.returnSoon:
-        return _buildBanner(
-          title: "Rendu dans moins de 24h",
-          body: "Prépare l’état des lieux de sortie.",
+        return Column(
+          children: [
+            _buildBanner(
+              title: "Récupérez votre matériel dans moins de 24h",
+              body:
+                  "Contrôler l’état de votre matériel (défauts, photos), durant l’état des lieux.",
+            ),
+            const SizedBox(height: 10),
+            CustomButton(
+              text: "Vérifier le matériel",
+              onPressed: onOpenInventory,
+            ),
+          ],
         );
 
       case ReservationStatus.none:

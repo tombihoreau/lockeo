@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 22),
 
                   const Text(
-                    "Création du mot de passe",
+                    "Mot de passe",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
