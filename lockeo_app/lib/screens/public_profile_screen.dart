@@ -215,12 +215,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     child: Text(
                       tabs[index],
                       key: _tabKeys[index],
-                      style: TextStyle(
-                        fontSize: 16,
+                      style: AppTextStyles.h3.copyWith(
                         fontWeight: isActive
                             ? FontWeight.w700
                             : FontWeight.w400,
-                        color: isActive ? Colors.black : Colors.grey,
+                        color: isActive ? AppColors.textPrimary : AppColors.textGrey800,
                       ),
                     ),
                   ),
@@ -237,7 +236,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               children: [
                 Align(
                   alignment: Alignment.bottomCenter,
-                  child: Container(height: 1, color: Colors.grey.shade300),
+                  child: Container(height: 1, color: AppColors.cape300),
                 ),
                 if (_underlineReady)
                   AnimatedPositioned(

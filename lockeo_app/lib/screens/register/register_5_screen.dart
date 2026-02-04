@@ -2,27 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import '../../theme/app_colors.dart';
+import 'package:lockeo_app/services/location_service.dart';
 
 class Register5Screen extends StatelessWidget {
   const Register5Screen({super.key});
 
+  static final LocationService _loc = LocationService();
+
   void _goHome(BuildContext context) {
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+  }
+
+  Future<void> _onAllow(BuildContext context) async {
+    await _loc.requestAndCacheLocation();
+    if (!context.mounted) return;
+    _goHome(context);
+  }
+
+  Future<void> _onDeny(BuildContext context) async {
+    await _loc.denyAndCache();
+    if (!context.mounted) return;
+    _goHome(context);
   }
 
   void _openRefuseDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: true, // tu peux laisser true si tu veux
-      builder: (_) {
+      barrierDismissible: true,
+      builder: (dialogCtx) {
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(horizontal: 22),
           backgroundColor: Colors.transparent,
           child: _RefuseLocationDialog(
-            onContinue: () {
-              // important : fermer la dialog AVANT de naviguer
-              Navigator.of(context, rootNavigator: true).pop();
-              Future.microtask(() => _goHome(context));
+            onContinue: () async {
+              // Ici tu peux aussi récupérer le code postal si tu veux (optionnel)
+              await _loc.denyAndCache();
+
+              if (!dialogCtx.mounted) return;
+              Navigator.of(dialogCtx, rootNavigator: true).pop();
+
+              if (!context.mounted) return;
+              _goHome(context);
             },
           ),
         );
@@ -51,27 +71,17 @@ class Register5Screen extends StatelessWidget {
                   child: Align(
                     alignment: Alignment.topRight,
                     child: GestureDetector(
-                      onTap: () => _goHome(context),
+                      onTap: () => _onDeny(context), // passer = refuser (cache)
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                '/',
-                                (route) => false,
-                              );
-                            },
-                            child: Text(
-                              "Passer cette étape",
-                              style: AppTextStyles.link.copyWith(
-                                color: Colors.white,
-                                decorationColor: Colors.white,
-                              ),
+                          Text(
+                            "Passer cette étape",
+                            style: AppTextStyles.link.copyWith(
+                              color: Colors.white,
+                              decorationColor: Colors.white,
                             ),
                           ),
-
                           const SizedBox(width: 8),
                           Container(
                             width: 26,
@@ -127,7 +137,7 @@ class Register5Screen extends StatelessWidget {
                     width: double.infinity,
                     height: 64,
                     child: ElevatedButton(
-                      onPressed: () => _goHome(context),
+                      onPressed: () => _onAllow(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         elevation: 0,
@@ -172,7 +182,7 @@ class Register5Screen extends StatelessWidget {
 }
 
 class _RefuseLocationDialog extends StatefulWidget {
-  final VoidCallback onContinue;
+  final Future<void> Function() onContinue;
 
   const _RefuseLocationDialog({required this.onContinue});
 
@@ -250,7 +260,7 @@ class _RefuseLocationDialogState extends State<_RefuseLocationDialog> {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              "Titre",
+              "Code postal",
               style: AppTextStyles.label.copyWith(color: Colors.black),
             ),
           ),
@@ -294,7 +304,9 @@ class _RefuseLocationDialogState extends State<_RefuseLocationDialog> {
             width: double.infinity,
             height: 56,
             child: OutlinedButton(
-              onPressed: widget.onContinue,
+              onPressed: () async {
+                await widget.onContinue();
+              },
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.primaryRed, width: 1.5),
                 shape: RoundedRectangleBorder(

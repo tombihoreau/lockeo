@@ -252,7 +252,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               children: [
                 Align(
                   alignment: Alignment.bottomCenter,
-                  child: Container(height: 1, color: Colors.grey.shade300),
+                  child: Container(height: 1, color: AppColors.cape300),
                 ),
                 if (_underlineReady)
                   AnimatedPositioned(

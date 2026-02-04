@@ -8,6 +8,9 @@ import 'dart:io';
 import '../../models/offerDraft.dart';
 import 'create_offer_step2_screen.dart';
 
+// TODO: adapte l’import selon ton projet
+import '../../services/location_service.dart';
+
 class CreateOfferScreen extends StatefulWidget {
   const CreateOfferScreen({super.key});
 
@@ -20,7 +23,12 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final descriptionController = TextEditingController();
 
   String? selectedState;
+
+  // ✅ garde une vraie valeur + un controller persistant
   String? location;
+  final TextEditingController _locationCtrl = TextEditingController();
+
+  final _loc = LocationService();
 
   final dataService = LocalDataService();
 
@@ -35,6 +43,17 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   void initState() {
     super.initState();
     _loadCategories();
+
+    // optionnel : si tu as déjà une valeur par défaut
+    _locationCtrl.text = location ?? "";
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    descriptionController.dispose();
+    _locationCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCategories() async {
@@ -52,6 +71,16 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     }
   }
 
+  Future<void> _fillLocationFromGPS() async {
+
+    final label = await _loc.getCachedOrCurrentLocationLabel();
+    if (label == null || label.trim().isEmpty) return;
+
+    setState(() {
+      location = label;
+      _locationCtrl.text = label;
+    });
+  }
 
   void _goToStep2() {
     if (titleController.text.trim().isEmpty) {
@@ -78,7 +107,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       state: selectedState,
-      location: location,
+      location: location, // ✅ récupère la valeur
       categories: _selectedCategories,
       photos: photos,
     );
@@ -115,7 +144,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),
-
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
@@ -146,7 +174,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
           ),
         ],
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -158,7 +185,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Titre
             const Text("Titre"),
             const SizedBox(height: 8),
             TextField(
@@ -168,7 +194,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
             const SizedBox(height: 20),
 
-            // Description
             const Text("Description"),
             const SizedBox(height: 8),
             TextField(
@@ -181,7 +206,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
             const SizedBox(height: 20),
 
-            // État
             const Text("État"),
             const SizedBox(height: 8),
             Container(
@@ -206,7 +230,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
             const SizedBox(height: 20),
 
-            // Localisation
+            // ✅ Localisation (fix)
             const Text("Localisation"),
             const SizedBox(height: 8),
             Container(
@@ -220,16 +244,17 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                 children: [
                   Expanded(
                     child: TextField(
-                      controller: TextEditingController(text: location),
+                      controller: _locationCtrl,
                       readOnly: true,
-                      decoration: const InputDecoration(border: InputBorder.none),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: "Ajouter une localisation",
+                      ),
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.my_location),
-                    onPressed: () {
-                      // Position GPS plus tard
-                    },
+                    onPressed: _fillLocationFromGPS,
                   ),
                 ],
               ),
@@ -237,7 +262,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
             const SizedBox(height: 20),
 
-            // Catégories
             const Text("Catégories"),
             const SizedBox(height: 12),
             CategoriesSelector(
@@ -250,18 +274,17 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
             const SizedBox(height: 25),
 
-            // Photos
             const Text("Photos", style: TextStyle(fontSize: 16)),
             const SizedBox(height: 4),
             const Row(
               children: [
-                Text("Ajouter vos photos ", style: TextStyle(color: Colors.black54)),
+                Text("Ajouter vos photos ",
+                    style: TextStyle(color: Colors.black54)),
                 Text("(Max 5)", style: TextStyle(color: Colors.orange)),
               ],
             ),
             const SizedBox(height: 12),
 
-            // Grille photos
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -276,9 +299,8 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                 final hasPhoto = index < photos.length;
 
                 return GestureDetector(
-                  onLongPress: hasPhoto
-                      ? () => setState(() => photos.removeAt(index))
-                      : null,
+                  onLongPress:
+                      hasPhoto ? () => setState(() => photos.removeAt(index)) : null,
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -306,7 +328,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
           ],
         ),
       ),
-
       bottomNavigationBar: Container(
         color: Colors.white,
         alignment: Alignment.center,
