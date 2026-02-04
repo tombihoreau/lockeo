@@ -45,12 +45,10 @@ export class AuthController {
     return this.auth.signToken(user);
   }
 
-  @Get('me')
-  @ApiOperation({ summary: 'Profil de l’utilisateur courant' })
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ schema: { example: { userId: 'uuid', email: 'alice@lockeo.io', role: 'user' } } })
-  me(@Req() req: RequestWithUser): AuthenticatedUser {
+  @Get('me')
+  me(@Req() req: RequestWithUser) {
     return req.user;
   }
 }
