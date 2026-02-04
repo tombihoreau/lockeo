@@ -27,7 +27,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
 
 @Module({
-  imports: [UsersModule, ConfigModule.forRoot({ isGlobal: true }), CategoriesModule, ProductsModule, FavoritesModule,
+  imports: [
+    UsersModule, 
+    ConfigModule.forRoot({ isGlobal: true }), 
+    CategoriesModule, 
+    ProductsModule, 
+    FavoritesModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -60,7 +65,7 @@ import { join } from 'path';
         } as const;
       },
     }),
-    UsersModule, AuthModule],
+    AuthModule],
   controllers: [AppController],
   providers: [AppService]
 })

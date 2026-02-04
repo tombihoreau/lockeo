@@ -18,7 +18,15 @@ async function bootstrap() {
     .setTitle('Lockeo API')
     .setDescription('Documentation OpenAPI pour le backend Lockeo')
     .setVersion('1.0.0')
-    .addBearerAuth() // si tu utilises JWT
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        in: 'header',
+      },
+      'access-token',
+    )
     .addTag('auth')
     .addTag('users')
     .build();
