@@ -80,7 +80,8 @@ class LocationService {
       return null;
     }
   }
-    Future<String?> getCachedOrCurrentLocationLabel() async {
+
+  Future<String?> getCachedOrCurrentLocationLabel() async {
     final cached = await getStoredLabel();
     if (cached != null && cached.trim().isNotEmpty) return cached;
 
@@ -90,4 +91,11 @@ class LocationService {
     return await getStoredLabel();
   }
 
+  Future<({double lat, double lng})?> getStoredLatLng() async {
+    final sp = await SharedPreferences.getInstance();
+    final lat = sp.getDouble('loc_lat');
+    final lng = sp.getDouble('loc_lng');
+    if (lat == null || lng == null) return null;
+    return (lat: lat, lng: lng);
+  }
 }

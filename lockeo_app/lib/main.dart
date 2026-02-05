@@ -61,7 +61,7 @@ class _MyAppState extends State<MyApp> {
           elevation: 0,
         ),
       ),
-      initialRoute: '/welcome',
+      initialRoute: '/',
 
       // 🧱 Routes statiques
       routes: {
