@@ -137,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(height: 20),
-                  const SuggestionsGrid(maxItems: 4, shrinkWrap: true),
+                  // const SuggestionsGrid(maxItems: 4, shrinkWrap: true),
                   const SizedBox(height: 40),
 
                   Row(
