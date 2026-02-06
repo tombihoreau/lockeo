@@ -7,9 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../models/offerDraft.dart';
 import 'create_offer_step2_screen.dart';
-
-// TODO: adapte l’import selon ton projet
 import '../../services/location_service.dart';
+import 'package:lockeo_app/theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class CreateOfferScreen extends StatefulWidget {
   const CreateOfferScreen({super.key});
@@ -24,7 +24,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
   String? selectedState;
 
-  // ✅ garde une vraie valeur + un controller persistant
   String? location;
   final TextEditingController _locationCtrl = TextEditingController();
 
@@ -72,7 +71,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   }
 
   Future<void> _fillLocationFromGPS() async {
-
     final label = await _loc.getCachedOrCurrentLocationLabel();
     if (label == null || label.trim().isEmpty) return;
 
@@ -114,29 +112,149 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => CreateOfferStep2Screen(draft: draft),
-      ),
+      MaterialPageRoute(builder: (_) => CreateOfferStep2Screen(draft: draft)),
     );
   }
 
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: AppTextStyles.label.copyWith(color: AppColors.cape400),
       filled: true,
       fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(8)),
-        borderSide: BorderSide(color: Color(0xFF00434A), width: 1.8),
-      ),
+      border: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      focusedBorder: InputBorder.none,
+      disabledBorder: InputBorder.none,
+    );
+  }
+
+  Widget buildPhotosPicker({
+    required List<String> photos,
+    required VoidCallback pickPhoto,
+    required VoidCallback onChanged,
+  }) {
+    const double gap = 6;
+    const double radius = 12;
+
+    const double minHeight = 190;
+
+    void removeAt(int index) {
+      if (index >= photos.length) return;
+      photos.removeAt(index);
+      onChanged();
+    }
+
+    Widget tile({required int index, required bool isLarge}) {
+      final bool hasPhoto = index < photos.length;
+
+      return Container(
+        decoration: BoxDecoration(
+          color: hasPhoto ? Colors.white : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(radius),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (hasPhoto)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(radius),
+                child: Image.file(File(photos[index]), fit: BoxFit.cover),
+              )
+            else
+              Center(
+                child: IconButton(
+                  onPressed: photos.length >= 5 ? null : pickPhoto,
+                  icon: Icon(
+                    Icons.add_a_photo_outlined,
+                    size: isLarge ? 34 : 26,
+                    color: Colors.grey.shade600,
+                  ),
+                  splashRadius: isLarge ? 26 : 22,
+                  tooltip: "Ajouter une photo",
+                ),
+              ),
+
+            // Bouton poubelle (uniquement si photo)
+            if (hasPhoto)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: InkWell(
+                  onTap: () => removeAt(index),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.55),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalW = constraints.maxWidth;
+
+        final rightW = totalW * 0.40;
+        final leftW = totalW - gap - rightW;
+        final height = minHeight;
+        final small = (height - gap) / 2;
+
+        return SizedBox(
+          height: height,
+          child: Row(
+            children: [
+              SizedBox(
+                width: leftW,
+                height: height,
+                child: tile(index: 0, isLarge: true),
+              ),
+              const SizedBox(width: gap),
+              SizedBox(
+                width: rightW,
+                height: height,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: small,
+                      child: Row(
+                        children: [
+                          Expanded(child: tile(index: 1, isLarge: false)),
+                          const SizedBox(width: gap),
+                          Expanded(child: tile(index: 2, isLarge: false)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: gap),
+                    SizedBox(
+                      height: small,
+                      child: Row(
+                        children: [
+                          Expanded(child: tile(index: 3, isLarge: false)),
+                          const SizedBox(width: gap),
+                          Expanded(child: tile(index: 4, isLarge: false)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -146,79 +264,110 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       backgroundColor: const Color(0xFFF4F4F4),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pushNamed(context, '/'),
         ),
         centerTitle: true,
-        title: const Text(
-          "Ajouter mon annonce",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
+        title: const Text("Ajouter mon annonce", style: AppTextStyles.h2),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
-            child: Text(
-              "1/2",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
-              ),
-            ),
+            child: Text("1/2", style: AppTextStyles.h3),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Informations générales",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            const Text("Photos", style: AppTextStyles.h3),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text("Ajouter des photos ", style: AppTextStyles.label),
+                Text(
+                  "(Minimum 3 images)",
+                  style: AppTextStyles.label.copyWith(
+                    color: AppColors.primaryRed,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-
-            const Text("Titre"),
             const SizedBox(height: 8),
-            TextField(
-              controller: titleController,
-              decoration: _inputDecoration("Titre de l'annonce"),
+
+            buildPhotosPicker(
+              photos: photos,
+              pickPhoto: pickPhoto,
+              onChanged: () => setState(() {}),
             ),
+            const SizedBox(height: 24),
 
-            const SizedBox(height: 20),
+            const Text("Informations générales", style: AppTextStyles.h3),
+            const SizedBox(height: 12),
 
-            const Text("Description"),
-            const SizedBox(height: 8),
-            TextField(
-              controller: descriptionController,
-              maxLines: 4,
-              decoration: _inputDecoration(
-                "ex : utilisé quelques fois, état, marque...",
-              ),
-            ),
+            const Text("Titre", style: AppTextStyles.label),
+            const SizedBox(height: 4),
 
-            const SizedBox(height: 20),
-
-            const Text("État"),
-            const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              clipBehavior: Clip.antiAlias, // IMPORTANT
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(6),
               ),
+              child: TextField(
+                controller: titleController,
+                style: AppTextStyles.label.copyWith(
+                  color: AppColors.textPrimary, // couleur du texte saisi
+                ),
+                decoration: _inputDecoration("Titre de l'annonce"),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            const Text("Description", style: AppTextStyles.label),
+            const SizedBox(height: 4),
+
+            Container(
+              clipBehavior: Clip.antiAlias, // IMPORTANT
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: TextField(
+                controller: descriptionController,
+                maxLines: 4,
+                style: AppTextStyles.label.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+                decoration: _inputDecoration(
+                  "ex : utilisé quelques fois, état, marque...",
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            const Text("État", style: AppTextStyles.label),
+            const SizedBox(height: 4),
+            Container(
+              clipBehavior: Clip.antiAlias, // IMPORTANT
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   isExpanded: true,
-                  hint: const Text("État"),
+                  style: AppTextStyles.label.copyWith(
+                    color:
+                        AppColors.textPrimary, // couleur du texte sélectionné
+                  ),
+                  hint: const Text("État", style: AppTextStyles.label),
                   value: selectedState,
                   items: ["Neuf", "Très bon", "Bon", "Satisfaisant"]
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -228,27 +377,29 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
 
-            // ✅ Localisation (fix)
-            const Text("Localisation"),
-            const SizedBox(height: 8),
+            const Text("Localisation", style: AppTextStyles.label),
+            const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
+              decoration: BoxDecoration(color: Colors.white),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _locationCtrl,
                       readOnly: true,
-                      decoration: const InputDecoration(
+                      style: AppTextStyles.label.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                      decoration: InputDecoration(
                         border: InputBorder.none,
+
                         hintText: "Ajouter une localisation",
+                        hintStyle: AppTextStyles.label.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
                   ),
@@ -260,10 +411,10 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               ),
             ),
 
-            const SizedBox(height: 20),
-
-            const Text("Catégories"),
             const SizedBox(height: 12),
+
+            const Text("Catégories", style: AppTextStyles.label),
+            const SizedBox(height: 8),
             CategoriesSelector(
               categories: _categories,
               selectedCategories: _selectedCategories,
@@ -271,60 +422,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                 setState(() => _selectedCategories = updatedList);
               },
             ),
-
-            const SizedBox(height: 25),
-
-            const Text("Photos", style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 4),
-            const Row(
-              children: [
-                Text("Ajouter vos photos ",
-                    style: TextStyle(color: Colors.black54)),
-                Text("(Max 5)", style: TextStyle(color: Colors.orange)),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 5,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisExtent: 110,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemBuilder: (_, index) {
-                final hasPhoto = index < photos.length;
-
-                return GestureDetector(
-                  onLongPress:
-                      hasPhoto ? () => setState(() => photos.removeAt(index)) : null,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: hasPhoto
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              File(photos[index]),
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : IconButton(
-                            icon: const Icon(Icons.add_a_photo),
-                            onPressed: pickPhoto,
-                          ),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 120),
           ],
         ),
       ),
@@ -334,10 +431,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         height: 100,
         child: SizedBox(
           width: 300,
-          child: CustomButton(
-            text: "Suivant",
-            onPressed: _goToStep2,
-          ),
+          child: CustomButton(text: "Suivant", onPressed: _goToStep2),
         ),
       ),
     );

@@ -37,13 +37,13 @@ class CategoryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.blue50,
+                color: AppColors.primaryBlue,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 _iconForLabel(name),
                 size: 18,
-                color: AppColors.blue900,
+                color: Colors.white,
               ),
             ),
             const SizedBox(width: 8),

@@ -388,7 +388,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       const SizedBox(height: 4),
 
                                       Text(
-                                        "$ownerOffersCount transactions", // ✅ vrai chiffre
+                                        "$ownerOffersCount transactions", 
                                         style: AppTextStyles.label.copyWith(
                                           color: Colors.black.withOpacity(0.6),
                                         ),
@@ -408,7 +408,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   child: CustomButton(
                                     text: "Contacter",
                                     onPressed: () {
-                                      // 1) si une conversation existe déjà avec ce propriétaire -> /conversation avec l'id
                                       final existingConversationId =
                                           _findConversationIdWithUser(
                                             conversations: conversations,
@@ -427,15 +426,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         return;
                                       }
 
-                                      // 2) sinon -> il faudrait créer une conversation
-                                      // ⚠️ pas possible avec un JSON statique (pas de persistence).
-                                      // TODO: appeler ton backend / service pour créer une conversation et récupérer l'id
-                                      // final newId = await dataService.createConversation(...);
-                                      // Navigator.pushNamed(context, '/conversation', arguments: newId);
-
-                                      // En attendant : tu peux naviguer vers /conversation sans id,
-                                      // ou afficher un message.
-                                      // Navigator.pushNamed(context, '/conversation');
                                     },
                                   ),
                                 ),

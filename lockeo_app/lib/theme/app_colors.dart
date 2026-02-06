@@ -15,5 +15,6 @@ class AppColors {
   static const Color textGrey800 = Color(0xFF6D7274);
   static const Color cape200 = Color(0xFFF0F2F5);
   static const Color cape300 = Color(0xFFE6E6E6);
+  static const Color cape400 = Color(0xFFCFCFCF);
   static const Color jaunedegueu = Color(0xFFF69F1D);
 }

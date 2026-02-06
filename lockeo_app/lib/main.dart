@@ -70,7 +70,7 @@ class _MyAppState extends State<MyApp> {
         '/categories': (context) =>
             const MainScaffold(currentIndex: 0, child: CategoriesScreen()),
         '/create': (context) =>
-            const MainScaffold(currentIndex: 3, child: CreateOfferScreen()),
+            const MainScaffold(currentIndex: 0, showBottomBar: false, child: CreateOfferScreen()),
         '/userProfile': (context) =>
             const MainScaffold(currentIndex: 4, child: UserProfileScreen()),
         '/discover': (context) =>
