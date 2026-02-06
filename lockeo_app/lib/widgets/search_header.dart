@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class SearchHeader extends StatelessWidget {
   final String? initialQuery;
@@ -53,13 +54,11 @@ class SearchHeader extends StatelessWidget {
                   ),
                 ),
               if (showBackButton) const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
                   "Que recherchez-vous ?",
-                  style: TextStyle(
+                  style: AppTextStyles.h2.copyWith(
                     color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),

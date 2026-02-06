@@ -5,6 +5,8 @@
     "description": "VTT tout terrain parfait pour balade en forêt.",
     "price": 20.0,
     "price_estimate": 18.0,
+    "price_3_days": 55.0,
+    "price_7_days": 120.0,
     "state": "Très bon état",
     "longitude": -1.6778,
     "latitude": 48.1173,

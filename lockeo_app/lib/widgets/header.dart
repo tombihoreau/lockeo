@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../screens/search_screen.dart';
 import '../theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class Header extends StatefulWidget {
   final String? userName; // 🔹 optionnel
@@ -38,7 +38,7 @@ class _HeaderState extends State<Header> {
         // 🟩 Fond principal
         SizedBox(
           width: double.infinity,
-          height: widget.isHome ? 280 + statusBarHeight : 180 + statusBarHeight,
+          height: 260 + statusBarHeight,
           child: DecoratedBox(
             decoration: const BoxDecoration(
               color: AppColors.background,
@@ -69,36 +69,38 @@ class _HeaderState extends State<Header> {
                       child: Text.rich(
                         TextSpan(
                           children: [
-                            const TextSpan(
+                            TextSpan(
                               text: "Bonjour,\n",
-                              style: TextStyle(
+                              style: AppTextStyles.h1.copyWith(
                                 color: Colors.white,
-                                fontSize: 22,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
                             TextSpan(
                               text: widget.userName,
-                              style: const TextStyle(
+                              style: AppTextStyles.h1.copyWith(
                                 color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.secondaryBlue,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.notifications_none,
-                        color: Colors.white,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/notifications');
+                      },
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.secondaryBlue,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.notifications_none,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -112,13 +114,9 @@ class _HeaderState extends State<Header> {
               const SizedBox(height: 10),
 
               // 🔍 Titre de recherche
-              const Text(
+              Text(
                 "Que recherchez-vous ?",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppTextStyles.h2.copyWith(color: Colors.white),
               ),
 
               const SizedBox(height: 10),
@@ -128,13 +126,6 @@ class _HeaderState extends State<Header> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
                 ),
                 child: TextField(
                   controller: _controller,
@@ -179,11 +170,7 @@ class _HeaderState extends State<Header> {
                     const SizedBox(width: 6),
                     Text(
                       widget.location!,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
+                      style: AppTextStyles.label.copyWith(color: Colors.white),
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(width: 6),

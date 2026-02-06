@@ -12,7 +12,7 @@ class ProductGrid extends StatelessWidget {
   final bool randomize;
   final bool favoritesOnly;
   final String? searchQuery;
-  final List<String>? selectedCategories;
+  final List<int>? selectedCategories;
   final double? maxDistance;
   final RangeValues? priceRange;
   final String? sortBy;
@@ -55,19 +55,13 @@ class ProductGrid extends StatelessWidget {
         final images = snapshot.data![1] as List<ImageModel>;
         final allOffers = snapshot.data![2] as List<Offer>;
 
-        // 🔹 Filtrer uniquement les favoris si demandé
         if (favoritesOnly) {
           products = products.where((p) => p.isFavorite).toList();
         }
 
-        // 🔹 Filtrer par catégories si présentes (attend que Product ait un champ 'category')
         if (selectedCategories != null && selectedCategories!.isNotEmpty) {
           products = products.where((p) {
-            // Si le produit a plusieurs catégories
-            final productCategories = (p.categoryIds ?? [])
-                .map((id) => id.toString())
-                .toList();
-
+            final productCategories = p.categoryIds;
             return productCategories.any(
               (id) => selectedCategories!.contains(id),
             );
@@ -180,7 +174,7 @@ class ProductGrid extends StatelessWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 6,
             mainAxisSpacing: 6,
-            childAspectRatio: 0.6,
+            childAspectRatio: 0.62,
           ),
           itemCount: displayedOffers.length,
           itemBuilder: (context, index) {

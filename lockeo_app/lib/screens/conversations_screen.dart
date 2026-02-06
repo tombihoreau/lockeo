@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/local_data_service.dart';
-import '../models/conversation.dart';
-import '../models/message.dart';
 import '../models/user.dart';
 import 'conversation_screen.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class ConversationsScreen extends StatefulWidget {
   const ConversationsScreen({super.key});
@@ -100,12 +100,19 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Messagerie"),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
         elevation: 0,
+        centerTitle: false,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pushNamed(context, '/'),
+        ),
+        title: Text(
+          "Messagerie",
+          style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
+        ),
       ),
       body: SafeArea(
         child: FutureBuilder<_ConversationsVm>(
@@ -116,7 +123,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             }
             if (snapshot.hasError) {
               return Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Text("Erreur: ${snapshot.error}"),
               );
             }
@@ -127,9 +134,16 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
             }
 
             return ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 21),
               itemCount: rows.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              separatorBuilder: (_, __) => const Padding(
+                padding: EdgeInsets.only(left: 0), // aligné après l’avatar
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Color(0xFFE5E5E5),
+                ),
+              ),
               itemBuilder: (context, i) {
                 final row = rows[i];
                 return _ConversationTile(
@@ -194,7 +208,7 @@ class _ConversationTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
               ClipRRect(
@@ -214,14 +228,11 @@ class _ConversationTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: isUnread
-                            ? FontWeight.w700
-                            : FontWeight.w600,
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.w400,
                         color: isUnread
-                            ? const Color(0xFF0C88A6)
-                            : Colors.black,
+                            ? AppColors.primaryRed
+                            : AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -229,12 +240,11 @@ class _ConversationTile extends StatelessWidget {
                       lastMessage,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textPrimary,
                         fontWeight: isUnread
                             ? FontWeight.w600
                             : FontWeight.w400,
-                        color: const Color(0xFF2F3A3F),
                       ),
                     ),
                   ],
@@ -262,8 +272,8 @@ class _ConversationTile extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2C8AA0),
-                        borderRadius: BorderRadius.circular(999),
+                        color: AppColors.primaryRed,
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         unreadCount.toString(),

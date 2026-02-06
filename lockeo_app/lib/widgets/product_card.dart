@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../models/image.dart';
 import '../theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../services/approx_loc_service.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -36,7 +38,6 @@ class ProductCard extends StatelessWidget {
               fit: BoxFit.cover,
             ),
 
-            // Padding uniquement en bas
             const SizedBox(height: 12),
 
             // Infos produit
@@ -49,18 +50,10 @@ class ProductCard extends StatelessWidget {
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                    style: AppTextStyles.h3.copyWith(color: Colors.black),
                   ),
-                  Text(
-                    "${product.city}, ${product.postalCode}",
-                    style: const TextStyle(
-                      color: AppColors.textGrey,
-                      fontSize: 12,
-                    ),
-                  ),
+                  const SizedBox(height: 10),
+                  _distanceOrCity(),
                 ],
               ),
             ),
@@ -74,15 +67,14 @@ class ProductCard extends StatelessWidget {
                 children: [
                   Text(
                     "${product.price?.toStringAsFixed(0)}€",
-                    style: const TextStyle(
-                      color: AppColors.textGrey,
-                      fontSize: 14,
-                    ),
+                    style: AppTextStyles.label.copyWith(color: Colors.black),
                   ),
 
-                  const Text(
+                  Text(
                     "1 journée",
-                    style: TextStyle(fontSize: 12, color: AppColors.textGrey),
+                    style: AppTextStyles.label.copyWith(
+                      color: AppColors.textGrey,
+                    ),
                   ),
                 ],
               ),
@@ -90,6 +82,35 @@ class ProductCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _distanceOrCity() {
+    final approx = ApproxLocationService();
+
+    return FutureBuilder<double?>(
+      future: approx.distanceFromUser(product.city),
+      builder: (context, snap) {
+        String label;
+
+        if (!snap.hasData || snap.data == null) {
+          label = product.city;
+        } else {
+          final km = snap.data!;
+          label = km < 10 ? "${km.toStringAsFixed(1)} km" : "${km.round()} km";
+        }
+
+        return Row(
+          children: [
+            Icon(Icons.place_outlined, size: 10, color: AppColors.textGrey),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppTextStyles.label.copyWith(color: AppColors.textGrey),
+            ),
+          ],
+        );
+      },
     );
   }
 }

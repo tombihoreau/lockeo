@@ -1,7 +1,8 @@
 class Reservation {
   final int reservationId;
-  final int userId;
   final int productId;
+  final int ownerId;
+  final int renterId;
   final DateTime startDate;
   final DateTime endDate;
   final String status;
@@ -12,7 +13,8 @@ class Reservation {
 
   Reservation({
     required this.reservationId,
-    required this.userId,
+    required this.ownerId,
+    required this.renterId,
     required this.productId,
     required this.startDate,
     required this.endDate,
@@ -26,7 +28,8 @@ class Reservation {
   factory Reservation.fromJson(Map<String, dynamic> json) {
     return Reservation(
       reservationId: json['reservation_id'],
-      userId: json['user_id'],
+      ownerId: json['owner_id'],
+      renterId: json['renter_id'],
       productId: json['product_id'],
       startDate: DateTime.parse(json['start_date']),
       endDate: DateTime.parse(json['end_date']),

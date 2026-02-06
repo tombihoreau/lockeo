@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import '../models/offer.dart';
 import '../services/local_data_service.dart';
 import '../models/product.dart';
+import '../models/image.dart';
 import '../widgets/button.dart';
 import 'confirmation_reservation_screen.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../theme/app_colors.dart';
+import 'package:intl/intl.dart';
 
 class ReservationPaymentScreen extends StatefulWidget {
   final int offerId;
   final DateTime startDate;
   final DateTime endDate;
 
-  ReservationPaymentScreen({
+  const ReservationPaymentScreen({
     super.key,
     required this.offerId,
     required this.startDate,
@@ -27,6 +31,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
 
   Offer? _offer;
   Product? _product;
+  ImageModel? _img;
 
   @override
   void initState() {
@@ -39,11 +44,16 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
 
     if (offer == null) return;
     final products = await dataService.loadProducts();
+    final images = await dataService.loadImages();
     final product = products.firstWhere((p) => p.productId == offer.productId);
+    final productImage = images.firstWhere(
+      (img) => img.productId == product.productId,
+    );
 
     setState(() {
       _offer = offer;
       _product = product;
+      _img = productImage;
     });
   }
 
@@ -64,12 +74,11 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "Réserver votre location",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+        title: Text(
+          "Demande de location",
+          style: AppTextStyles.h1.copyWith(color: AppColors.textPrimary),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -80,13 +89,13 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 🧱 Carte produit
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -96,9 +105,9 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.asset(
-                        "assets/images/default.jpg",
-                        width: 80,
-                        height: 80,
+                        _img?.url ?? 'assets/images/default.jpg',
+                        width: 110,
+                        height: 110,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -109,15 +118,46 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                         children: [
                           Text(
                             _product!.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                            style: AppTextStyles.h2.copyWith(
+                              color: Colors.black,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "${(_product?.price ?? 0).round()}€ / jour",
-                            style: const TextStyle(color: Colors.black54),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                color: Colors.black,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  "${_product?.city}, ${_product?.postalCode}",
+                                  style: AppTextStyles.label.copyWith(
+                                    color: Colors.black,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.savings_outlined,
+                                color: AppColors.textPrimary,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "${(_product?.price ?? 0).round()}€ / jour",
+                                style: AppTextStyles.label.copyWith(
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -126,70 +166,118 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-              // 📅 Dates de location
-              const Text(
-                "Jour de location",
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
+              //  Dates de location
               Text(
-                "${_formatDate(widget.startDate)} → ${_formatDate(widget.endDate)} ($_days jours)",
-                style: const TextStyle(color: Colors.black87),
+                "Durée de location",
+                style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
               ),
-
-              const SizedBox(height: 24),
-
-              // 🛡️ Assurance
-              const Text(
-                "Assurance",
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(
-                    child: Text(
-                      "Protection contre les dommages pendant la location.",
-                      style: TextStyle(color: Colors.grey.shade700),
+                  const Icon(
+                    Icons.calendar_month,
+                    color: AppColors.textPrimary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    "Du ${_formatDate(widget.startDate)} au ${_formatDate(widget.endDate)}",
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.normal,
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               // 💳 Détail du paiement
-              const Text(
+              Text(
                 "Détail du paiement",
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              _priceRow("Location ($_days jours)", _rentalPrice),
-              _priceRow(
-                "Assurance",
-                _insurancePrice,
-                color: Color.fromRGBO(212, 133, 13, 1),
+                style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
               ),
 
-              const Divider(height: 32),
-              _priceRow("Total", _total, isBold: true),
+              const SizedBox(height: 10),
 
-              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Location ($_days jours)",
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                    Text(
+                      "${_rentalPrice.toStringAsFixed(2)}€",
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Comission Lockeo",
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textGrey800,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                    Text(
+                      "${_insurancePrice.toStringAsFixed(2)}€",
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textGrey800,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      "${_total.toStringAsFixed(2)}€",
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 41,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 32),
 
               // 💰 Moyens de paiement
-              const Text(
+              Text(
                 "Moyen de paiement",
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _paymentTile("Carte"),
-                  _paymentTile("Apple Pay"),
-                  _paymentTile("PayPal"),
+                  _paymentTile('assets/images/LogoPaiement.png'),
+                  _paymentTile('assets/images/LogoPaiement-1.png'),
+                  _paymentTile('assets/images/LogoPaiement-2.png'),
                 ],
               ),
 
@@ -212,7 +300,12 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const ReservationConfirmationScreen(),
+                  builder: (_) =>
+                      ReservationConfirmationScreen(
+                        offerId: widget.offerId,
+                        startDate: widget.startDate,
+                        endDate: widget.endDate,
+                      ),
                 ),
               );
             },
@@ -222,37 +315,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
     );
   }
 
-  Widget _priceRow(
-    String label,
-    double price, {
-    bool isBold = false,
-    Color? color,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.normal,
-              color: color,
-            ),
-          ),
-          Text(
-            "${price.toStringAsFixed(2)}€",
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.normal,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _paymentTile(String label) {
+  Widget _paymentTile(String assetPath) {
     return Expanded(
       child: Container(
         height: 56,
@@ -262,10 +325,18 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.center,
-        child: Text(label),
+        child: Image.asset(
+          assetPath,
+          width: 70,
+          height: 43,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }
 
-  String _formatDate(DateTime d) => "${d.day}/${d.month}/${d.year}";
+  String _formatDate(DateTime d) {
+    final formatted = DateFormat('d MMMM y', 'fr_FR').format(d);
+    return formatted[0].toUpperCase() + formatted.substring(1);
+  }
 }

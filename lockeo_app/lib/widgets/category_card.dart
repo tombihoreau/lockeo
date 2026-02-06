@@ -1,25 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class CategoryCard extends StatelessWidget {
   final String name;
   final VoidCallback? onTap;
 
   const CategoryCard({super.key, required this.name, this.onTap});
-
   IconData _iconForLabel(String label) {
     final normalized = label.toLowerCase();
-    if (normalized.contains('vélo') || normalized.contains('velo'))
-      return LucideIcons.bike;
-    if (normalized.contains('hiver')) return LucideIcons.snowflake;
-    if (normalized.contains('nata') || normalized.contains('eau'))
-      return LucideIcons.waves;
-    if (normalized.contains('randonn') || normalized.contains('mont'))
-      return LucideIcons.mountain;
-    if (normalized.contains('camp')) return LucideIcons.tent;
-    if (normalized.contains('escala') || normalized.contains('grimpe'))
-      return LucideIcons.hand;
+    if (normalized.contains('vélo') || normalized.contains('velo')) {
+      return LucideIcons.mountainSnow;
+    }
+    if (normalized.contains('nautique')) return LucideIcons.waves;
+    if (normalized.contains('randonnée')) return LucideIcons.trees;
+    if (normalized.contains('sport de balle')) return LucideIcons.dribbble;
     return LucideIcons.box;
   }
 
@@ -41,26 +37,20 @@ class CategoryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.blue50,
+                color: AppColors.primaryBlue,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 _iconForLabel(name),
                 size: 18,
-                color: AppColors.blue900,
+                color: Colors.white,
               ),
             ),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
                 name,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.blue900,
-                ),
-                softWrap: true,
-                overflow: TextOverflow.visible,
+                style: AppTextStyles.caption.copyWith(color: Colors.black),
               ),
             ),
             const SizedBox(width: 4),

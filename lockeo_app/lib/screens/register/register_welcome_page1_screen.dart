@@ -67,7 +67,7 @@ class RegisterWelcomePage1Screen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Louer plutôt qu’acheter",
+                        "Louez plutôt qu’acheter",
                         style: AppTextStyles.h2.copyWith(color: Colors.white),
                       ),
                       SizedBox(height: 4),

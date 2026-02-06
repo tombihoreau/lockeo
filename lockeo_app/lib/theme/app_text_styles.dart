@@ -24,7 +24,7 @@ class AppTextStyles {
 
   // 🟦 HEADING 3
   static const TextStyle h3 = TextStyle(
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: FontWeight.w600, // SemiBold
     height: 1.3,
   );

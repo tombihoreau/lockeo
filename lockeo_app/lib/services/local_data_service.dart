@@ -9,6 +9,10 @@ import '../models/review.dart';
 import '../models/reservation.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
+import '../models/product_unavailability.dart';
+import '../models/inventory.dart';
+import '../models/notification_template.dart';
+import '../models/user_notification.dart';
 
 class LocalDataService {
   Future<List<Product>> loadProducts() async {
@@ -36,13 +40,49 @@ class LocalDataService {
   }
 
   Future<List<Reservation>> loadReservations() async {
-    return loadJson<Reservation>("reservations", (json) => Reservation.fromJson(json));
+    return loadJson<Reservation>(
+      "reservations",
+      (json) => Reservation.fromJson(json),
+    );
   }
+
   Future<List<Conversation>> loadConversations() async {
-    return loadJson<Conversation>("conversations", (json) => Conversation.fromJson(json));
+    return loadJson<Conversation>(
+      "conversations",
+      (json) => Conversation.fromJson(json),
+    );
   }
+
   Future<List<Message>> loadMessages() async {
     return loadJson<Message>("messages", (json) => Message.fromJson(json));
+  }
+
+  Future<List<ProductUnavailability>> loadProductUnavailabilities() async {
+    return loadJson<ProductUnavailability>(
+      "product_unavailabilities",
+      (json) => ProductUnavailability.fromJson(json),
+    );
+  }
+
+  Future<List<Inventory>> loadInventories() async {
+    return loadJson<Inventory>(
+      "inventories",
+      (json) => Inventory.fromJson(json),
+    );
+  }
+
+  Future<List<NotificationTemplate>> loadNotificationTemplates() async {
+    return loadJson<NotificationTemplate>(
+      "notifications_templates",
+      (json) => NotificationTemplate.fromJson(json),
+    );
+  }
+
+  Future<List<UserNotification>> loadUserNotifications() async {
+    return loadJson<UserNotification>(
+      "user_notifications",
+      (json) => UserNotification.fromJson(json),
+    );
   }
 
   Future<List<T>> loadJson<T>(
@@ -102,39 +142,47 @@ class LocalDataService {
   }
 
   // Conversations for current user
-Future<List<Conversation>> getConversationsForCurrentUser() async {
-  final current = await getCurrentUser();
-  if (current == null) return [];
+  Future<List<Conversation>> getConversationsForCurrentUser() async {
+    final current = await getCurrentUser();
+    if (current == null) return [];
 
-  final conversations = await loadConversations();
-  final items = conversations.where((c) => c.userIds.contains(current.userId)).toList();
+    final conversations = await loadConversations();
+    final items = conversations
+        .where((c) => c.userIds.contains(current.userId))
+        .toList();
 
-  // sort by last message date desc
-  items.sort((a, b) => b.lastMessageAt.compareTo(a.lastMessageAt));
-  return items;
-}
-
-// Messages for a conversation
-Future<List<Message>> getMessagesByConversationId(int conversationId) async {
-  final messages = await loadMessages();
-  final items = messages.where((m) => m.conversationId == conversationId).toList();
-
-  // sort by date asc
-  items.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-  return items;
-}
-
-// Find an existing conversation for product + 2 users
-Future<Conversation?> findConversation(int productId, int user1Id, int user2Id) async {
-  final conversations = await loadConversations();
-
-  for (final c in conversations) {
-    if (c.productId != productId) continue;
-    if (c.userIds.length != 2) continue;
-    if (c.userIds.contains(user1Id) && c.userIds.contains(user2Id)) {
-      return c;
-    }
+    // sort by last message date desc
+    items.sort((a, b) => b.lastMessageAt.compareTo(a.lastMessageAt));
+    return items;
   }
-  return null;
-}
+
+  // Messages for a conversation
+  Future<List<Message>> getMessagesByConversationId(int conversationId) async {
+    final messages = await loadMessages();
+    final items = messages
+        .where((m) => m.conversationId == conversationId)
+        .toList();
+
+    // sort by date asc
+    items.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return items;
+  }
+
+  // Find an existing conversation for product + 2 users
+  Future<Conversation?> findConversation(
+    int productId,
+    int user1Id,
+    int user2Id,
+  ) async {
+    final conversations = await loadConversations();
+
+    for (final c in conversations) {
+      if (c.productId != productId) continue;
+      if (c.userIds.length != 2) continue;
+      if (c.userIds.contains(user1Id) && c.userIds.contains(user2Id)) {
+        return c;
+      }
+    }
+    return null;
+  }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lockeo_app/models/review.dart';
 import 'package:lockeo_app/models/user.dart';
+import '../theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
 class ReviewsList extends StatelessWidget {
   final List<Review> reviews;
@@ -15,24 +17,17 @@ class ReviewsList extends StatelessWidget {
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.only(top: 2),
       itemCount: reviews.length,
       itemBuilder: (context, index) {
         final r = reviews[index];
         final author = allUsers.firstWhere((u) => u.userId == r.authorId);
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,24 +44,10 @@ class ReviewsList extends StatelessWidget {
                   Expanded(
                     child: Text(
                       author.firstName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                      style: AppTextStyles.h2.copyWith(
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 18),
-                      const SizedBox(width: 4),
-                      Text(
-                        "${r.rating}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -74,12 +55,33 @@ class ReviewsList extends StatelessWidget {
               const SizedBox(height: 12),
 
               // Titre
-              Text(
-                r.title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                children: [
+                  Text(
+                    r.title,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star,
+                        color: AppColors.jaunedegueu,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "${r.rating}",
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.jaunedegueu,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
 
               const SizedBox(height: 6),
