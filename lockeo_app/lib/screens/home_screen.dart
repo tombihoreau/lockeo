@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // 🟢 Header en plein écran
             Header(
               userName: AuthSession.instance.displayName,
-              location: "Rennes, France",
+              location: _locationLabel,
               isHome: true,
             ),
 
