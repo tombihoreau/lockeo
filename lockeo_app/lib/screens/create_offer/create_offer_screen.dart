@@ -80,6 +80,26 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     });
   }
 
+  Set<int> _withParents(Set<int> selectedIds) {
+    if (_categories.isEmpty) return selectedIds;
+
+    // Map id -> Category pour lookup rapide
+    final byId = {for (final c in _categories) c.categoryId: c};
+
+    final result = <int>{...selectedIds};
+
+    // Ajoute parents (et parents de parents) tant qu'il y en a
+    for (final id in selectedIds) {
+      Category? current = byId[id];
+      while (current != null && current.parentId != 0) {
+        result.add(current.parentId ?? 0);
+        current = byId[current.parentId];
+      }
+    }
+
+    return result;
+  }
+
   void _goToStep2() {
     if (titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -101,12 +121,16 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       return;
     }
 
+    final enrichedCategoryIds = _withParents(
+      _selectedCategories.toSet(),
+    ).toList();
+
     final draft = OfferDraft(
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       state: selectedState,
-      location: location, // ✅ récupère la valeur
-      categories: _selectedCategories,
+      location: location,
+      categories: enrichedCategoryIds,
       photos: photos,
     );
 
@@ -265,16 +289,35 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pushNamed(context, '/'),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: InkWell(
+            onTap: () => Navigator.pop(context),
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: const Icon(Icons.chevron_left, color: Colors.black),
+            ),
+          ),
         ),
-        centerTitle: true,
-        title: const Text("Ajouter mon annonce", style: AppTextStyles.h2),
-        actions: const [
+        centerTitle: false,
+        title: Text(
+          "Ajouter mon annonce",
+          style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
+        ),
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Text("1/2", style: AppTextStyles.h3),
+            padding: const EdgeInsets.only(right: 16),
+            child: Text(
+              "1/3",
+              style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
+            ),
           ),
         ],
       ),

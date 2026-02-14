@@ -17,4 +17,5 @@ class AppColors {
   static const Color cape300 = Color(0xFFE6E6E6);
   static const Color cape400 = Color(0xFFCFCFCF);
   static const Color jaunedegueu = Color(0xFFF69F1D);
+  static const Color green = Color(0xFF2FB551);
 }
