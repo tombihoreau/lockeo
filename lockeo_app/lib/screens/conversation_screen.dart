@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../services/local_data_service.dart';
 import '../services/chat_socket_service.dart';
 import '../services/auth_session.dart';
+import '../services/conversations_service.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
 import '../models/offer.dart';
@@ -33,6 +34,7 @@ class ConversationScreen extends StatefulWidget {
 class _ConversationScreenState extends State<ConversationScreen> {
   final _dataService = LocalDataService();
   final _chatSocketService = ChatSocketService();
+  final _conversationsService = ConversationsService();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -47,6 +49,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
   Inventory? _inventory;
 
   User? _otherUser;
+  String _otherUserName = "";
 
   List<Message> _messages = [];
   bool _loading = true;
@@ -181,6 +184,19 @@ class _ConversationScreenState extends State<ConversationScreen> {
             .toList()
           ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
+    ConversationSnapshot? backendSnapshot;
+    try {
+      backendSnapshot = await _conversationsService.fetchConversationSnapshot(
+        conversationId: widget.conversationId,
+      );
+    } catch (_) {
+      backendSnapshot = null;
+    }
+
+    final resolvedMessages = backendSnapshot?.messages ?? convoMessages;
+    final resolvedOtherUserName = backendSnapshot?.otherUser?.displayName ??
+        _localDisplayName(otherUser);
+
     setState(() {
       _currentUserId = currentUserId;
 
@@ -190,11 +206,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
       _productImage = productImage;
 
       _otherUser = otherUser;
+      _otherUserName = resolvedOtherUserName;
 
       _reservation = reservation;
       _inventory = inventory;
 
-      _messages = convoMessages;
+      _messages = resolvedMessages;
       _loading = false;
     });
 
@@ -598,7 +615,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                         priceLabel:
                             "${(_product?.price ?? 0).toStringAsFixed(0)}€/jour",
                         dateLabel: _formatRangeLabel(_reservation),
-                        otherUserName: _otherUser?.firstName ?? "",
+                        otherUserName: _otherUserName,
                         imagePath:
                             _productImage?.url ?? 'assets/images/default.jpg',
                         cityLabel: _product?.city ?? "",
@@ -669,6 +686,16 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final h = local.hour.toString().padLeft(2, '0');
     final min = local.minute.toString().padLeft(2, '0');
     return "$h:$min";
+  }
+
+  String _localDisplayName(User? user) {
+    if (user == null) return "";
+    if (user.login.trim().isNotEmpty) return user.login.trim();
+    final first = user.firstName.trim();
+    if (first.isNotEmpty) return first;
+    final last = user.lastName.trim();
+    if (last.isNotEmpty) return last;
+    return "";
   }
 }
 

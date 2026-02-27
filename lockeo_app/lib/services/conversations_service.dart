@@ -1,5 +1,6 @@
 import '../services/api_client.dart';
 import '../services/auth_session.dart';
+import '../models/message.dart';
 
 class ConversationListItem {
   final int conversationId;
@@ -14,6 +15,42 @@ class ConversationListItem {
     required this.lastText,
     required this.lastMessageAt,
     required this.unreadCount,
+  });
+}
+
+class ConversationParticipant {
+  final int userId;
+  final String? login;
+  final String? firstName;
+  final String? lastName;
+
+  const ConversationParticipant({
+    required this.userId,
+    this.login,
+    this.firstName,
+    this.lastName,
+  });
+
+  String get displayName {
+    final safeLogin = login?.trim();
+    if (safeLogin != null && safeLogin.isNotEmpty) return safeLogin;
+
+    final parts = [firstName, lastName]
+        .where((p) => p != null && p.trim().isNotEmpty)
+        .map((p) => p!.trim())
+        .toList();
+    if (parts.isNotEmpty) return parts.join(' ');
+    return 'Utilisateur';
+  }
+}
+
+class ConversationSnapshot {
+  final ConversationParticipant? otherUser;
+  final List<Message> messages;
+
+  const ConversationSnapshot({
+    required this.otherUser,
+    required this.messages,
   });
 }
 
@@ -35,6 +72,65 @@ class ConversationsService {
         .whereType<Map>()
         .map((raw) => _fromJson(raw.cast<String, dynamic>()))
         .toList();
+  }
+
+  Future<int> ensureConversationWithUser({required int otherUserId}) async {
+    final token = AuthSession.instance.accessToken;
+    if (token == null || token.trim().isEmpty) {
+      throw StateError('Utilisateur non connecté');
+    }
+
+    _api.setBearerToken(token);
+    final json = await _api.postJson(
+      '/conversations/ensure',
+      body: {'otherUserId': otherUserId},
+    );
+
+    final conversationId = _toInt(json['conversation_id']);
+    if (conversationId == null || conversationId <= 0) {
+      throw const FormatException('Réponse invalide: conversation_id manquant');
+    }
+    return conversationId;
+  }
+
+  Future<ConversationSnapshot> fetchConversationSnapshot({
+    required int conversationId,
+  }) async {
+    final token = AuthSession.instance.accessToken;
+    if (token == null || token.trim().isEmpty) {
+      throw StateError('Utilisateur non connecté');
+    }
+
+    _api.setBearerToken(token);
+    final rows = await _api.getJsonList('/conversations');
+    final row = rows.whereType<Map>().map((r) => r.cast<String, dynamic>()).firstWhere(
+      (r) => _toInt(r['conversation_id']) == conversationId,
+      orElse: () => <String, dynamic>{},
+    );
+
+    ConversationParticipant? otherUser;
+    final otherRaw = row['other_user'];
+    if (otherRaw is Map) {
+      final other = otherRaw.map((k, v) => MapEntry(k.toString(), v));
+      final userId = _toInt(other['user_id']);
+      if (userId != null) {
+        otherUser = ConversationParticipant(
+          userId: userId,
+          login: (other['login'] as String?)?.trim(),
+          firstName: (other['first_name'] as String?)?.trim(),
+          lastName: (other['last_name'] as String?)?.trim(),
+        );
+      }
+    }
+
+    final messageRows = await _api.getJsonList('/conversations/$conversationId/messages');
+    final messages = messageRows
+        .whereType<Map>()
+        .map((raw) => _messageFromJson(raw.cast<String, dynamic>()))
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+    return ConversationSnapshot(otherUser: otherUser, messages: messages);
   }
 
   ConversationListItem _fromJson(Map<String, dynamic> json) {
@@ -104,5 +200,19 @@ class ConversationsService {
     if (value is int) return value;
     if (value is String) return int.tryParse(value);
     return null;
+  }
+
+  Message _messageFromJson(Map<String, dynamic> json) {
+    return Message(
+      messageId: _toInt(json['message_id']) ?? 0,
+      conversationId: _toInt(json['conversation_id']) ?? 0,
+      senderUserId: _toInt(json['sender_user_id']) ?? 0,
+      text: (json['text'] as String?) ?? '',
+      status: (json['status'] as String?) ?? 'sent',
+      createdAt: DateTime.parse(
+        (json['created_at'] as String?) ?? DateTime.now().toUtc().toIso8601String(),
+      ),
+      readAt: json['read_at'] is String ? DateTime.parse(json['read_at'] as String) : null,
+    );
   }
 }

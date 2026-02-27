@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation } from '../entities/conversation.entity';
@@ -31,6 +31,11 @@ export interface ConversationListItemPayload {
     created_at: string;
   } | null;
   unread_count: number;
+}
+
+export interface EnsureConversationPayload {
+  conversation_id: number;
+  is_created: boolean;
 }
 
 @Injectable()
@@ -116,7 +121,6 @@ export class MessagingService {
                 created_at: lastMessage.created_at.toISOString(),
               }
             : null,
-          // Le schéma actuel ne stocke pas read_at/status côté DB.
           unread_count: 0,
         } satisfies ConversationListItemPayload;
       }),
@@ -129,6 +133,53 @@ export class MessagingService {
     });
 
     return rows;
+  }
+
+  async ensureConversationBetweenUsers(currentUserId: number, otherUserId: number): Promise<EnsureConversationPayload> {
+    if (currentUserId === otherUserId) {
+      throw new BadRequestException('Impossible de créer une conversation avec soi-même');
+    }
+
+    const [currentUser, otherUser] = await Promise.all([
+      this.userRepo.findOne({ where: { user_id: currentUserId } }),
+      this.userRepo.findOne({ where: { user_id: otherUserId } }),
+    ]);
+
+    if (!currentUser) {
+      throw new NotFoundException('Utilisateur courant introuvable');
+    }
+
+    if (!otherUser) {
+      throw new NotFoundException('Utilisateur cible introuvable');
+    }
+
+    const existing = await this.conversationRepo.findOne({
+      where: [
+        { renter: { user_id: currentUserId }, owner: { user_id: otherUserId } },
+        { renter: { user_id: otherUserId }, owner: { user_id: currentUserId } },
+      ],
+      relations: ['renter', 'owner'],
+      order: { conversation_id: 'DESC' },
+    });
+
+    if (existing) {
+      return {
+        conversation_id: existing.conversation_id,
+        is_created: false,
+      };
+    }
+
+    const created = await this.conversationRepo.save(
+      this.conversationRepo.create({
+        renter: currentUser,
+        owner: otherUser,
+      }),
+    );
+
+    return {
+      conversation_id: created.conversation_id,
+      is_created: true,
+    };
   }
 
   async sendMessage(conversationId: number, senderUserId: number, text: string): Promise<MessagePayload> {

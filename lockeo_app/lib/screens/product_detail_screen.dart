@@ -8,10 +8,10 @@ import '../models/category.dart';
 import '../models/reservation.dart';
 import '../models/product_unavailability.dart';
 import '../models/review.dart';
-import '../models/conversation.dart';
-import '../models/message.dart';
 
 import '../services/local_data_service.dart';
+import '../services/conversations_service.dart';
+import '../services/auth_session.dart';
 
 import '../widgets/images_slider.dart';
 import '../widgets/category_card.dart';
@@ -34,6 +34,8 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  final _conversationsService = ConversationsService();
+
   @override
   Widget build(BuildContext context) {
     final dataService = LocalDataService();
@@ -48,9 +50,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         dataService.loadReservations(),
         dataService.loadProductUnavailabilities(),
         dataService.loadReviews(),
-        dataService.loadConversations(),
-        dataService.loadMessages(),
-        dataService.getCurrentUser(),
       ]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -75,9 +74,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         final unavailabilities =
             snapshot.data![6] as List<ProductUnavailability>;
         final reviews = snapshot.data![7] as List<Review>;
-        final conversations = snapshot.data![8] as List<Conversation>;
-        final messages = snapshot.data![9] as List<Message>;
-        final currentUser = snapshot.data![10] as User;
 
         // Produit + relations
         final product = products.firstWhere(
@@ -407,25 +403,48 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 Expanded(
                                   child: CustomButton(
                                     text: "Contacter",
-                                    onPressed: () {
-                                      final existingConversationId =
-                                          _findConversationIdWithUser(
-                                            conversations: conversations,
-                                            currentUserId: currentUser.userId,
-                                            otherUserId: owner.userId,
-                                            messages: messages,
+                                    onPressed: () async {
+                                      try {
+                                        final currentUserId =
+                                            AuthSession.instance.userId;
+                                        if (currentUserId != null &&
+                                            currentUserId == owner.userId) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                "Vous ne pouvez pas vous contacter vous-même.",
+                                              ),
+                                            ),
                                           );
+                                          return;
+                                        }
 
-
-                                      if (existingConversationId != null) {
+                                        final conversationId =
+                                            await _conversationsService
+                                                .ensureConversationWithUser(
+                                                  otherUserId: owner.userId,
+                                                );
+                                        if (!context.mounted) return;
                                         Navigator.pushNamed(
                                           context,
                                           '/conversation',
-                                          arguments: existingConversationId,
+                                          arguments: conversationId,
                                         );
-                                        return;
+                                      } catch (e) {
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              "Impossible d'ouvrir la conversation: $e",
+                                            ),
+                                          ),
+                                        );
                                       }
-
                                     },
                                   ),
                                 ),
@@ -541,22 +560,4 @@ class _PriceChip extends StatelessWidget {
       ),
     );
   }
-}
-
-int? _findConversationIdWithUser({
-  required List<Conversation> conversations,
-  required int currentUserId,
-  required int otherUserId,
-  required List<Message> messages, // pas utilisé ici mais on le laisse
-}) {
-  for (final c in conversations) {
-    final participants = c.userIds;
-
-    final hasBoth =
-        participants.contains(currentUserId) &&
-        participants.contains(otherUserId);
-
-    if (hasBoth) return c.conversationId;
-  }
-  return null;
 }
