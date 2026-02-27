@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/local_data_service.dart';
-import '../models/user.dart';
+import '../services/conversations_service.dart';
 import 'conversation_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -14,6 +14,7 @@ class ConversationsScreen extends StatefulWidget {
 
 class _ConversationsScreenState extends State<ConversationsScreen> {
   final _dataService = LocalDataService();
+  final _conversationsService = ConversationsService();
   late Future<_ConversationsVm> _future;
 
   @override
@@ -23,6 +24,31 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   }
 
   Future<_ConversationsVm> _load() async {
+    try {
+      final dbRows = await _conversationsService.fetchMyConversations();
+      if (dbRows.isNotEmpty) {
+        return _ConversationsVm(
+          rows: dbRows
+              .map(
+                (r) => _ConversationRow(
+                  conversationId: r.conversationId,
+                  title: r.title,
+                  lastText: r.lastText,
+                  timeLabel: r.lastMessageAt != null ? _formatHour(r.lastMessageAt!) : "",
+                  unreadCount: r.unreadCount,
+                ),
+              )
+              .toList(),
+        );
+      }
+    } catch (_) {
+      // fallback local en cas d'erreur réseau/API
+    }
+
+    return _loadFromLocalJson();
+  }
+
+  Future<_ConversationsVm> _loadFromLocalJson() async {
     final current = await _dataService.getCurrentUser();
     if (current == null) {
       return const _ConversationsVm(rows: []);
@@ -71,7 +97,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
       rows.add(
         _ConversationRow(
           conversationId: conversationId,
-          title: _displayName(otherUser),
+          title: otherUser.login ?? "Pseudo",
           lastText: lastMessage?.text ?? "Aucun message",
           timeLabel: lastMessage != null
               ? _formatHour(lastMessage.createdAt)
@@ -82,10 +108,6 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     }
 
     return _ConversationsVm(rows: rows);
-  }
-
-  String _displayName(User user) {
-    return user.login ?? "Pseudo";
   }
 
   void _openConversation(int conversationId) {

@@ -56,6 +56,9 @@ class AuthService {
     _api.setBearerToken(AuthSession.instance.accessToken);
     final me = await _api.getJson('/auth/me');
 
+    AuthSession.instance.userId = me['userId'] is int
+        ? me['userId'] as int
+        : int.tryParse('${me['userId']}');
     AuthSession.instance.firstName = (me['firstName'] as String?)?.trim();
     AuthSession.instance.lastName = (me['lastName'] as String?)?.trim();
   }

@@ -6,6 +6,7 @@ class AuthSession {
   AuthSession._();
 
   String? accessToken;
+  int? userId;
 
   /// Profil minimal en mémoire pour afficher le prénom/nom dans l’UI.
   /// (À persister plus tard si nécessaire.)

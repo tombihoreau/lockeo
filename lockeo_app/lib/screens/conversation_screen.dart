@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../services/local_data_service.dart';
+import '../services/chat_socket_service.dart';
+import '../services/auth_session.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
 import '../models/offer.dart';
@@ -28,6 +32,7 @@ class ConversationScreen extends StatefulWidget {
 
 class _ConversationScreenState extends State<ConversationScreen> {
   final _dataService = LocalDataService();
+  final _chatSocketService = ChatSocketService();
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -45,9 +50,18 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   List<Message> _messages = [];
   bool _loading = true;
+  bool _socketConnected = false;
+  bool _isConnectingSocket = false;
+  bool _isOtherUserTyping = false;
+  bool _isTypingSent = false;
 
   bool _hasReadChanges = false;
   bool _checkoutCongratsShown = false;
+  StreamSubscription<ConversationHistoryEvent>? _historySub;
+  StreamSubscription<ConversationMessageEvent>? _newMessageSub;
+  StreamSubscription<ConversationTypingEvent>? _typingSub;
+  StreamSubscription<String>? _socketErrorSub;
+  Timer? _typingStopTimer;
 
   @override
   void initState() {
@@ -57,6 +71,19 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   @override
   void dispose() {
+    _historySub?.cancel();
+    _newMessageSub?.cancel();
+    _typingSub?.cancel();
+    _socketErrorSub?.cancel();
+    _typingStopTimer?.cancel();
+    if (_socketConnected) {
+      _chatSocketService.emitTyping(
+        conversationId: widget.conversationId,
+        isTyping: false,
+      );
+    }
+    _chatSocketService.leaveConversation(widget.conversationId);
+    _chatSocketService.disconnect();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -66,7 +93,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     setState(() => _loading = true);
 
     final currentUser = await _dataService.getCurrentUser();
-    final currentUserId = currentUser?.userId ?? 1;
+    final currentUserId = AuthSession.instance.userId ?? currentUser?.userId ?? 1;
 
     final conversations = await _dataService.loadConversations();
     final messages = await _dataService.loadMessages();
@@ -174,6 +201,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     _maybeShowCheckoutCongrats();
     _markAllIncomingAsRead();
     _scrollToBottom();
+    await _initRealtime();
   }
 
   // -------------------------
@@ -321,8 +349,23 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    final nextId = _messages.isEmpty ? 1 : (_messages.last.messageId + 1);
+    if (_socketConnected) {
+      if (_isTypingSent) {
+        _chatSocketService.emitTyping(
+          conversationId: widget.conversationId,
+          isTyping: false,
+        );
+        _isTypingSent = false;
+      }
+      _chatSocketService.sendMessage(
+        conversationId: widget.conversationId,
+        text: text,
+      );
+      _controller.clear();
+      return;
+    }
 
+    final nextId = _messages.isEmpty ? 1 : (_messages.last.messageId + 1);
     final newMessage = Message(
       messageId: nextId,
       conversationId: widget.conversationId,
@@ -337,8 +380,109 @@ class _ConversationScreenState extends State<ConversationScreen> {
       _messages = [..._messages, newMessage];
       _controller.clear();
     });
-
     _scrollToBottom();
+  }
+
+  void _onComposerChanged(String value) {
+    if (!_socketConnected) return;
+
+    final hasText = value.trim().isNotEmpty;
+    if (hasText && !_isTypingSent) {
+      _chatSocketService.emitTyping(
+        conversationId: widget.conversationId,
+        isTyping: true,
+      );
+      _isTypingSent = true;
+    }
+
+    _typingStopTimer?.cancel();
+    if (hasText) {
+      _typingStopTimer = Timer(const Duration(milliseconds: 1200), () {
+        if (!_socketConnected || !_isTypingSent) return;
+        _chatSocketService.emitTyping(
+          conversationId: widget.conversationId,
+          isTyping: false,
+        );
+        _isTypingSent = false;
+      });
+    } else if (_isTypingSent) {
+      _chatSocketService.emitTyping(
+        conversationId: widget.conversationId,
+        isTyping: false,
+      );
+      _isTypingSent = false;
+    }
+  }
+
+  Future<void> _initRealtime() async {
+    if (_isConnectingSocket) return;
+    _isConnectingSocket = true;
+
+    _historySub?.cancel();
+    _newMessageSub?.cancel();
+    _typingSub?.cancel();
+    _socketErrorSub?.cancel();
+
+    _historySub = _chatSocketService.historyStream.listen((event) {
+      if (!mounted || event.conversationId != widget.conversationId) return;
+      setState(() {
+        _messages = event.messages;
+      });
+      _markAllIncomingAsRead();
+      _scrollToBottom();
+    });
+
+    _newMessageSub = _chatSocketService.newMessageStream.listen((event) {
+      if (!mounted || event.conversationId != widget.conversationId) return;
+      final alreadyExists = _messages.any(
+        (m) => m.messageId == event.message.messageId && m.messageId != 0,
+      );
+      if (alreadyExists) return;
+
+      setState(() {
+        _messages = [..._messages, event.message];
+        if (event.message.senderUserId != _currentUserId) {
+          _isOtherUserTyping = false;
+        }
+      });
+      _markAllIncomingAsRead();
+      _scrollToBottom();
+    });
+
+    _typingSub = _chatSocketService.typingStream.listen((event) {
+      if (!mounted || event.conversationId != widget.conversationId) return;
+      if (event.senderUserId == _currentUserId) return;
+      setState(() => _isOtherUserTyping = event.isTyping);
+    });
+
+    _socketErrorSub = _chatSocketService.errorStream.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _socketConnected = false;
+        _isOtherUserTyping = false;
+      });
+      _isTypingSent = false;
+    });
+
+    final token = AuthSession.instance.accessToken;
+    if (token == null || token.trim().isEmpty) {
+      _isConnectingSocket = false;
+      return;
+    }
+
+    try {
+      await _chatSocketService.connect(token: token);
+      _chatSocketService.joinConversation(widget.conversationId);
+      if (mounted) {
+        setState(() => _socketConnected = true);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _socketConnected = false);
+      }
+    } finally {
+      _isConnectingSocket = false;
+    }
   }
 
   // -------------------------
@@ -491,7 +635,29 @@ class _ConversationScreenState extends State<ConversationScreen> {
                     ),
                   ),
 
-                  _ComposerBar(controller: _controller, onSend: _sendMessage),
+                  if (_isOtherUserTyping)
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        left: 28,
+                        right: 28,
+                        bottom: 8,
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Est en train d'écrire ...",
+                          style: AppTextStyles.caption.copyWith(
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  _ComposerBar(
+                    controller: _controller,
+                    onSend: _sendMessage,
+                    onChanged: _onComposerChanged,
+                  ),
                 ],
               ),
       ),
@@ -615,8 +781,13 @@ class _Avatar extends StatelessWidget {
 class _ComposerBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
+  final ValueChanged<String> onChanged;
 
-  const _ComposerBar({required this.controller, required this.onSend});
+  const _ComposerBar({
+    required this.controller,
+    required this.onSend,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -648,6 +819,7 @@ class _ComposerBar extends StatelessWidget {
                     isCollapsed: true,
                   ),
                   textInputAction: TextInputAction.send,
+                  onChanged: onChanged,
                   onSubmitted: (_) => onSend(),
                 ),
               ),
