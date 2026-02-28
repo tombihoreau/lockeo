@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:lockeo_app/models/user.dart';
 import 'package:lockeo_app/services/local_data_service.dart';
 import 'package:lockeo_app/models/offer.dart';
@@ -22,6 +23,7 @@ class PublicProfileScreen extends StatefulWidget {
 
 class _PublicProfileScreenState extends State<PublicProfileScreen> {
   final dataService = LocalDataService();
+  late final PageController _pageController;
 
   User? user;
   bool isLoading = true;
@@ -66,6 +68,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
 
     currentTabIndex = 0;
 
@@ -74,6 +77,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     });
 
     loadData();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> loadData() async {
@@ -181,7 +190,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       transactionsCount: transactionsCount,
       isCertified: true,
       isReactive: true,
-      onBack: () => Navigator.pop(context),
+      onBack: () => AppNavigator.back(context),
     );
   }
 
@@ -205,9 +214,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                    setState(() => currentTabIndex = index);
-                    WidgetsBinding.instance.addPostFrameCallback(
-                      (_) => _updateUnderline(),
+                    _pageController.animateToPage(
+                      index,
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOut,
                     );
                   },
                   child: Padding(
@@ -265,10 +275,17 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Widget _buildTabContent() {
-    if (currentTabIndex == 0) {
-      return ProductGrid(offers: userOffers);
-    }
-    return ReviewsList(reviews: userReviews, allUsers: allUsers);
+    return PageView(
+      controller: _pageController,
+      onPageChanged: (index) {
+        setState(() => currentTabIndex = index);
+        WidgetsBinding.instance.addPostFrameCallback((_) => _updateUnderline());
+      },
+      children: [
+        ProductGrid(offers: userOffers),
+        ReviewsList(reviews: userReviews, allUsers: allUsers),
+      ],
+    );
   }
 
   Widget _buildBottomCta(double height) {

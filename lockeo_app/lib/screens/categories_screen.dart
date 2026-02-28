@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../models/category.dart';
 import '../services/local_data_service.dart';
@@ -110,7 +111,7 @@ class CategoriesScreen extends StatelessWidget {
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => AppNavigator.back(context),
         ),
         title: Text(
           pageTitle,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../models/offerDraft.dart';
@@ -41,6 +42,7 @@ class _CreateOfferStep3ScreenState extends State<CreateOfferStep3Screen> {
   }
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+  bool _isPastDate(DateTime day) => _dateOnly(day).isBefore(_dateOnly(DateTime.now()));
 
   bool get _allDaysSelected => _selectedWeekDays.length == 7;
   bool get _hasAtLeastOneDay => _selectedWeekDays.isNotEmpty;
@@ -125,7 +127,7 @@ class _CreateOfferStep3ScreenState extends State<CreateOfferStep3Screen> {
         color: Colors.grey.shade400,
       ),
       disabledTextStyle: AppTextStyles.label.copyWith(
-        color: Colors.grey.shade400,
+        color: Colors.black54,
       ),
       selectedTextStyle: AppTextStyles.label.copyWith(
         color: Colors.white,
@@ -198,7 +200,7 @@ class _CreateOfferStep3ScreenState extends State<CreateOfferStep3Screen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: InkWell(
-            onTap: () => Navigator.pop(context),
+            onTap: () => AppNavigator.back(context),
             borderRadius: BorderRadius.circular(999),
             child: Container(
               width: 36,
@@ -333,6 +335,7 @@ class _CreateOfferStep3ScreenState extends State<CreateOfferStep3Screen> {
                 ),
                 headerStyle: _headerStyle,
                 calendarStyle: _calendarStyle,
+                enabledDayPredicate: (day) => !_isPastDate(day),
 
                 selectedDayPredicate: (day) {
                   final isSel = _unavailableDates.contains(_dateOnly(day));

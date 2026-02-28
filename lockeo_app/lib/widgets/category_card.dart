@@ -37,24 +37,29 @@ class CategoryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue,
+                color: AppColors.blue50,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 _iconForLabel(name),
                 size: 18,
-                color: Colors.white,
+                color: AppColors.blue900,
               ),
             ),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
                 name,
-                style: AppTextStyles.caption.copyWith(color: Colors.black),
+                style: AppTextStyles.caption.copyWith(color: AppColors.blue900),
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, color: AppColors.blue900, size: 18),
+            if (onTap != null)
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.blue900,
+                size: 18,
+              ),
           ],
         ),
       ),

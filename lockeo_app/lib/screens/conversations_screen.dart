@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../services/local_data_service.dart';
 import '../models/user.dart';
 import 'conversation_screen.dart';
+import 'home_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/app_navigator.dart';
+import '../widgets/main_scaffold.dart';
 
 class ConversationsScreen extends StatefulWidget {
   const ConversationsScreen({super.key});
@@ -97,6 +100,14 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     );
   }
 
+  Future<void> _onBackPressed() async {
+    await AppNavigator.back(
+      context,
+      fallbackBuilder: (_) =>
+          const MainScaffold(currentIndex: 0, child: HomeScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,7 +118,7 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pushNamed(context, '/'),
+          onPressed: _onBackPressed,
         ),
         title: Text(
           "Messagerie",

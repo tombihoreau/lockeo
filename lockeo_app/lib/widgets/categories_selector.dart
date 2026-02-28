@@ -77,7 +77,7 @@ class _CategoriesSelectorState extends State<CategoriesSelector> {
               ),
             Text(
               label,
-              style: AppTextStyles.caption.copyWith(
+              style: AppTextStyles.h3.copyWith(
                 color: isSelected ? AppColors.primaryBlue : AppColors.textGrey,
               ),
             ),

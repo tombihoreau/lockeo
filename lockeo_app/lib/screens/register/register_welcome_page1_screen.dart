@@ -25,7 +25,7 @@ class RegisterWelcomePage1Screen extends StatelessWidget {
               ),
               children: [
                 TextSpan(
-                  text: "Économiser, partager et\nconsommer autrement\navec ",
+                  text: "Économisez, partagez et\nconsommez autrement\navec ",
                   style: AppTextStyles.h1.copyWith(color: Colors.white),
                 ),
 

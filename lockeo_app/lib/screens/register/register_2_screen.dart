@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
@@ -12,30 +13,40 @@ class Register2Screen extends StatefulWidget {
 
 class _Register2ScreenState extends State<Register2Screen> {
   final _emailCtrl = TextEditingController();
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
   final _pwdCtrl = TextEditingController();
   final _pwdConfirmCtrl = TextEditingController();
 
   bool _obscurePwd = true;
   bool _obscureConfirm = true;
+  bool _acceptedCgu = false;
 
   @override
   void dispose() {
     _emailCtrl.dispose();
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
     _pwdCtrl.dispose();
     _pwdConfirmCtrl.dispose();
     super.dispose();
   }
 
   void _submit() {
-    // TODO: branche ton inscription
-    // Pour l’instant, tu peux naviguer vers une prochaine page si tu veux :
-    // Navigator.pushNamed(context, "/register_3");
+    if (!_acceptedCgu) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Veuillez accepter les conditions générales d’utilisation."),
+        ),
+      );
+      return;
+    }
+
+    Navigator.pushNamed(context, '/register_3');
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-
     return Scaffold(
       body: Stack(
         children: [
@@ -59,7 +70,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                     children: [
                       InkWell(
                         borderRadius: BorderRadius.circular(24),
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => AppNavigator.back(context),
                         child: Row(
                           children: const [
                             SizedBox(width: 4),
@@ -98,7 +109,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 12),
 
                         Center(
                           child: SvgPicture.asset(
@@ -107,7 +118,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                           ),
                         ),
 
-                        const SizedBox(height: 70),
+                        const SizedBox(height: 28),
 
                         Text(
                           "Créer votre compte",
@@ -116,17 +127,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                           ),
                         ),
 
-                        const SizedBox(height: 10),
-
-                        Text(
-                          "Lorem ipsum dolor sit amet consectetur.\n"
-                          "Sit viverra donec quis dignissim. Fames.",
-                          style: AppTextStyles.number.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 16),
 
                         _Label("Votre e-mail"),
                         const SizedBox(height: 8),
@@ -138,7 +139,31 @@ class _Register2ScreenState extends State<Register2Screen> {
                           obscureText: false,
                         ),
 
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 12),
+
+                        _Label("Votre prénom"),
+                        const SizedBox(height: 8),
+                        _TextFieldWhite(
+                          controller: _firstNameCtrl,
+                          hintText: "Votre prénom",
+                          keyboardType: TextInputType.name,
+                          textInputAction: TextInputAction.next,
+                          obscureText: false,
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        _Label("Votre nom"),
+                        const SizedBox(height: 8),
+                        _TextFieldWhite(
+                          controller: _lastNameCtrl,
+                          hintText: "Votre nom",
+                          keyboardType: TextInputType.name,
+                          textInputAction: TextInputAction.next,
+                          obscureText: false,
+                        ),
+
+                        const SizedBox(height: 12),
 
                         _Label("Création du mot de passe"),
                         const SizedBox(height: 8),
@@ -170,7 +195,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                           ),
                         ),
 
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 6),
 
                         _Label("Confirmation du mot de passe"),
                         const SizedBox(height: 8),
@@ -202,29 +227,78 @@ class _Register2ScreenState extends State<Register2Screen> {
 
                 // Bottom button
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 64,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/register_3');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.primaryRed,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _acceptedCgu,
+                              onChanged: (value) {
+                                setState(() => _acceptedCgu = value ?? false);
+                              },
+                              side: const BorderSide(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                              checkColor: AppColors.primaryBlue,
+                              activeColor: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 1),
+                              child: RichText(
+                                text: TextSpan(
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                  children: const [
+                                    TextSpan(text: "J’accepte les "),
+                                    TextSpan(
+                                      text: "conditions générales d’utilisation.",
+                                      style: TextStyle(
+                                        decoration: TextDecoration.underline,
+                                        decorationColor: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 64,
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppColors.primaryRed,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                          ),
+                          child: Text(
+                            "CRÉER MON COMPTE",
+                            style: AppTextStyles.button.copyWith(
+                              color: AppColors.primaryRed,
+                            ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        "CRÉER MON COMPTE",
-                        style: AppTextStyles.button.copyWith(
-                          color: AppColors.primaryRed,
-                        ),
-                      ),
-                    ),
+                    ],
                   ),
                 ),
               ],

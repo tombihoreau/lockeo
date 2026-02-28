@@ -209,6 +209,14 @@ class _ReservationConfirmationScreenState
                     ],
                   ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  "Contactez le propriétaire pour organiser votre échange (horaire et lieu)",
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.label.copyWith(
+                    color: AppColors.textGrey,
+                  ),
+                ),
               ],
             ),
           ),

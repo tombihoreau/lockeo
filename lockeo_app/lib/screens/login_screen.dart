@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
@@ -28,8 +29,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final statusBar = MediaQuery.of(context).padding.top;
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           // Background image
@@ -42,159 +45,173 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // Content
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.fromLTRB(24, 0, 24, keyboardInset + 16),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
 
-                  // Back row
-                  Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.chevron_left),
-                          color: const Color(0xFF1549C9),
-                          onPressed: () => Navigator.pop(context),
+                            // Back row
+                            Row(
+                              children: [
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    padding: EdgeInsets.zero,
+                                    icon: const Icon(Icons.chevron_left),
+                                    color: const Color(0xFF1549C9),
+                                    onPressed: () => AppNavigator.back(context),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                GestureDetector(
+                                  onTap: () => AppNavigator.back(context),
+                                  child: const Text(
+                                    "Retour",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: Colors.white,
+                                      decorationThickness: 2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 36),
+
+                            // Logo
+                            Center(
+                              child: SvgPicture.asset(
+                                'assets/icons/logo.svg',
+                                height: 35,
+                              ),
+                            ),
+
+                            const SizedBox(height: 70),
+
+                            const Text(
+                              "Connectez vous à\nvotre compte",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            const Text(
+                              "Votre e-mail",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _Input(
+                              controller: _emailCtrl,
+                              hintText: "Votre adresse e-mail",
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                            ),
+
+                            const SizedBox(height: 22),
+
+                            const Text(
+                              "Mot de passe",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _Input(
+                              controller: _pwdCtrl,
+                              hintText: "Mot de passe",
+                              obscureText: true,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => _onLogin(),
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            Center(
+                              child: GestureDetector(
+                                onTap: () {
+                                  // TODO: route inscription
+                                  Navigator.pushNamed(context, "/register");
+                                },
+                                child: const Text(
+                                  "Je n’ai pas de compte",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Colors.white,
+                                    decorationThickness: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const Spacer(),
+
+                            // Bottom button (with bottom safe area spacing)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 32),
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 64,
+                                child: ElevatedButton(
+                                  onPressed: _onLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: AppColors.primaryRed,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "SE CONNECTER",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      fontStyle: FontStyle.italic,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Text(
-                          "Retour",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white,
-                            decorationThickness: 2,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 36),
-
-                  // Logo
-                  Center(
-                    child: SvgPicture.asset(
-                      'assets/icons/logo.svg',
-                      height: 35,
                     ),
-                  ),
-
-                  const SizedBox(height: 70),
-
-                  const Text(
-                    "Connectez vous à\nvotre compte",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  const Text(
-                    "Votre e-mail",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _Input(
-                    controller: _emailCtrl,
-                    hintText: "Votre adresse e-mail",
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  const Text(
-                    "Mot de passe",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _Input(
-                    controller: _pwdCtrl,
-                    hintText: "Mot de passe",
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _onLogin(),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        // TODO: route inscription
-                        Navigator.pushNamed(context, "/register");
-                      },
-                      child: const Text(
-                        "Je n’ai pas de compte",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
-                          decorationColor: Colors.white,
-                          decorationThickness: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  // Bottom button (with bottom safe area spacing)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 32),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 64,
-                      child: ElevatedButton(
-                        onPressed: _onLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primaryRed,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                        ),
-                        child: const Text(
-                          "SE CONNECTER",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            fontStyle: FontStyle.italic,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),
@@ -237,7 +254,7 @@ class _Input extends StatelessWidget {
       textInputAction: textInputAction,
       obscureText: obscureText,
       onSubmitted: onSubmitted,
-          style: AppTextStyles.label.copyWith(color: AppColors.textPrimary),
+      style: AppTextStyles.label.copyWith(color: AppColors.textPrimary),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: AppTextStyles.label.copyWith(color: AppColors.textGrey),

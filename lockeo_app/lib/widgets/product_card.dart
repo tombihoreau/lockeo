@@ -9,12 +9,14 @@ class ProductCard extends StatelessWidget {
   final Product product;
   final ImageModel image;
   final VoidCallback? onTap;
+  final VoidCallback? onToggleFavorite;
 
   const ProductCard({
     super.key,
     required this.product,
     required this.image,
     this.onTap,
+    this.onToggleFavorite,
   });
 
   @override
@@ -31,11 +33,40 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image en haut
-            Image.asset(
-              image.url,
-              height: 150,
-              width: double.infinity,
-              fit: BoxFit.cover,
+            Stack(
+              children: [
+                Image.asset(
+                  image.url,
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Material(
+                    color: Colors.white,
+                    shape: const CircleBorder(),
+                    elevation: 0,
+                    child: InkWell(
+                      onTap: onToggleFavorite,
+                      customBorder: const CircleBorder(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Icon(
+                          product.isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          size: 20,
+                          color: product.isFavorite
+                              ? AppColors.primaryRed
+                              : const Color(0xFFE57373),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 12),

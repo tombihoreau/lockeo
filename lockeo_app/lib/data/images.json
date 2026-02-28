@@ -2,15 +2,71 @@
   {
     "image_id": 1,
     "product_id": 1,
-    "url": "assets/images/vtt1.jpg",
+    "url": "assets/images/football_ballon.jpg",
     "position_image": 1,
     "created_at": "2025-01-10T12:00:00Z"
   },
   {
     "image_id": 2,
-    "product_id": 1,
-    "url": "assets/images/vtt2.jpg",
-    "position_image": 2,
+    "product_id": 2,
+    "url": "assets/images/kit_bivouac.jpg",
+    "position_image": 1,
     "created_at": "2025-01-11T09:00:00Z"
+  },
+  {
+    "image_id": 3,
+    "product_id": 3,
+    "url": "assets/images/kayak_randonnee.jpg",
+    "position_image": 1,
+    "created_at": "2025-01-12T09:00:00Z"
+  },
+  {
+    "image_id": 4,
+    "product_id": 4,
+    "url": "assets/images/kayaks_lot.jpg",
+    "position_image": 1,
+    "created_at": "2025-01-13T09:00:00Z"
+  },
+  {
+    "image_id": 5,
+    "product_id": 5,
+    "url": "assets/images/paddle_touring.jpg",
+    "position_image": 1,
+    "created_at": "2025-01-14T09:00:00Z"
+  },
+  {
+    "image_id": 6,
+    "product_id": 6,
+    "url": "assets/images/planche_surf.jpg",
+    "position_image": 1,
+    "created_at": "2025-01-15T09:00:00Z"
+  },
+  {
+    "image_id": 7,
+    "product_id": 7,
+    "url": "assets/images/sac_randonnee.jpg",
+    "position_image": 1,
+    "created_at": "2025-01-16T09:00:00Z"
+  },
+  {
+    "image_id": 8,
+    "product_id": 8,
+    "url": "assets/images/tente_dome.jpg",
+    "position_image": 1,
+    "created_at": "2025-01-17T09:00:00Z"
+  },
+  {
+    "image_id": 9,
+    "product_id": 9,
+    "url": "assets/images/velo_pliant.jpg",
+    "position_image": 1,
+    "created_at": "2025-01-18T09:00:00Z"
+  },
+  {
+    "image_id": 10,
+    "product_id": 10,
+    "url": "assets/images/velo_enfant.jpg",
+    "position_image": 1,
+    "created_at": "2025-01-19T09:00:00Z"
   }
 ]

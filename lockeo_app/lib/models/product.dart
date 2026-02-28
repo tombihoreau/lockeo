@@ -58,4 +58,44 @@ class Product {
       price7Days: json['price_7_days']?.toDouble(),
     );
   }
+
+  Product copyWith({
+    int? productId,
+    String? name,
+    String? description,
+    double? price,
+    double? priceEstimate,
+    String? state,
+    double? longitude,
+    double? latitude,
+    String? city,
+    String? postalCode,
+    bool? isAvailable,
+    String? createdAt,
+    String? updatedAt,
+    List<int>? categoryIds,
+    bool? isFavorite,
+    double? price3Days,
+    double? price7Days,
+  }) {
+    return Product(
+      productId: productId ?? this.productId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      priceEstimate: priceEstimate ?? this.priceEstimate,
+      state: state ?? this.state,
+      longitude: longitude ?? this.longitude,
+      latitude: latitude ?? this.latitude,
+      city: city ?? this.city,
+      postalCode: postalCode ?? this.postalCode,
+      isAvailable: isAvailable ?? this.isAvailable,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      categoryIds: categoryIds ?? this.categoryIds,
+      isFavorite: isFavorite ?? this.isFavorite,
+      price3Days: price3Days ?? this.price3Days,
+      price7Days: price7Days ?? this.price7Days,
+    );
+  }
 }

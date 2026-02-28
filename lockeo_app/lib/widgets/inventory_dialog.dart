@@ -1,7 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../models/inventory.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import 'button.dart';
 
 class InventoryDialog extends StatefulWidget {
   final int reservationId;
@@ -20,7 +25,8 @@ class InventoryDialog extends StatefulWidget {
 }
 
 class _InventoryDialogState extends State<InventoryDialog> {
-  late List<String> _photos; // suppose Inventory.photos: List<String>
+  final ImagePicker _picker = ImagePicker();
+  late List<String> _photos;
   late TextEditingController _commentCtrl;
 
   @override
@@ -36,17 +42,20 @@ class _InventoryDialogState extends State<InventoryDialog> {
     super.dispose();
   }
 
-  void _onTapSlot(int index) {
+  Future<void> _onTapSlot(int index) async {
     if (widget.readOnly) return;
 
-    // TODO plus tard: image_picker
-    const fakePath = 'assets/images/default.jpg';
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
 
     setState(() {
       while (_photos.length < 4) {
         _photos.add("");
       }
-      _photos[index] = fakePath;
+      _photos[index] = picked.path;
       _photos = _photos.where((p) => p.trim().isNotEmpty).toList();
     });
   }
@@ -54,87 +63,110 @@ class _InventoryDialogState extends State<InventoryDialog> {
   @override
   Widget build(BuildContext context) {
     final title = "L’état des lieux";
+    final maxHeight = MediaQuery.of(context).size.height * 0.82;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.h1.copyWith(color: AppColors.textPrimary),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 36),
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.h1.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, size: 28),
+                      splashRadius: 22,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Ajouter vos photos",
+                  style: AppTextStyles.h3.copyWith(
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Ajouter vos photos",
-                style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-            _InventoryPhotosGrid(
-              photos: _photos,
-              onTapSlot: _onTapSlot,
-              readOnly: widget.readOnly,
-            ),
-
-            const SizedBox(height: 16),
-
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Commentaire",
-                style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
+              _InventoryPhotosGrid(
+                photos: _photos,
+                onTapSlot: _onTapSlot,
+                readOnly: widget.readOnly,
               ),
-            ),
-            const SizedBox(height: 10),
 
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.cape300),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _commentCtrl,
-                enabled: !widget.readOnly,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.all(12),
-                  border: InputBorder.none,
-                  hintText: "Décris l’état du matériel (défauts, rayures, etc.)",
+              const SizedBox(height: 22),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Commentaire",
+                  style: AppTextStyles.h3.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 12),
 
-            const SizedBox(height: 18),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.cape300),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: TextField(
+                  controller: _commentCtrl,
+                  enabled: !widget.readOnly,
+                  maxLines: 4,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.all(16),
+                    border: InputBorder.none,
+                    hintText:
+                        "On retrouve quelques endroits abîmés comme :\nle dessous droit et le côté gauche.\nAutres défauts : aucun",
+                    hintStyle: AppTextStyles.body.copyWith(
+                      color: AppColors.textGrey,
+                    ),
+                  ),
+                ),
+              ),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
+              const SizedBox(height: 18),
+
+              CustomButton(
+                text: widget.readOnly
+                    ? "Fermer l’état des lieux"
+                    : "Envoyer l’état des lieux",
                 onPressed: () {
                   if (widget.readOnly) {
                     Navigator.pop(context, null);
                     return;
                   }
 
-                  // création d'un Inventory direct (pas de draft)
                   final inv = Inventory(
                     inventoryId: DateTime.now().millisecondsSinceEpoch,
                     reservationId: widget.reservationId,
@@ -146,22 +178,9 @@ class _InventoryDialogState extends State<InventoryDialog> {
 
                   Navigator.pop(context, inv);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Text(
-                  widget.readOnly ? "Fermer" : "Envoyer l’état des lieux",
-                  style: AppTextStyles.h3.copyWith(color: Colors.white),
-                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -170,7 +189,7 @@ class _InventoryDialogState extends State<InventoryDialog> {
 
 class _InventoryPhotosGrid extends StatelessWidget {
   final List<String> photos;
-  final void Function(int index) onTapSlot;
+  final Future<void> Function(int index) onTapSlot;
   final bool readOnly;
 
   const _InventoryPhotosGrid({
@@ -199,25 +218,31 @@ class _InventoryPhotosGrid extends StatelessWidget {
       itemBuilder: (_, i) {
         final path = slotPhoto(i);
 
-        return GestureDetector(
-          onTap: () => onTapSlot(i),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.cape200,
-              borderRadius: BorderRadius.circular(16),
-              border: readOnly
-                  ? Border.all(color: AppColors.cape300, width: 1)
-                  : null,
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: readOnly ? null : () => onTapSlot(i),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+              ),
+              child: path == null
+                  ? Icon(
+                      Icons.image_outlined,
+                      size: 48,
+                      color:
+                          readOnly ? AppColors.cape300 : const Color(0xFFD1D5DB),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: path.startsWith('assets/')
+                          ? Image.asset(path, fit: BoxFit.cover)
+                          : Image.file(File(path), fit: BoxFit.cover),
+                    ),
             ),
-            child: path == null
-                ? Icon(
-                    Icons.image_outlined,
-                    color: readOnly ? AppColors.cape300 : AppColors.textGrey,
-                  )
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.asset(path, fit: BoxFit.cover),
-                  ),
           ),
         );
       },

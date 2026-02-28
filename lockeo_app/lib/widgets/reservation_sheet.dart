@@ -82,12 +82,13 @@ class _ReservationSheetState extends State<ReservationSheet> {
         color: Colors.grey.shade300,
         shape: BoxShape.circle,
       ),
+      disabledTextStyle: const TextStyle(color: Colors.black54),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    double bottomSize = 140;
+    double bottomSize = 110;
 
     return Container(
       decoration: const BoxDecoration(
@@ -190,13 +191,6 @@ class _ReservationSheetState extends State<ReservationSheet> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          hasRange
-                              ? "Votre coût initial sera de 10€"
-                              : "Sélectionnez une plage de dates",
-                          style: const TextStyle(color: Colors.black54),
-                        ),
-                        const SizedBox(height: 12),
                         CustomButton(
                           text: "Suivant",
                           onPressed: hasRange

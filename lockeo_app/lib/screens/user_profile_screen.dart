@@ -12,9 +12,12 @@ import 'package:lockeo_app/widgets/product_grid.dart';
 import 'package:lockeo_app/widgets/reviews_list.dart';
 import 'package:lockeo_app/widgets/profile_header.dart';
 import 'package:lockeo_app/widgets/transactions_list.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
+import 'package:lockeo_app/widgets/main_scaffold.dart';
 
 import '../theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import 'home_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -25,6 +28,7 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   final dataService = LocalDataService();
+  late final PageController _pageController;
 
   User? currentUser;
 
@@ -74,10 +78,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     currentTabIndex = 0;
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateUnderline());
     loadData();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> loadData() async {
@@ -197,13 +208,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildHeader() {
     return PublicProfileHeader(
       firstName: currentUser!.firstName,
+      email: currentUser!.email,
       rating: averageRating,
       reviewsCount: reviewsCount,
       transactionsCount: transactionsCount,
       isCertified: true,
       isReactive: true,
-      onBack: () =>
-          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false),
+      onBack: () => AppNavigator.back(
+        context,
+        fallbackBuilder: (_) =>
+            const MainScaffold(currentIndex: 0, child: HomeScreen()),
+      ),
     );
   }
 
@@ -222,9 +237,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               return GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
-                  setState(() => currentTabIndex = index);
-                  WidgetsBinding.instance.addPostFrameCallback(
-                    (_) => _updateUnderline(),
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
                   );
                 },
                 child: Padding(
@@ -275,9 +291,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildTabContent() {
-    switch (currentTabIndex) {
-      case 0:
-        return TransactionsList(
+    return PageView(
+      controller: _pageController,
+      onPageChanged: (index) {
+        setState(() => currentTabIndex = index);
+        WidgetsBinding.instance.addPostFrameCallback((_) => _updateUnderline());
+      },
+      children: [
+        TransactionsList(
           reservations: userReservations,
           products: products,
           images: images,
@@ -295,19 +316,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           onTapReview: (r) {
             // TODO
           },
-        );
-
-      case 1:
-        return ProductGrid(offers: favorites);
-
-      case 2:
-        return ProductGrid(offers: myOffers);
-
-      case 3:
-        return ReviewsList(reviews: reviews, allUsers: allUsers);
-
-      default:
-        return const SizedBox.shrink();
-    }
+        ),
+        ProductGrid(offers: favorites),
+        ProductGrid(offers: myOffers),
+        ReviewsList(reviews: reviews, allUsers: allUsers),
+      ],
+    );
   }
 }

@@ -310,7 +310,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
       _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
+        0,
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
@@ -390,6 +390,18 @@ class _ConversationScreenState extends State<ConversationScreen> {
     );
   }
 
+  void _openOfferDetails() {
+    final offer = _offer;
+    if (offer == null) return;
+    Navigator.pushNamed(context, '/productDetails', arguments: offer);
+  }
+
+  void _openOtherUserProfile() {
+    final otherUserId = _otherUser?.userId;
+    if (otherUserId == null || otherUserId <= 0) return;
+    Navigator.pushNamed(context, '/user', arguments: otherUserId);
+  }
+
   void _acceptReservation() {}
   void _declineReservation() {}
 
@@ -429,6 +441,8 @@ class _ConversationScreenState extends State<ConversationScreen> {
   @override
   Widget build(BuildContext context) {
     final lightBg = const Color(0xFFF5F7FA);
+    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final displayedMessages = _messages.reversed.toList();
 
     return WillPopScope(
       onWillPop: () async {
@@ -437,63 +451,75 @@ class _ConversationScreenState extends State<ConversationScreen> {
       },
       child: Scaffold(
         backgroundColor: lightBg,
-        body: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  Container(
-                    color: Colors.white,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        top: MediaQuery.of(context).padding.top + 8,
+        body: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    if (!keyboardVisible)
+                      Container(
+                        color: Colors.white,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            top: MediaQuery.of(context).padding.top + 8,
+                          ),
+                          child: ConversationHeader(
+                            role: _role,
+                            status: _reservationStatus,
+                            productTitle: _product?.name ?? "",
+                            priceLabel:
+                                "${(_product?.price ?? 0).toStringAsFixed(0)}€/jour",
+                            dateLabel: _formatRangeLabel(_reservation),
+                            otherUserName: _otherUser?.firstName ?? "",
+                            imagePath:
+                                _productImage?.url ?? 'assets/images/default.jpg',
+                            cityLabel: _product?.city ?? "",
+                            postalCodeLabel: _product?.postalCode ?? "",
+                            pricePerDay: _product?.price ?? 0,
+                            onAccept: _acceptReservation,
+                            onDecline: _declineReservation,
+                            onOpenInventory: _openInventory,
+                            onValidateInventory: _validateInventory,
+                            onMakeOffer: _openOfferSheet,
+                            onOpenOfferDetails: _openOfferDetails,
+                            rentalEndDate: _reservation?.endDate,
+                          ),
+                        ),
                       ),
-                      child: ConversationHeader(
-                        role: _role,
-                        status: _reservationStatus,
-                        productTitle: _product?.name ?? "",
-                        priceLabel:
-                            "${(_product?.price ?? 0).toStringAsFixed(0)}€/jour",
-                        dateLabel: _formatRangeLabel(_reservation),
-                        otherUserName: _otherUser?.firstName ?? "",
-                        imagePath:
-                            _productImage?.url ?? 'assets/images/default.jpg',
-                        cityLabel: _product?.city ?? "",
-                        postalCodeLabel: _product?.postalCode ?? "",
-                        pricePerDay: _product?.price ?? 0,
-                        onAccept: _acceptReservation,
-                        onDecline: _declineReservation,
-                        onOpenInventory: _openInventory,
-                        onValidateInventory: _validateInventory,
-                        onMakeOffer: _openOfferSheet,
-                        rentalEndDate: _reservation?.endDate,
+
+                    Expanded(
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          keyboardVisible ? 60 : 8,
+                          16,
+                          8,
+                        ),
+                        itemCount: displayedMessages.length,
+                        itemBuilder: (context, index) {
+                          final m = displayedMessages[index];
+                          final isMe = m.senderUserId == _currentUserId;
+                          return _MessageRow(
+                            isMe: isMe,
+                            text: m.text,
+                            timeLabel: _formatTime(m.createdAt),
+                            teal: AppColors.blue100,
+                            onOtherAvatarTap: _openOtherUserProfile,
+                          );
+                        },
                       ),
                     ),
-                  ),
 
-                  Expanded(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final m = _messages[index];
-                        final isMe = m.senderUserId == _currentUserId;
-                        return _MessageRow(
-                          isMe: isMe,
-                          text: m.text,
-                          timeLabel: _formatTime(m.createdAt),
-                          teal: AppColors.blue100,
-                        );
-                      },
-                    ),
-                  ),
-
-                  _ComposerBar(controller: _controller, onSend: _sendMessage),
-                ],
-              ),
+                    _ComposerBar(controller: _controller, onSend: _sendMessage),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -511,12 +537,14 @@ class _MessageRow extends StatelessWidget {
   final String text;
   final String timeLabel;
   final Color teal;
+  final VoidCallback? onOtherAvatarTap;
 
   const _MessageRow({
     required this.isMe,
     required this.text,
     required this.timeLabel,
     required this.teal,
+    this.onOtherAvatarTap,
   });
 
   @override
@@ -533,9 +561,12 @@ class _MessageRow extends StatelessWidget {
             : MainAxisAlignment.start,
         children: [
           if (!isMe)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 18),
-              child: _Avatar(isMe: false),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: GestureDetector(
+                onTap: onOtherAvatarTap,
+                child: const _Avatar(isMe: false),
+              ),
             ),
           if (!isMe) const SizedBox(width: 10),
 
