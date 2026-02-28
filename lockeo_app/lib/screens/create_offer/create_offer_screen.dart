@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import '../../widgets/button.dart';
 import '../../widgets/categories_selector.dart';
 import '../../models/category.dart';
@@ -10,6 +11,8 @@ import 'create_offer_step2_screen.dart';
 import '../../services/location_service.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../../widgets/main_scaffold.dart';
+import '../home_screen.dart';
 
 class CreateOfferScreen extends StatefulWidget {
   const CreateOfferScreen({super.key});
@@ -42,8 +45,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   void initState() {
     super.initState();
     _loadCategories();
-
-    // optionnel : si tu as déjà une valeur par défaut
     _locationCtrl.text = location ?? "";
   }
 
@@ -184,7 +185,9 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
             if (hasPhoto)
               ClipRRect(
                 borderRadius: BorderRadius.circular(radius),
-                child: Image.file(File(photos[index]), fit: BoxFit.cover),
+                child: photos[index].startsWith('assets/')
+                    ? Image.asset(photos[index], fit: BoxFit.cover)
+                    : Image.file(File(photos[index]), fit: BoxFit.cover),
               )
             else
               Center(
@@ -292,7 +295,11 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: InkWell(
-            onTap: () => Navigator.pop(context),
+            onTap: () => AppNavigator.back(
+              context,
+              fallbackBuilder: (_) =>
+                  const MainScaffold(currentIndex: 0, child: HomeScreen()),
+            ),
             borderRadius: BorderRadius.circular(999),
             child: Container(
               width: 36,

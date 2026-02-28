@@ -87,7 +87,7 @@ class RegisterWelcomePage2Screen extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      "Notifications en temps réel, paiement sécurisé et assurance pour chaque location.",
+                      "Des notifications en temps réel, un paiement sécurisé et une garantie avec sécurité Lockeo.",
                       style: AppTextStyles.body.copyWith(color: Colors.white),
                     ),
                   ],
@@ -121,7 +121,7 @@ class RegisterWelcomePage2Screen extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      "Récupérez l’objet, utilisez-le, puis laissez un avis et gagnez en confiance.",
+                      "Récupérez l’objet, utilisez le, puis rendez le. Laissez un avis et gagnez en confiance !",
                       style: AppTextStyles.body.copyWith(color: Colors.white),
                     ),
                   ],

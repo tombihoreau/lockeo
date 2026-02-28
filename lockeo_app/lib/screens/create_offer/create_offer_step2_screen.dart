@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:flutter/services.dart';
 
 import '../../models/offerDraft.dart';
@@ -279,7 +280,7 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: InkWell(
-            onTap: () => Navigator.pop(context),
+            onTap: () => AppNavigator.back(context),
             borderRadius: BorderRadius.circular(999),
             child: Container(
               width: 36,
@@ -308,64 +309,87 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Pour une journée", style: AppTextStyles.h3),
-            const SizedBox(height: 16),
-            _dayPriceInput(),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Pour une journée", style: AppTextStyles.h3),
+              const SizedBox(height: 16),
+              _dayPriceInput(),
 
-            if (_showDurations) ...[
-              const SizedBox(height: 24),
+              if (_showDurations) ...[
+                const SizedBox(height: 24),
 
-              Text(
-                "Fixez des tarifs par durée de location.\n"
-                "Un prix dégressif incite les locataires à réserver sur\n"
-                "plusieurs jours.",
-                style: AppTextStyles.label.copyWith(
-                  color: AppColors.textPrimary,
+                RichText(
+                  text: TextSpan(
+                    style: AppTextStyles.label.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: "Fixez des tarifs par durée de location.\n",
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const TextSpan(
+                        text:
+                            "Un prix dégressif incite les locataires à réserver sur\n"
+                            "plusieurs jours.",
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
+                _durationRow(
+                  title: "Pour 3 jours",
+                  current: _price3Days,
+                  recommended: _recommended3,
+                  min: minTotal,
+                  max: max3,
+                  onMinus: _dec3,
+                  onPlus: _inc3,
+                ),
 
-              _durationRow(
-                title: "Pour 3 jours",
-                current: _price3Days,
-                recommended: _recommended3,
-                min: minTotal,
-                max: max3,
-                onMinus: _dec3,
-                onPlus: _inc3,
-              ),
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
-
-              _durationRow(
-                title: "Pour 7 jours",
-                current: _price7Days,
-                recommended: _recommended7,
-                min: minTotal,
-                max: max7,
-                onMinus: _dec7,
-                onPlus: _inc7,
-              ),
+                _durationRow(
+                  title: "Pour 7 jours",
+                  current: _price7Days,
+                  recommended: _recommended7,
+                  min: minTotal,
+                  max: max7,
+                  onMinus: _dec7,
+                  onPlus: _inc7,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
       bottomNavigationBar: Container(
         color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 54,
-            child: CustomButton(
-              text: "Suivant",
-              onPressed: _showDurations ? goToStep3 : null,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 54,
+                child: CustomButton(
+                  text: "Suivant",
+                  onPressed: _showDurations ? goToStep3 : null,
+                ),
+              ),
             ),
           ),
         ),

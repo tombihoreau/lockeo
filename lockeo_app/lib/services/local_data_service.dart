@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product.dart';
 import '../models/image.dart';
 import '../models/offer.dart';
@@ -15,8 +16,32 @@ import '../models/notification_template.dart';
 import '../models/user_notification.dart';
 
 class LocalDataService {
+  static const _favoriteProductIdsKey = 'favorite_product_ids';
+
   Future<List<Product>> loadProducts() async {
-    return loadJson<Product>("products", (json) => Product.fromJson(json));
+    final products = await loadJson<Product>(
+      "products",
+      (json) => Product.fromJson(json),
+    );
+    final prefs = await SharedPreferences.getInstance();
+    final storedFavorites = prefs.getStringList(_favoriteProductIdsKey);
+
+    if (storedFavorites == null) {
+      return products;
+    }
+
+    final favoriteIds = storedFavorites
+        .map(int.tryParse)
+        .whereType<int>()
+        .toSet();
+
+    return products
+        .map(
+          (product) => product.copyWith(
+            isFavorite: favoriteIds.contains(product.productId),
+          ),
+        )
+        .toList();
   }
 
   Future<List<ImageModel>> loadImages() async {
@@ -124,6 +149,36 @@ class LocalDataService {
     return offers
         .where((o) => favoriteProducts.any((p) => p.productId == o.productId))
         .toList();
+  }
+
+  Future<void> toggleFavoriteProduct(int productId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getStringList(_favoriteProductIdsKey);
+
+    Set<int> favoriteIds;
+    if (existing == null) {
+      final products = await loadJson<Product>(
+        "products",
+        (json) => Product.fromJson(json),
+      );
+      favoriteIds = products
+          .where((product) => product.isFavorite)
+          .map((product) => product.productId)
+          .toSet();
+    } else {
+      favoriteIds = existing.map(int.parse).toSet();
+    }
+
+    if (favoriteIds.contains(productId)) {
+      favoriteIds.remove(productId);
+    } else {
+      favoriteIds.add(productId);
+    }
+
+    await prefs.setStringList(
+      _favoriteProductIdsKey,
+      favoriteIds.map((id) => id.toString()).toList(),
+    );
   }
 
   Future<List<Review>> getReviewsForUser(int userId) async {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import '../theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 
@@ -42,7 +43,7 @@ class SearchHeader extends StatelessWidget {
             children: [
               if (showBackButton)
                 GestureDetector(
-                  onTap: onBack ?? () => Navigator.pop(context),
+                  onTap: onBack ?? () => AppNavigator.back(context),
                   child: Container(
                     width: 36,
                     height: 36,

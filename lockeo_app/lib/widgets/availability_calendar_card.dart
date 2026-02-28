@@ -15,6 +15,12 @@ class AvailabilityCalendarCard extends StatefulWidget {
 
 class _AvailabilityCalendarCardState extends State<AvailabilityCalendarCard> {
   DateTime _focusedDay = DateTime.now();
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  bool _isPastDate(DateTime day) {
+    final today = _dateOnly(DateTime.now());
+    return _dateOnly(day).isBefore(today);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +52,8 @@ class _AvailabilityCalendarCardState extends State<AvailabilityCalendarCard> {
         ),
 
         // ✅ jours indispos grisés
-        enabledDayPredicate: (day) => !widget.isUnavailableDay(day),
+        enabledDayPredicate: (day) =>
+            !_isPastDate(day) && !widget.isUnavailableDay(day),
 
         // calendrier informatif (pas de sélection)
         calendarStyle: CalendarStyle(
@@ -54,7 +61,7 @@ class _AvailabilityCalendarCardState extends State<AvailabilityCalendarCard> {
             color: Colors.grey.shade300,
             shape: BoxShape.circle,
           ),
-          disabledTextStyle: TextStyle(color: Colors.grey.shade400),
+          disabledTextStyle: TextStyle(color: Colors.grey.shade600),
           defaultTextStyle: const TextStyle(color: Colors.black),
           weekendTextStyle: const TextStyle(color: Colors.black),
         ),

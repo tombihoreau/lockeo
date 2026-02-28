@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import '../models/offer.dart';
 import '../services/local_data_service.dart';
 import '../models/product.dart';
@@ -8,6 +9,7 @@ import 'confirmation_reservation_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import '../theme/app_colors.dart';
 import 'package:intl/intl.dart';
+import '../widgets/security_card.dart';
 
 class ReservationPaymentScreen extends StatefulWidget {
   final int offerId;
@@ -29,6 +31,9 @@ class ReservationPaymentScreen extends StatefulWidget {
 class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
   final dataService = LocalDataService();
 
+  bool _isLoading = true;
+  String? _loadError;
+
   Offer? _offer;
   Product? _product;
   ImageModel? _img;
@@ -40,35 +45,107 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
   }
 
   Future<void> _loadData() async {
-    final offer = await dataService.getOfferById(widget.offerId);
-
-    if (offer == null) return;
-    final products = await dataService.loadProducts();
-    final images = await dataService.loadImages();
-    final product = products.firstWhere((p) => p.productId == offer.productId);
-    final productImage = images.firstWhere(
-      (img) => img.productId == product.productId,
-    );
-
     setState(() {
-      _offer = offer;
-      _product = product;
-      _img = productImage;
+      _isLoading = true;
+      _loadError = null;
     });
+
+    try {
+      final offer = await dataService.getOfferById(widget.offerId);
+      if (offer == null) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _loadError = 'Offer introuvable (offerId=${widget.offerId}).';
+        });
+        return;
+      }
+
+      final products = await dataService.loadProducts();
+      final images = await dataService.loadImages();
+
+      final product = products.cast<Product?>().firstWhere(
+        (p) => p?.productId == offer.productId,
+        orElse: () => null,
+      );
+
+      if (product == null) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _loadError =
+              'Produit introuvable pour offerId=${offer.offerId} (productId=${offer.productId}).';
+        });
+        return;
+      }
+
+      final productImage = images.cast<ImageModel?>().firstWhere(
+        (img) => img?.productId == product.productId,
+        orElse: () => null,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _offer = offer;
+        _product = product;
+        _img = productImage;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _loadError = 'Erreur de chargement: $e';
+      });
+    }
   }
 
   int get _days => widget.endDate.difference(widget.startDate).inDays + 1;
 
   double get _rentalPrice => (_product?.price ?? 0) * _days;
 
-  double get _insurancePrice => _rentalPrice * 0.06;
+  double get _insurancePrice => _rentalPrice * 0.15;
 
   double get _total => _rentalPrice + _insurancePrice;
 
   @override
   Widget build(BuildContext context) {
-    if (_product == null) {
+    if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_loadError != null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => AppNavigator.back(context),
+          ),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _loadError!,
+                style: AppTextStyles.body.copyWith(color: AppColors.primaryRed),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadData,
+                child: const Text('Réessayer'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (_product == null) {
+      return const Scaffold(
+        body: Center(child: Text('Aucune donnée produit disponible.')),
+      );
     }
 
     return Scaffold(
@@ -78,11 +155,11 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
         elevation: 0,
         title: Text(
           "Demande de location",
-          style: AppTextStyles.h1.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => AppNavigator.back(context),
         ),
       ),
 
@@ -173,7 +250,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                 "Durée de location",
                 style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
               ),
-              const SizedBox(height: 8),
+
               Row(
                 children: [
                   const Icon(
@@ -190,6 +267,13 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 32),
+
+              SecurityCard(
+                onTap: () {
+                  // navigation ou ouverture modal
+                },
               ),
 
               const SizedBox(height: 32),
@@ -255,10 +339,8 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                   children: [
                     Text(
                       "${_total.toStringAsFixed(2)}€",
-                      style: AppTextStyles.body.copyWith(
+                      style: AppTextStyles.hero.copyWith(
                         color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 41,
                       ),
                     ),
                   ],
@@ -300,12 +382,11 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      ReservationConfirmationScreen(
-                        offerId: widget.offerId,
-                        startDate: widget.startDate,
-                        endDate: widget.endDate,
-                      ),
+                  builder: (_) => ReservationConfirmationScreen(
+                    offerId: widget.offerId,
+                    startDate: widget.startDate,
+                    endDate: widget.endDate,
+                  ),
                 ),
               );
             },

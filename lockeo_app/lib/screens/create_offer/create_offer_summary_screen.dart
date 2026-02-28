@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../models/offerDraft.dart';
@@ -118,7 +119,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
       outsideTextStyle:
           AppTextStyles.label.copyWith(color: Colors.grey.shade400),
       disabledTextStyle:
-          AppTextStyles.label.copyWith(color: Colors.grey.shade400),
+          AppTextStyles.label.copyWith(color: Colors.black54),
       todayTextStyle: AppTextStyles.label.copyWith(
         color: AppColors.textPrimary,
         fontWeight: FontWeight.w700,
@@ -244,7 +245,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: InkWell(
-            onTap: () => Navigator.pop(context),
+            onTap: () => AppNavigator.back(context),
             borderRadius: BorderRadius.circular(999),
             child: Container(
               width: 36,
@@ -267,7 +268,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
         //   Padding(
         //     padding: const EdgeInsets.only(right: 12),
         //     child: TextButton(
-        //       onPressed: () => Navigator.pop(context), // retour vers les steps
+        //       onPressed: () => AppNavigator.back(context), // retour vers les steps
         //       child: Text(
         //         "Modifier",
         //         style: AppTextStyles.caption.copyWith(
@@ -305,7 +306,10 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                   child: Text(
                     "${d.location ?? ''}",
                     style:
-                        AppTextStyles.label.copyWith(color: AppColors.textPrimary),
+                        AppTextStyles.caption.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w500,
+                          ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -322,7 +326,10 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                 Text(
                   "${(d.pricePerDay ?? 0).toStringAsFixed(0)}€/jour",
                   style:
-                      AppTextStyles.label.copyWith(color: AppColors.textPrimary),
+                      AppTextStyles.caption.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                          ),
                 ),
                 const SizedBox(width: 8),
                 if (d.price3Days != null && d.price3Days! > 0) ...[
@@ -349,7 +356,10 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                   child: Text(
                     d.state ?? "Bon état",
                     style:
-                        AppTextStyles.label.copyWith(color: AppColors.textPrimary),
+                        AppTextStyles.caption.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w500,
+                          ),
                   ),
                 ),
               ],
@@ -407,10 +417,21 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                 // Affichage des indispos même si le jour est "disabled"
                 calendarBuilders: CalendarBuilders(
                   defaultBuilder: (context, day, focusedDay) {
-                    final isOut =
-                        day.month != focusedDay.month; // hors mois courant
+                    final today = _dateOnly(DateTime.now());
+                    final isPast = _dateOnly(day).isBefore(today);
                     final isUnavailable = _isUnavailableDate(day);
                     final isEnabled = _isEnabledDay(day);
+
+                    if (isPast || !isEnabled) {
+                      return Center(
+                        child: Text(
+                          "${day.day}",
+                          style: AppTextStyles.label.copyWith(
+                            color: Colors.black54,
+                          ),
+                        ),
+                      );
+                    }
 
                     if (isUnavailable) {
                       return Center(
@@ -428,17 +449,6 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
                             ),
-                          ),
-                        ),
-                      );
-                    }
-
-                    if (!isEnabled || isOut) {
-                      return Center(
-                        child: Text(
-                          "${day.day}",
-                          style: AppTextStyles.label.copyWith(
-                            color: Colors.grey.shade400,
                           ),
                         ),
                       );

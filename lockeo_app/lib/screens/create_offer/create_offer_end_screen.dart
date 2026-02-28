@@ -94,7 +94,7 @@ class CreateOfferEndScreen extends StatelessWidget {
 
                               GestureDetector(
                                 onTap: () {
-                                  // Naviguer vers l'annonce
+                                  // JULES FAUT QUE CA NAVIGUE VERS LA NOUVELLE ANNONCE QU'ON VIENT DE CREER
                                 },
                                 child: Text(
                                   "Voir mon annonce",

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import '../services/local_data_service.dart';
 import '../models/category.dart';
 import '../widgets/button.dart';
@@ -25,7 +26,7 @@ class _FiltersPageState extends State<FiltersPage> {
   List<Category> _categories = [];
   List<int> _selectedCategories = [];
 
-  double _maxDistance = 20;
+  double _maxDistance = 100;
 
   // ✅ nouvelle logique prix
   double _minPossiblePrice = 0;
@@ -34,6 +35,7 @@ class _FiltersPageState extends State<FiltersPage> {
 
   String _sortBy = "Prix";
   DateTimeRange? _selectedDateRange;
+  bool _favoritesOnly = false;
 
   bool _isLoading = true;
   late TextEditingController _controller;
@@ -80,10 +82,11 @@ class _FiltersPageState extends State<FiltersPage> {
     RangeValues defaultRange = RangeValues(minP, maxP);
 
     List<int> initialCats = [];
-    double initialMaxDistance = 20;
+    double initialMaxDistance = 100;
     String initialSortBy = "Prix";
     DateTimeRange? initialDateRange;
     RangeValues initialPriceRange = defaultRange;
+    bool initialFavoritesOnly = false;
 
     if (f != null) {
       initialCats = List<int>.from(f['categories'] ?? []);
@@ -92,6 +95,7 @@ class _FiltersPageState extends State<FiltersPage> {
       if (md is num) initialMaxDistance = md.toDouble();
 
       initialSortBy = (f['sortBy'] ?? "Prix").toString();
+      initialFavoritesOnly = f['favoritesOnly'] == true;
 
       final dr = f['selectedDateRange'];
       if (dr != null && dr is Map && dr['start'] != null && dr['end'] != null) {
@@ -125,6 +129,7 @@ class _FiltersPageState extends State<FiltersPage> {
       _maxDistance = initialMaxDistance;
       _sortBy = initialSortBy;
       _selectedDateRange = initialDateRange;
+      _favoritesOnly = initialFavoritesOnly;
 
       _minPossiblePrice = minP;
       _maxPossiblePrice = maxP;
@@ -205,10 +210,11 @@ class _FiltersPageState extends State<FiltersPage> {
   void _applyAndClose() {
     Navigator.pop(context, {
       'categories': _selectedCategories,
-      'maxDistance': _maxDistance,
+      'maxDistance': _maxDistance >= 100 ? null : _maxDistance,
       // ✅ renvoie null si full range => ProductGrid ne filtre pas
       'priceRange': _isFullPriceRangeSelected ? null : _selectedPriceRange,
       'sortBy': _sortBy,
+      'favoritesOnly': _favoritesOnly,
       'selectedDateRange': _selectedDateRange == null
           ? null
           : {
@@ -233,7 +239,7 @@ class _FiltersPageState extends State<FiltersPage> {
           padding: const EdgeInsets.only(left: 12),
           child: InkWell(
             borderRadius: BorderRadius.circular(999),
-            onTap: () => Navigator.pop(context),
+            onTap: () => AppNavigator.back(context),
             child: Container(
               width: 40,
               height: 40,
@@ -383,6 +389,10 @@ class _FiltersPageState extends State<FiltersPage> {
                             child: Text("Distance"),
                           ),
                           DropdownMenuItem(
+                            value: "Popularité",
+                            child: Text("Popularité"),
+                          ),
+                          DropdownMenuItem(
                             value: "Nouveautés",
                             child: Text("Nouveautés"),
                           ),
@@ -397,7 +407,48 @@ class _FiltersPageState extends State<FiltersPage> {
 
                   const SizedBox(height: 22),
 
-                  // 5) Prix (nouveau fonctionnement)
+                  // 5) Favoris
+                  _h3("Favoris"),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: _inputDecoration(),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _favoritesOnly
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: _favoritesOnly
+                              ? AppColors.primaryRed
+                              : AppColors.textGrey,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "Favoris uniquement",
+                            style: AppTextStyles.label.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Switch.adaptive(
+                          value: _favoritesOnly,
+                          activeColor: AppColors.primaryRed,
+                          onChanged: (value) {
+                            setState(() => _favoritesOnly = value);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // 6) Prix (nouveau fonctionnement)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

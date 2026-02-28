@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import '../widgets/product_grid.dart';
 import '../screens/filters_screen.dart';
 import '../widgets/search_header.dart';
+import '../widgets/main_scaffold.dart';
+import 'home_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 
 class SearchPage extends StatefulWidget {
   final String? initialQuery;
   final List<int>? initialCategoryIds;
-  const SearchPage({super.key, this.initialQuery, this.initialCategoryIds});
+  final String initialSortBy;
+  final bool favoritesOnly;
+
+  const SearchPage({
+    super.key,
+    this.initialQuery,
+    this.initialCategoryIds,
+    this.initialSortBy = "Prix",
+    this.favoritesOnly = false,
+  });
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -20,14 +32,16 @@ class _SearchPageState extends State<SearchPage> {
   String _query = '';
   int _resultCount = 0;
   List<int> _selectedCategories = [];
-  double _maxDistance = 20;
+  double? _maxDistance;
   RangeValues? _priceRange;
-  String _sortBy = "Prix";
+  late String _sortBy;
+  late bool _favoritesOnly;
   bool get _hasActiveFilters {
     return _selectedCategories.isNotEmpty ||
-        _maxDistance != 20 ||
+        _maxDistance != null ||
         _priceRange != null ||
-        _sortBy != "Prix";
+        _sortBy != "Prix" ||
+        _favoritesOnly;
   }
 
   @override
@@ -36,6 +50,8 @@ class _SearchPageState extends State<SearchPage> {
     _controller = TextEditingController(text: widget.initialQuery ?? '');
     _query = widget.initialQuery ?? '';
     _selectedCategories = widget.initialCategoryIds ?? [];
+    _sortBy = widget.initialSortBy;
+    _favoritesOnly = widget.favoritesOnly;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNode);
@@ -53,7 +69,11 @@ class _SearchPageState extends State<SearchPage> {
             controller: _controller,
             initialQuery: _query,
             onChanged: (value) => setState(() => _query = value),
-            onBack: () => Navigator.pop(context),
+            onBack: () => AppNavigator.back(
+              context,
+              fallbackBuilder: (_) =>
+                  const MainScaffold(currentIndex: 0, child: HomeScreen()),
+            ),
           ),
 
           // 🧱 Résultats
@@ -96,12 +116,13 @@ class _SearchPageState extends State<SearchPage> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => FiltersPage(
-                                searchQuery: _query, // 👈 nouvelle propriété
+                                searchQuery: _query,
                                 initialFilters: {
                                   'categories': _selectedCategories,
                                   'maxDistance': _maxDistance,
                                   'priceRange': _priceRange,
                                   'sortBy': _sortBy,
+                                  'favoritesOnly': _favoritesOnly,
                                 },
                               ),
                             ),
@@ -112,12 +133,16 @@ class _SearchPageState extends State<SearchPage> {
                               _selectedCategories = List<int>.from(
                                 result['categories'] ?? [],
                               );
-                              _maxDistance = (result['maxDistance'] as num)
-                                  .toDouble();
+                              final maxDistance = result['maxDistance'];
+                              _maxDistance = maxDistance is num
+                                  ? maxDistance.toDouble()
+                                  : null;
                               _priceRange =
                                   result['priceRange'] as RangeValues?;
-
-                              _sortBy = (result['sortBy'] ?? "Prix").toString();
+                              _sortBy =
+                                  (result['sortBy'] ?? "Prix").toString();
+                              _favoritesOnly =
+                                  result['favoritesOnly'] == true;
                             });
                           }
                         },
@@ -133,7 +158,10 @@ class _SearchPageState extends State<SearchPage> {
                                 decoration: TextDecoration.none,
                               ),
                             ),
-                            Icon(Icons.chevron_right, color: AppColors.blue800),
+                            Icon(
+                              Icons.chevron_right,
+                              color: AppColors.blue800,
+                            ),
                           ],
                         ),
                       ),
@@ -146,13 +174,14 @@ class _SearchPageState extends State<SearchPage> {
                   Expanded(
                     child: ProductGrid(
                       key: ValueKey(
-                        "$_query-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy",
+                        "$_query-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy-$_favoritesOnly",
                       ),
                       searchQuery: _query,
                       selectedCategories: _selectedCategories,
                       maxDistance: _maxDistance,
                       priceRange: _priceRange,
                       sortBy: _sortBy,
+                      favoritesOnly: _favoritesOnly,
                       onCountChanged: (count) {
                         if (count != _resultCount) {
                           setState(() {

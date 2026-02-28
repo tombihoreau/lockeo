@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 
 import '../models/product.dart';
 import '../models/image.dart';
@@ -34,14 +35,23 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
+<<<<<<< HEAD
   final _conversationsService = ConversationsService();
+=======
+  final LocalDataService _dataService = LocalDataService();
+
+  Future<void> _toggleFavorite() async {
+    await _dataService.toggleFavoriteProduct(widget.offer.productId);
+    if (!mounted) return;
+    setState(() {});
+  }
+>>>>>>> features/redesign
 
   @override
   Widget build(BuildContext context) {
-    final dataService = LocalDataService();
-
     return FutureBuilder<List<dynamic>>(
       future: Future.wait([
+<<<<<<< HEAD
         dataService.loadProducts(),
         dataService.loadImages(),
         dataService.loadUsers(),
@@ -50,6 +60,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         dataService.loadReservations(),
         dataService.loadProductUnavailabilities(),
         dataService.loadReviews(),
+=======
+        _dataService.loadProducts(),
+        _dataService.loadImages(),
+        _dataService.loadUsers(),
+        _dataService.loadOffers(),
+        _dataService.loadCategories(),
+        _dataService.loadReservations(),
+        _dataService.loadProductUnavailabilities(),
+        _dataService.loadReviews(),
+        _dataService.loadConversations(),
+        _dataService.loadMessages(),
+        _dataService.getCurrentUser(),
+>>>>>>> features/redesign
       ]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -152,7 +175,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => AppNavigator.back(context),
             ),
           ),
 
@@ -164,7 +187,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: 320,
-                  child: ImageSlider(images: productImages, height: 320),
+                  child: ImageSlider(
+                    images: productImages,
+                    height: 320,
+                    isFavorite: product.isFavorite,
+                    onToggleFavorite: _toggleFavorite,
+                  ),
                 ),
 
                 Padding(
@@ -194,8 +222,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           Flexible(
                             child: Text(
                               "${product.city}, ${product.postalCode}",
-                              style: AppTextStyles.label.copyWith(
+                              style: AppTextStyles.caption.copyWith(
                                 color: Colors.black,
+                                fontWeight: FontWeight.w300,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -215,8 +244,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                           Text(
                             "${product.price?.toStringAsFixed(0)}€/jour",
-                            style: AppTextStyles.label.copyWith(
+                            style: AppTextStyles.caption.copyWith(
                               color: Colors.black,
+                              fontWeight: FontWeight.w300,
                             ),
                           ),
 
@@ -251,8 +281,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             Flexible(
                               child: Text(
                                 "Cet objet a été loué $rentalCount fois.",
-                                style: AppTextStyles.label.copyWith(
+                                style: AppTextStyles.caption.copyWith(
                                   color: Colors.black,
+                                  fontWeight: FontWeight.w300,
                                 ),
                               ),
                             ),
@@ -271,8 +302,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           Flexible(
                             child: Text(
                               product.state,
-                              style: AppTextStyles.label.copyWith(
+                              style: AppTextStyles.caption.copyWith(
                                 color: Colors.black,
+                                fontWeight: FontWeight.w300,
                               ),
                             ),
                           ),

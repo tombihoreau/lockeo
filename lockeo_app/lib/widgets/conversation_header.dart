@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
@@ -35,6 +36,7 @@ class ConversationHeader extends StatelessWidget {
   final VoidCallback? onAccept;
   final VoidCallback? onDecline;
   final VoidCallback? onMakeOffer;
+  final VoidCallback? onOpenOfferDetails;
   final VoidCallback? onOpenInventory;
   final VoidCallback? onValidateInventory;
 
@@ -61,6 +63,7 @@ class ConversationHeader extends StatelessWidget {
     this.onAccept,
     this.onDecline,
     this.onMakeOffer,
+    this.onOpenOfferDetails,
     this.onOpenInventory,
     this.onValidateInventory,
   });
@@ -77,7 +80,7 @@ class ConversationHeader extends StatelessWidget {
           Row(
             children: [
               GestureDetector(
-                onTap: () => Navigator.pop(context),
+                onTap: () => AppNavigator.back(context),
                 child: Container(
                   width: 27,
                   height: 27,
@@ -104,71 +107,75 @@ class ConversationHeader extends StatelessWidget {
           const SizedBox(height: 14),
 
           // 🔹 CARD PRODUIT
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: Image.asset(
-                  imagePath,
-                  width: 137,
-                  height: 113,
-                  fit: BoxFit.cover,
+          InkWell(
+            onTap: onOpenOfferDetails,
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Image.asset(
+                    imagePath,
+                    width: 137,
+                    height: 113,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      productTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.h2.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          color: Colors.black,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            "$cityLabel, $postalCodeLabel",
-                            style: AppTextStyles.label.copyWith(
-                              color: Colors.black,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.savings_outlined,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        productTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.h2.copyWith(
                           color: AppColors.textPrimary,
-                          size: 18,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          "${pricePerDay.round()}€ / jour",
-                          style: AppTextStyles.label.copyWith(
-                            color: AppColors.textPrimary,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.black,
+                            size: 18,
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              "$cityLabel, $postalCodeLabel",
+                              style: AppTextStyles.label.copyWith(
+                                color: Colors.black,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.savings_outlined,
+                            color: AppColors.textPrimary,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${pricePerDay.round()}€ / jour",
+                            style: AppTextStyles.label.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           const SizedBox(height: 14),
@@ -294,13 +301,6 @@ class ConversationHeader extends StatelessWidget {
                 child: CustomButton(text: "Louer", onPressed: onMakeOffer),
               ),
               const SizedBox(width: 10),
-              Expanded(
-                child: CustomButton(
-                  text: "Faire une offre",
-                  outlined: true,
-                  onPressed: onMakeOffer,
-                ),
-              ),
             ],
           );
 

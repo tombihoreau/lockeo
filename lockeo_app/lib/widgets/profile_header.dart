@@ -4,6 +4,7 @@ import '../theme/app_text_styles.dart';
 
 class PublicProfileHeader extends StatelessWidget {
   final String firstName;
+  final String? email;
   final double rating;
   final int reviewsCount;
 
@@ -17,6 +18,7 @@ class PublicProfileHeader extends StatelessWidget {
   const PublicProfileHeader({
     super.key,
     required this.firstName,
+    this.email,
     required this.rating,
     required this.reviewsCount,
     this.transactionsCount = 0,
@@ -100,6 +102,15 @@ class PublicProfileHeader extends StatelessWidget {
                       firstName,
                       style: AppTextStyles.hero.copyWith(color: Colors.white),
                     ),
+                    if (email != null && email!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        email!,
+                        style: AppTextStyles.label.copyWith(
+                          color: Colors.white.withOpacity(0.92),
+                        ),
+                      ),
+                    ],
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [

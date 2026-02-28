@@ -173,12 +173,6 @@ class _HeaderState extends State<Header> {
                       style: AppTextStyles.label.copyWith(color: Colors.white),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 6),
-                    const Icon(
-                      Icons.expand_more,
-                      color: Colors.white70,
-                      size: 18,
-                    ),
                   ],
                 ),
             ],

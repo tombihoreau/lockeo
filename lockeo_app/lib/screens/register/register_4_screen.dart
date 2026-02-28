@@ -66,7 +66,7 @@ class Register4Screen extends StatelessWidget {
 
                 // Bouton
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                   child: SizedBox(
                     width: double.infinity,
                     height: 64,
@@ -86,7 +86,7 @@ class Register4Screen extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        "DÉCOUVRIR LOCKEO",
+                        "CONTINUER",
                         style: AppTextStyles.button.copyWith(
                           color: AppColors.primaryRed,
                         ),

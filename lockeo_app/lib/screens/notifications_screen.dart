@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:intl/intl.dart';
 
 import '../services/local_data_service.dart';
@@ -93,7 +94,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         centerTitle: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => AppNavigator.back(context),
         ),
         titleSpacing: 0,
         title: Text(
