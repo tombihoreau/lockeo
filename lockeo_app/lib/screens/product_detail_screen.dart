@@ -35,9 +35,7 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-<<<<<<< HEAD
   final _conversationsService = ConversationsService();
-=======
   final LocalDataService _dataService = LocalDataService();
 
   Future<void> _toggleFavorite() async {
@@ -45,22 +43,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (!mounted) return;
     setState(() {});
   }
->>>>>>> features/redesign
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<dynamic>>(
       future: Future.wait([
-<<<<<<< HEAD
-        dataService.loadProducts(),
-        dataService.loadImages(),
-        dataService.loadUsers(),
-        dataService.loadOffers(),
-        dataService.loadCategories(),
-        dataService.loadReservations(),
-        dataService.loadProductUnavailabilities(),
-        dataService.loadReviews(),
-=======
         _dataService.loadProducts(),
         _dataService.loadImages(),
         _dataService.loadUsers(),
@@ -72,7 +59,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         _dataService.loadConversations(),
         _dataService.loadMessages(),
         _dataService.getCurrentUser(),
->>>>>>> features/redesign
       ]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

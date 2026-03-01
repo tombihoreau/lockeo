@@ -8,11 +8,8 @@ import '../widgets/complete_profile_card.dart';
 import '../widgets/main_scaffold.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/services/location_service.dart';
-<<<<<<< HEAD
 import '../services/auth_session.dart';
-=======
 import 'search_screen.dart';
->>>>>>> features/redesign
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -147,15 +144,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(height: 20),
-<<<<<<< HEAD
-                  // const SuggestionsGrid(maxItems: 4, shrinkWrap: true),
-=======
                   const ProductGrid(
                     maxItems: 4,
                     sortBy: "Popularité",
                     shrinkWrap: true,
                   ),
->>>>>>> features/redesign
                   const SizedBox(height: 40),
 
                   Row(

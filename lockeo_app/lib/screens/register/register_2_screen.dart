@@ -16,8 +16,6 @@ class _Register2ScreenState extends State<Register2Screen> {
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
-  final _firstNameCtrl = TextEditingController();
-  final _lastNameCtrl = TextEditingController();
   final _pwdCtrl = TextEditingController();
   final _pwdConfirmCtrl = TextEditingController();
 
@@ -32,15 +30,12 @@ class _Register2ScreenState extends State<Register2Screen> {
     _firstNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _emailCtrl.dispose();
-    _firstNameCtrl.dispose();
-    _lastNameCtrl.dispose();
     _pwdCtrl.dispose();
     _pwdConfirmCtrl.dispose();
     super.dispose();
   }
 
   void _submit() {
-<<<<<<< HEAD
     if (_submitting) return;
 
     final firstName = _firstNameCtrl.text.trim();
@@ -49,21 +44,26 @@ class _Register2ScreenState extends State<Register2Screen> {
     final pwd = _pwdCtrl.text;
     final pwdConfirm = _pwdConfirmCtrl.text;
 
-    if (firstName.isEmpty || lastName.isEmpty || email.isEmpty || pwd.isEmpty || pwdConfirm.isEmpty) {
+    if (firstName.isEmpty ||
+        lastName.isEmpty ||
+        email.isEmpty ||
+        pwd.isEmpty ||
+        pwdConfirm.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Merci de remplir tous les champs.')),
-=======
+      );
+      return;
+    }
+
     if (!_acceptedCgu) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Veuillez accepter les conditions générales d’utilisation."),
         ),
->>>>>>> features/redesign
       );
       return;
     }
 
-<<<<<<< HEAD
     if (pwd != pwdConfirm) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Les mots de passe ne correspondent pas.')),
@@ -82,20 +82,19 @@ class _Register2ScreenState extends State<Register2Screen> {
           passwordConfirm: pwdConfirm,
         )
         .then((_) {
-      if (!mounted) return;
-      Navigator.pushNamed(context, '/register_3');
-    }).catchError((e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Inscription impossible: $e')),
-      );
-    }).whenComplete(() {
-      if (!mounted) return;
-      setState(() => _submitting = false);
-    });
-=======
-    Navigator.pushNamed(context, '/register_3');
->>>>>>> features/redesign
+          if (!mounted) return;
+          Navigator.pushNamed(context, '/register_3');
+        })
+        .catchError((e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Inscription impossible: $e')),
+          );
+        })
+        .whenComplete(() {
+          if (!mounted) return;
+          setState(() => _submitting = false);
+        });
   }
 
   @override
@@ -171,11 +170,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                           ),
                         ),
 
-<<<<<<< HEAD
-                        const SizedBox(height: 40),
-=======
                         const SizedBox(height: 28),
->>>>>>> features/redesign
 
                         Text(
                           "Créer votre compte",
@@ -184,14 +179,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                           ),
                         ),
 
-<<<<<<< HEAD
-                        const SizedBox(height: 10),
-
-
-                        const SizedBox(height: 22),
-=======
                         const SizedBox(height: 16),
->>>>>>> features/redesign
 
                         _Label("Votre prénom"),
                         const SizedBox(height: 8),
@@ -227,31 +215,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                           obscureText: false,
                         ),
 
-                        const SizedBox(height: 12),
-
-                        _Label("Votre prénom"),
-                        const SizedBox(height: 8),
-                        _TextFieldWhite(
-                          controller: _firstNameCtrl,
-                          hintText: "Votre prénom",
-                          keyboardType: TextInputType.name,
-                          textInputAction: TextInputAction.next,
-                          obscureText: false,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        _Label("Votre nom"),
-                        const SizedBox(height: 8),
-                        _TextFieldWhite(
-                          controller: _lastNameCtrl,
-                          hintText: "Votre nom",
-                          keyboardType: TextInputType.name,
-                          textInputAction: TextInputAction.next,
-                          obscureText: false,
-                        ),
-
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 18),
 
                         _Label("Création du mot de passe"),
                         const SizedBox(height: 8),
@@ -315,38 +279,6 @@ class _Register2ScreenState extends State<Register2Screen> {
 
                 // Bottom button
                 Padding(
-<<<<<<< HEAD
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 64,
-                    child: ElevatedButton(
-                      onPressed: _submitting ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.primaryRed,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                      ),
-                      child: _submitting
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Color(0xFFD1380D),
-                              ),
-                            )
-                          : Text(
-                              "CRÉER MON COMPTE",
-                              style: AppTextStyles.button.copyWith(
-                                color: const Color(0xFFD1380D),
-                              ),
-                            ),
-                    ),
-=======
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -401,7 +333,7 @@ class _Register2ScreenState extends State<Register2Screen> {
                         width: double.infinity,
                         height: 64,
                         child: ElevatedButton(
-                          onPressed: _submit,
+                          onPressed: _submitting ? null : _submit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: AppColors.primaryRed,
@@ -410,16 +342,24 @@ class _Register2ScreenState extends State<Register2Screen> {
                               borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          child: Text(
-                            "CRÉER MON COMPTE",
-                            style: AppTextStyles.button.copyWith(
-                              color: AppColors.primaryRed,
-                            ),
-                          ),
+                          child: _submitting
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Color(0xFFD1380D),
+                                  ),
+                                )
+                              : Text(
+                                  "CRÉER MON COMPTE",
+                                  style: AppTextStyles.button.copyWith(
+                                    color: AppColors.primaryRed,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
->>>>>>> features/redesign
                   ),
                 ),
               ],

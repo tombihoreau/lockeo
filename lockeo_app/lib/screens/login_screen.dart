@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: double.infinity,
                                 height: 64,
                                 child: ElevatedButton(
-                                  onPressed: _onLogin,
+                                  onPressed: _submitting ? null : _onLogin,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     foregroundColor: AppColors.primaryRed,
@@ -226,15 +226,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                       borderRadius: BorderRadius.circular(22),
                                     ),
                                   ),
-                                  child: const Text(
-                                    "SE CONNECTER",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w900,
-                                      fontStyle: FontStyle.italic,
-                                      letterSpacing: 1.0,
-                                    ),
-                                  ),
+                                  child: _submitting
+                                      ? const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Color(0xFFD1380D),
+                                          ),
+                                        )
+                                      : const Text(
+                                          "SE CONNECTER",
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w900,
+                                            fontStyle: FontStyle.italic,
+                                            letterSpacing: 1.0,
+                                          ),
+                                        ),
                                 ),
                               ),
                             ),
@@ -242,53 +251,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-<<<<<<< HEAD
-                  ),
-
-                  const Spacer(),
-
-                  // Bottom button (with bottom safe area spacing)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 32),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 64,
-                      child: ElevatedButton(
-                        onPressed: _submitting ? null : _onLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primaryRed,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                        ),
-                        child: _submitting
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Color(0xFFD1380D),
-                                ),
-                              )
-                            : const Text(
-                                "SE CONNECTER",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  fontStyle: FontStyle.italic,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
-=======
                   );
                 },
->>>>>>> features/redesign
               ),
             ),
           ),

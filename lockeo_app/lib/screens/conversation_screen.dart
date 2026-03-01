@@ -649,28 +649,6 @@ class _ConversationScreenState extends State<ConversationScreen> {
                           ),
                         ),
                       ),
-<<<<<<< HEAD
-                      child: ConversationHeader(
-                        role: _role,
-                        status: _reservationStatus,
-                        productTitle: _product?.name ?? "",
-                        priceLabel:
-                            "${(_product?.price ?? 0).toStringAsFixed(0)}€/jour",
-                        dateLabel: _formatRangeLabel(_reservation),
-                        otherUserName: _otherUserName,
-                        imagePath:
-                            _productImage?.url ?? 'assets/images/default.jpg',
-                        cityLabel: _product?.city ?? "",
-                        postalCodeLabel: _product?.postalCode ?? "",
-                        pricePerDay: _product?.price ?? 0,
-                        onAccept: _acceptReservation,
-                        onDecline: _declineReservation,
-                        onOpenInventory: _openInventory,
-                        onValidateInventory: _validateInventory,
-                        onMakeOffer: _openOfferSheet,
-                        rentalEndDate: _reservation?.endDate,
-=======
-
                     Expanded(
                       child: ListView.builder(
                         controller: _scrollController,
@@ -695,63 +673,33 @@ class _ConversationScreenState extends State<ConversationScreen> {
                             onOtherAvatarTap: _openOtherUserProfile,
                           );
                         },
->>>>>>> features/redesign
                       ),
                     ),
-
-<<<<<<< HEAD
-                  Expanded(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final m = _messages[index];
-                        final isMe = m.senderUserId == _currentUserId;
-                        return _MessageRow(
-                          isMe: isMe,
-                          text: m.text,
-                          timeLabel: _formatTime(m.createdAt),
-                          teal: AppColors.blue100,
-                        );
-                      },
-                    ),
-                  ),
-
-                  if (_isOtherUserTyping)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 28,
-                        right: 28,
-                        bottom: 8,
-                      ),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Est en train d'écrire ...",
-                          style: AppTextStyles.caption.copyWith(
-                            color: Colors.grey.shade600,
+                    if (_isOtherUserTyping)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          left: 28,
+                          right: 28,
+                          bottom: 8,
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Est en train d'écrire ...",
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ),
                       ),
+                    _ComposerBar(
+                      controller: _controller,
+                      onSend: _sendMessage,
+                      onChanged: _onComposerChanged,
                     ),
-
-                  _ComposerBar(
-                    controller: _controller,
-                    onSend: _sendMessage,
-                    onChanged: _onComposerChanged,
-                  ),
-                ],
-              ),
-=======
-                    _ComposerBar(controller: _controller, onSend: _sendMessage),
                   ],
                 ),
         ),
->>>>>>> features/redesign
       ),
     );
   }
