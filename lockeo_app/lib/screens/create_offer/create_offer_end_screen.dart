@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import '../../widgets/button.dart';
@@ -18,6 +20,39 @@ class CreateOfferEndScreen extends StatelessWidget {
     required this.offerImagePath,
     required this.offerCount,
   });
+
+  Widget _buildOfferImage() {
+    if (offerImagePath.trim().isEmpty) {
+      return Container(
+        width: 90,
+        height: 90,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.image_outlined),
+      );
+    }
+
+    if (offerImagePath.startsWith('assets/')) {
+      return Image.asset(
+        offerImagePath,
+        width: 90,
+        height: 90,
+        fit: BoxFit.cover,
+      );
+    }
+
+    return Image.file(
+      File(offerImagePath),
+      width: 90,
+      height: 90,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        width: 90,
+        height: 90,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.broken_image_outlined),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,12 +102,7 @@ class CreateOfferEndScreen extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(
-                          offerImagePath,
-                          width: 90,
-                          height: 90,
-                          fit: BoxFit.cover,
-                        ),
+                        child: _buildOfferImage(),
                       ),
 
                       const SizedBox(width: 14),

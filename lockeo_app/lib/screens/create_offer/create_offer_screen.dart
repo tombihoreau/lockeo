@@ -111,15 +111,16 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       return;
     }
 
-    if (photos.length < 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Veuillez ajouter au moins trois photos."),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    // Validation temporairement désactivée pour les tests Web.
+    // if (photos.length < 3) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(
+    //       content: Text("Veuillez ajouter au moins trois photos."),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    //   return;
+    // }
 
     final enrichedCategoryIds = _withParents(
       _selectedCategories.toSet(),

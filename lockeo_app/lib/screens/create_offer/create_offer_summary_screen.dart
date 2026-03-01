@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../models/offerDraft.dart';
 import '../../services/local_data_service.dart';
+import '../../services/create_offer_service.dart';
 import '../../models/category.dart';
 import '../../widgets/button.dart';
 import '../../widgets/category_card.dart';
@@ -24,8 +25,10 @@ class CreateOfferSummaryScreen extends StatefulWidget {
 
 class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
   List<Category> _allCategories = [];
+  final _createOfferService = CreateOfferService();
 
   bool _acceptedCgu = false;
+  bool _publishing = false;
 
   DateTime _focusedDay = DateTime.now();
 
@@ -40,21 +43,34 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
     if (mounted) setState(() {});
   }
 
-  void _saveAndContinue() {
-    if (!_acceptedCgu) return;
+  Future<void> _saveAndContinue() async {
+    if (!_acceptedCgu || _publishing) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CreateOfferEndScreen(
-          offerTitle: widget.draft.title ?? '',
-          offerDescription: widget.draft.description ?? '',
-          offerImagePath:
-              widget.draft.photos.isNotEmpty ? widget.draft.photos[0] : '',
-          offerCount: 1,
+    setState(() => _publishing = true);
+    try {
+      await _createOfferService.createOffer(widget.draft);
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CreateOfferEndScreen(
+            offerTitle: widget.draft.title ?? '',
+            offerDescription: widget.draft.description ?? '',
+            offerImagePath:
+                widget.draft.photos.isNotEmpty ? widget.draft.photos[0] : '',
+            offerCount: 1,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur lors de la publication: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _publishing = false);
+    }
   }
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -493,8 +509,12 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
           child: SizedBox(
             height: 54,
             child: CustomButton(
-              text: "Publier mon annonce",
-              onPressed: _acceptedCgu ? _saveAndContinue : null,
+              text: _publishing ? "Publication..." : "Publier mon annonce",
+              onPressed: (_acceptedCgu && !_publishing)
+                  ? () {
+                      _saveAndContinue();
+                    }
+                  : null,
             ),
           ),
         ),
