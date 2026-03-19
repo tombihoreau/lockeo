@@ -9,6 +9,7 @@ async function bootstrap() {
 
 // Sécurité/CORS (optionnel)
   app.enableCors();
+  app.setGlobalPrefix('api');
 
   // Validation globale des DTOs
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

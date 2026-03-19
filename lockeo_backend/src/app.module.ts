@@ -40,7 +40,8 @@ import { MessagingModule } from './messaging/messaging.module';
       useFactory: (config: ConfigService) => {
         const nodeEnv = config.get<string>('NODE_ENV', 'development');
         const isProd = nodeEnv === 'production';
-        const synchronize = config.get<string>('DB_SYNCHRONIZE', isProd ? 'false' : 'true') === 'true';
+        // Keep schema changes controlled through migrations by default.
+        const synchronize = config.get<string>('DB_SYNCHRONIZE', 'false') === 'true';
         const dropSchema = config.get<string>('DB_DROP_SCHEMA', 'false') === 'true';
 
         return {
