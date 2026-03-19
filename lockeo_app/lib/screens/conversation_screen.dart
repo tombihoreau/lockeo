@@ -633,7 +633,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                             priceLabel:
                                 "${(_product?.price ?? 0).toStringAsFixed(0)}€/jour",
                             dateLabel: _formatRangeLabel(_reservation),
-                            otherUserName: _otherUser?.firstName ?? "",
+                            otherUserName: _otherUserName,
                             imagePath:
                                 _productImage?.url ?? 'assets/images/default.jpg',
                             cityLabel: _product?.city ?? "",
