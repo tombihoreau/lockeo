@@ -19,7 +19,7 @@ class OfferCategoriesSelector extends StatelessWidget {
   });
 
   List<Category> get _parents =>
-      categories.where((c) => c.isParent).toList()
+      categories.where((c) => (c.parentId ?? 0) == 0).toList()
         ..sort((a, b) => a.label.compareTo(b.label));
 
   int? get _selectedParentId {
@@ -45,7 +45,7 @@ class OfferCategoriesSelector extends StatelessWidget {
   }
 
   List<Category> _childrenOf(int parentId) =>
-      categories.where((c) => c.parentId == parentId).toList()
+      categories.where((c) => (c.parentId ?? 0) == parentId).toList()
         ..sort((a, b) => a.label.compareTo(b.label));
 
   List<int> _currentChildren(int parentId) {
