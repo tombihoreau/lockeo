@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller,Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
@@ -22,7 +22,18 @@ export class AuthController {
   @ApiOperation({ summary: 'Créer un compte (hash bcrypt)' })
   @ApiCreatedResponse({ type: AuthResponseDto })
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
-    const user = await this.users.create({ email: dto.email, password: dto.password });
+    if (dto.passwordConfirm != null && dto.passwordConfirm !== dto.password) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    const user = await this.users.create({
+      email: dto.email,
+      password: dto.password,
+      login: dto.login,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      phoneNumber: dto.phoneNumber,
+    });
     return this.auth.signToken(user);
   }
 
@@ -34,12 +45,10 @@ export class AuthController {
     return this.auth.signToken(user);
   }
 
-  @Get('me')
-  @ApiOperation({ summary: 'Profil de l’utilisateur courant' })
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({ schema: { example: { userId: 'uuid', email: 'alice@lockeo.io', role: 'user' } } })
-  me(@Req() req: RequestWithUser): AuthenticatedUser {
+  @Get('me')
+  me(@Req() req: RequestWithUser) {
     return req.user;
   }
 }

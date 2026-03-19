@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:lockeo_app/utils/app_navigator.dart';
 import '../widgets/product_grid.dart';
 import '../screens/filters_screen.dart';
 import '../widgets/search_header.dart';
+import '../widgets/main_scaffold.dart';
+import 'home_screen.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
+import 'package:lockeo_app/theme/app_colors.dart';
 
 class SearchPage extends StatefulWidget {
   final String? initialQuery;
-  const SearchPage({super.key, this.initialQuery});
+  final List<int>? initialCategoryIds;
+  final String initialSortBy;
+  final bool favoritesOnly;
+
+  const SearchPage({
+    super.key,
+    this.initialQuery,
+    this.initialCategoryIds,
+    this.initialSortBy = "Prix",
+    this.favoritesOnly = false,
+  });
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -16,16 +31,27 @@ class _SearchPageState extends State<SearchPage> {
   final FocusNode _focusNode = FocusNode();
   String _query = '';
   int _resultCount = 0;
-  List<String> _selectedCategories = [];
-  double _maxDistance = 20;
+  List<int> _selectedCategories = [];
+  double? _maxDistance;
   RangeValues? _priceRange;
-  String _sortBy = "Prix";
+  late String _sortBy;
+  late bool _favoritesOnly;
+  bool get _hasActiveFilters {
+    return _selectedCategories.isNotEmpty ||
+        _maxDistance != null ||
+        _priceRange != null ||
+        _sortBy != "Prix" ||
+        _favoritesOnly;
+  }
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialQuery ?? '');
     _query = widget.initialQuery ?? '';
+    _selectedCategories = widget.initialCategoryIds ?? [];
+    _sortBy = widget.initialSortBy;
+    _favoritesOnly = widget.favoritesOnly;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNode);
@@ -43,7 +69,11 @@ class _SearchPageState extends State<SearchPage> {
             controller: _controller,
             initialQuery: _query,
             onChanged: (value) => setState(() => _query = value),
-            onBack: () => Navigator.pop(context),
+            onBack: () => AppNavigator.back(
+              context,
+              fallbackBuilder: (_) =>
+                  const MainScaffold(currentIndex: 0, child: HomeScreen()),
+            ),
           ),
 
           // 🧱 Résultats
@@ -61,21 +91,18 @@ class _SearchPageState extends State<SearchPage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 30), // 👈 Décalage ciblé
-                          const Text(
+                          const SizedBox(height: 30),
+                          Text(
                             "Nos résultats",
-                            style: TextStyle(
-                              fontSize: 23,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87,
+                            style: AppTextStyles.h2.copyWith(
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             "$_resultCount résultat${_resultCount > 1 ? 's' : ''}",
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade600,
+                            style: AppTextStyles.label.copyWith(
+                              color: AppColors.textGrey,
                             ),
                           ),
                         ],
@@ -89,12 +116,13 @@ class _SearchPageState extends State<SearchPage> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => FiltersPage(
-                                searchQuery: _query, // 👈 nouvelle propriété
+                                searchQuery: _query,
                                 initialFilters: {
                                   'categories': _selectedCategories,
                                   'maxDistance': _maxDistance,
                                   'priceRange': _priceRange,
                                   'sortBy': _sortBy,
+                                  'favoritesOnly': _favoritesOnly,
                                 },
                               ),
                             ),
@@ -102,25 +130,38 @@ class _SearchPageState extends State<SearchPage> {
 
                           if (result != null) {
                             setState(() {
-                              _selectedCategories = List<String>.from(
+                              _selectedCategories = List<int>.from(
                                 result['categories'] ?? [],
                               );
-                              _maxDistance = result['maxDistance'];
-                              _priceRange = result['priceRange'];
-                              _sortBy = result['sortBy'];
+                              final maxDistance = result['maxDistance'];
+                              _maxDistance = maxDistance is num
+                                  ? maxDistance.toDouble()
+                                  : null;
+                              _priceRange =
+                                  result['priceRange'] as RangeValues?;
+                              _sortBy =
+                                  (result['sortBy'] ?? "Prix").toString();
+                              _favoritesOnly =
+                                  result['favoritesOnly'] == true;
                             });
-
-                            // 🔄 ici tu pourras filtrer ta ProductGrid
                           }
                         },
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "Filtres",
-                              style: TextStyle(color: Color(0xFF00434A)),
+                              _hasActiveFilters
+                                  ? "Modifier mes filtres"
+                                  : "Nos filtres",
+                              style: AppTextStyles.link.copyWith(
+                                color: AppColors.blue800,
+                                decoration: TextDecoration.none,
+                              ),
                             ),
-                            Icon(Icons.chevron_right, color: Color(0xFF00434A)),
+                            Icon(
+                              Icons.chevron_right,
+                              color: AppColors.blue800,
+                            ),
                           ],
                         ),
                       ),
@@ -133,13 +174,14 @@ class _SearchPageState extends State<SearchPage> {
                   Expanded(
                     child: ProductGrid(
                       key: ValueKey(
-                        "$_query-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy",
+                        "$_query-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy-$_favoritesOnly",
                       ),
                       searchQuery: _query,
                       selectedCategories: _selectedCategories,
                       maxDistance: _maxDistance,
                       priceRange: _priceRange,
                       sortBy: _sortBy,
+                      favoritesOnly: _favoritesOnly,
                       onCountChanged: (count) {
                         if (count != _resultCount) {
                           setState(() {

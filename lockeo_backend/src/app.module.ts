@@ -15,6 +15,8 @@ import { Image } from './entities/image.entity';
 import { ProductUnavailability } from './entities/product-unavailability.entity';
 import { Category } from './entities/category.entity';
 import { CategoriesModule } from './categories/categories.module';
+import { ProductsModule } from './products/products.module';
+import { FavoritesModule } from './favorites/favorites.module';
 import { ProductHasCategory } from './entities/product-has-category.entity';
 import { NotificationTemplate } from './entities/notification-template.entity';
 import { UserNotification } from './entities/user-notification.entity';
@@ -23,16 +25,23 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
+import { MessagingModule } from './messaging/messaging.module';
 
 @Module({
-  imports: [UsersModule, ConfigModule.forRoot({ isGlobal: true }), CategoriesModule,
+  imports: [
+    UsersModule, 
+    ConfigModule.forRoot({ isGlobal: true }), 
+    CategoriesModule, 
+    ProductsModule, 
+    FavoritesModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const nodeEnv = config.get<string>('NODE_ENV', 'development');
         const isProd = nodeEnv === 'production';
-        const synchronize = config.get<string>('DB_SYNCHRONIZE', isProd ? 'false' : 'true') === 'true';
+        // Keep schema changes controlled through migrations by default.
+        const synchronize = config.get<string>('DB_SYNCHRONIZE', 'false') === 'true';
         const dropSchema = config.get<string>('DB_DROP_SCHEMA', 'false') === 'true';
 
         return {
@@ -58,7 +67,9 @@ import { join } from 'path';
         } as const;
       },
     }),
-    UsersModule, AuthModule],
+    AuthModule,
+    MessagingModule,
+  ],
   controllers: [AppController],
   providers: [AppService]
 })

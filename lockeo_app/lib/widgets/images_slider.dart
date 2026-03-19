@@ -38,13 +38,12 @@ class _ImageSliderState extends State<ImageSlider> {
               url: "assets/images/default.jpg",
               positionImage: 0,
               createdAt: "",
-            )
+            ),
           ];
 
     return Stack(
       children: [
         // Carte avec coins arrondis + ombre légère
-
         CarouselSlider.builder(
           itemCount: displayedImages.length,
           options: CarouselOptions(
@@ -98,7 +97,9 @@ class _ImageSliderState extends State<ImageSlider> {
               child: Icon(
                 widget.isFavorite ? Icons.favorite : Icons.favorite_border,
                 size: 20,
-                color: widget.isFavorite ? const Color(0xFFE74C3C) : Colors.black87,
+                color: widget.isFavorite
+                    ? const Color(0xFFE74C3C)
+                    : Colors.black87,
               ),
             ),
           ),
@@ -106,22 +107,29 @@ class _ImageSliderState extends State<ImageSlider> {
 
         if (displayedImages.length > 1)
           Positioned(
-            left: 12,
             bottom: 12,
-            child: Row(
-              children: List.generate(displayedImages.length, (i) {
-                final active = i == _currentIndex;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  margin: const EdgeInsets.only(right: 6),
-                  width: active ? 8 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: active ? Colors.white : Colors.white.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                );
-              }),
+            left: 0,
+            right: 0,
+            child: Align(
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(displayedImages.length, (i) {
+                  final active = i == _currentIndex;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.only(right: 6),
+                    width: active ? 20 : 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: active
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  );
+                }),
+              ),
             ),
           ),
       ],

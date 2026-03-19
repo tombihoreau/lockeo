@@ -9,6 +9,7 @@ async function bootstrap() {
 
 // Sécurité/CORS
   app.enableCors();
+  app.setGlobalPrefix('api');
 
   // Validation globale des DTOs
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
@@ -18,6 +19,17 @@ async function bootstrap() {
     .setTitle('Lockeo API')
     .setDescription('Documentation OpenAPI pour le backend Lockeo')
     .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        in: 'header',
+      },
+      'access-token',
+    )
+    .addTag('auth')
+    .addTag('users')
     .addBearerAuth() // JWT
     .addTag('Users') 
     .build();

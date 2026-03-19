@@ -1,8 +1,18 @@
 [
-  { "category_id": 1, "label": "Vélo" },
-  { "category_id": 2, "label": "Sports d'hiver" },
-  { "category_id": 3, "label": "Natation" },
-  { "category_id": 4, "label": "Randonnée" },
-  { "category_id": 5, "label": "Camping" },
-  { "category_id": 6, "label": "Escalade" }
+  { "category_id": 1, "label": "Nautique", "parent_id": 0 },
+  { "category_id": 2, "label": "Randonnée", "parent_id": 0 },
+  { "category_id": 3, "label": "Vélo", "parent_id": 0 },  
+  { "category_id": 4, "label": "Sport de balle", "parent_id": 0 },
+  { "category_id": 5, "label": "Kayak", "parent_id": 1 },
+  { "category_id": 6, "label": "Plongée", "parent_id": 1 },
+  { "category_id": 7, "label": "Surf", "parent_id": 1 },
+  { "category_id": 8, "label": "VTT", "parent_id": 3 },
+  { "category_id": 9, "label": "Vélos électriques", "parent_id": 3 },
+  { "category_id": 10, "label": "Vélos de route", "parent_id": 3 },
+  { "category_id": 11, "label": "Football", "parent_id": 4 },
+  { "category_id": 12, "label": "Basketball", "parent_id": 4 },
+  { "category_id": 13, "label": "Tennis", "parent_id": 4 },
+  { "category_id": 14, "label": "Chaussures de randonnée", "parent_id": 2 },
+  { "category_id": 15, "label": "Tentes", "parent_id": 2 },
+  { "category_id": 16, "label": "Accessoires de randonnée", "parent_id": 2 }
 ]

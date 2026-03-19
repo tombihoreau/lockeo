@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/category.dart';
+import 'package:lockeo_app/theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
 
-class CategoriesSelector extends StatelessWidget {
+class CategoriesSelector extends StatefulWidget {
   final List<Category> categories;
   final List<int> selectedCategories;
   final Function(List<int>) onChanged;
@@ -16,73 +18,128 @@ class CategoriesSelector extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: categories.map((cat) {
-        final isSelected = selectedCategories.contains(cat.categoryId,);
+  State<CategoriesSelector> createState() => _CategoriesSelectorState();
+}
 
-        return GestureDetector(
-          onTap: () {
-            if (!selectable) return;
-            final List<int> updated = List.from(selectedCategories);
+class _CategoriesSelectorState extends State<CategoriesSelector> {
+  int? _expandedParentId;
 
-            if (isSelected) {
-              updated.remove(cat.categoryId);
-            } else {
-              updated.add(cat.categoryId);
-            }
+  // Instance "helper" pour réutiliser tes méthodes (onlyParents / childrenOf)
+  // (comme elles ne sont pas static)
+  final Category _catHelper = Category(categoryId: -1, label: "_helper");
 
-            onChanged(updated);
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 10,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF00434A)
-                    : Colors.grey.shade300,
-                width: 1.5,
+  List<Category> get _parents => _catHelper.onlyParents(widget.categories);
+
+  List<Category> _childrenOf(int parentId) =>
+      _catHelper.childrenOf(widget.categories, parentId);
+
+  void _toggleSelect(int categoryId) {
+    if (!widget.selectable) return;
+
+    final updated = List<int>.from(widget.selectedCategories);
+
+    if (updated.contains(categoryId)) {
+      updated.remove(categoryId);
+    } else {
+      updated.add(categoryId);
+    }
+
+    widget.onChanged(updated);
+  }
+
+  Widget _chip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    bool showCheck = true,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected && showCheck)
+              Container(
+                margin: const EdgeInsets.only(right: 6),
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, size: 12, color: Colors.white),
+              ),
+            Text(
+              label,
+              style: AppTextStyles.h3.copyWith(
+                color: isSelected ? AppColors.primaryBlue : AppColors.textGrey,
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isSelected)
-                  Container(
-                    margin: const EdgeInsets.only(right: 6),
-                    width: 18,
-                    height: 18,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF00434A),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      size: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                Text(
-                  cat.label,
-                  style: TextStyle(
-                    color: isSelected
-                        ? const Color(0xFF00434A)
-                        : Colors.black87,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final parents = _parents;
+    final children = (_expandedParentId == null)
+        ? <Category>[]
+        : _childrenOf(_expandedParentId!);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: parents.map((parent) {
+            final isOpen = _expandedParentId == parent.categoryId;
+
+            return _chip(
+              label: parent.label,
+              isSelected: isOpen, // 👈 VISUEL BLEU + CHECK
+              onTap: () {
+                setState(() {
+                  _expandedParentId = isOpen ? null : parent.categoryId;
+                });
+              },
+            );
+          }).toList(),
+        ),
+
+        if (_expandedParentId != null) ...[
+          const SizedBox(height: 14),
+          Text(
+            "Sous-catégories",
+            style: AppTextStyles.label.copyWith(color: AppColors.textPrimary),
           ),
-        );
-      }).toList(),
+          const SizedBox(height: 10),
+
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: children.map((child) {
+              final isSelected = widget.selectedCategories.contains(
+                child.categoryId,
+              );
+
+              return _chip(
+                label: child.label,
+                isSelected: isSelected,
+                onTap: () => _toggleSelect(child.categoryId),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
   }
 }

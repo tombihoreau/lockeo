@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../theme/app_colors.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -12,9 +13,9 @@ class CustomBottomNavBar extends StatelessWidget {
   void _onItemTapped(BuildContext context, int index) {
     final List<String> routes = [
       '/',            // Accueil
-      '/calendar',    // Découvrir / Calendrier
+      '/discover',    // Découvrir / Calendrier
       '/create',      // Créer
-      '/messages',    // Messages
+      '/messaging',    // Messages
       '/userProfile', // Profil
     ];
 
@@ -47,8 +48,8 @@ class CustomBottomNavBar extends StatelessWidget {
             children: [
               _buildItem(context, LucideIcons.home, "Accueil", 0),
               _buildItem(context, LucideIcons.compass, "Découvrir", 1),
-              const SizedBox(width: 60), // espace pour le bouton "+"
-              _buildItem(context, LucideIcons.messageCircle, "Message", 3),
+              const SizedBox(width: 60), 
+              _buildItem(context, LucideIcons.messageCircle, "Messages", 3),
               _buildItem(context, LucideIcons.user, "Profil", 4),
             ],
           ),
@@ -67,12 +68,12 @@ class CustomBottomNavBar extends StatelessWidget {
                 child: Container(
                   margin: const EdgeInsets.all(5),
                   decoration: const BoxDecoration(
-                    color: Color(0xFFF69F1D), // Ton jaune
+                    color: AppColors.primaryBlue,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     LucideIcons.plus,
-                    color: Colors.black,
+                    color: Colors.white,
                     size: 30,
                   ),
                 ),
@@ -96,13 +97,13 @@ class CustomBottomNavBar extends StatelessWidget {
           Icon(
             icon,
             size: 22,
-            color: isActive ? const Color(0xFF00616B) : Colors.black54,
+            color: isActive ? AppColors.primaryBlue : Colors.black54,
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFF00616B) : Colors.black87,
+              color: isActive ? AppColors.primaryBlue : Colors.black87,
               fontSize: 12,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
             ),

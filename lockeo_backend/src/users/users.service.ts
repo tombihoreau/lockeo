@@ -28,11 +28,12 @@ export class UsersService {
 
   async create(input: CreateUserInput): Promise<User> {
     const email = input.email.trim().toLowerCase();
-    const login = (input.login ?? email).trim();
 
-    const exists = await this.repo.findOne({
-      where: [{ email }, { login }],
-    });
+  const rawLogin = input.login?.trim();
+  const login = rawLogin && rawLogin.length > 0 ? rawLogin : null;
+
+    const where = [{ email }, ...(login != null ? [{ login }] : [])];
+    const exists = await this.repo.findOne({ where });
     if (exists) throw new ConflictException('Email or login already in use');
 
     const saltRounds = 12;

@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import type { Request } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 export interface JwtPayload {
   sub: number;
   email: string;
-  role: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  role?: string;
   iat?: number;
   exp?: number;
 }
@@ -14,29 +16,28 @@ export interface JwtPayload {
 export interface AuthenticatedUser {
   userId: number;
   email: string;
-  role: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  role?: string;
 }
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
-    // Extracteur Bearer fourni par passport-jwt (types installés)
-    const bearerExtractor = ExtractJwt.fromAuthHeaderAsBearerToken();
-
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  constructor(private config: ConfigService) {
     super({
-      jwtFromRequest: bearerExtractor,
-      secretOrKey: process.env.JWT_SECRET ?? 'dev-secret', // à mettre dans les variables d'environnement en prod
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: config.get<string>('JWT_SECRET', 'dev-secret'),
       ignoreExpiration: false,
     });
   }
 
   validate(payload: JwtPayload): AuthenticatedUser {
-    const { sub, email, role } = payload;
-
     return {
-      userId: sub,
-      email,
-      role,
+      userId: payload.sub,
+      email: payload.email,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      role: payload.role,
     };
   }
 }
