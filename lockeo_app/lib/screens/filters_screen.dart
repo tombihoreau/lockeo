@@ -34,7 +34,6 @@ class _FiltersPageState extends State<FiltersPage> {
   double _maxPossiblePrice = 100;
   RangeValues _selectedPriceRange = const RangeValues(0, 100);
 
-  String _sortBy = "Prix";
   DateTimeRange? _selectedDateRange;
 
   bool _isLoading = true;
@@ -83,7 +82,6 @@ class _FiltersPageState extends State<FiltersPage> {
 
     List<int> initialCats = [];
     double initialMaxDistance = 20;
-    String initialSortBy = "Prix";
     DateTimeRange? initialDateRange;
     RangeValues initialPriceRange = defaultRange;
 
@@ -92,8 +90,6 @@ class _FiltersPageState extends State<FiltersPage> {
 
       final md = f['maxDistance'];
       if (md is num) initialMaxDistance = md.toDouble();
-
-      initialSortBy = (f['sortBy'] ?? "Prix").toString();
 
       final dr = f['selectedDateRange'];
       if (dr != null && dr is Map && dr['start'] != null && dr['end'] != null) {
@@ -125,7 +121,6 @@ class _FiltersPageState extends State<FiltersPage> {
       _selectedCategories = initialCats;
 
       _maxDistance = initialMaxDistance;
-      _sortBy = initialSortBy;
       _selectedDateRange = initialDateRange;
 
       _minPossiblePrice = minP;
@@ -221,7 +216,6 @@ class _FiltersPageState extends State<FiltersPage> {
       'maxDistance': _maxDistance,
       // ✅ renvoie null si full range => ProductGrid ne filtre pas
       'priceRange': _isFullPriceRangeSelected ? null : _selectedPriceRange,
-      'sortBy': _sortBy,
       'selectedDateRange': _selectedDateRange == null
           ? null
           : {
@@ -371,48 +365,7 @@ class _FiltersPageState extends State<FiltersPage> {
 
                   const SizedBox(height: 22),
 
-                  // 4) Trier par
-                  _h3("Trier par"),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: _inputDecoration(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _sortBy,
-                        isExpanded: true,
-                        icon: Icon(
-                          Icons.expand_more,
-                          color: AppColors.primaryBlue,
-                        ),
-                        style: AppTextStyles.label.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: "Prix", child: Text("Prix")),
-                          DropdownMenuItem(
-                            value: "Distance",
-                            child: Text("Distance"),
-                          ),
-                          DropdownMenuItem(
-                            value: "Nouveautés",
-                            child: Text("Nouveautés"),
-                          ),
-                        ],
-                        onChanged: (val) {
-                          if (val == null) return;
-                          setState(() => _sortBy = val);
-                        },
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  // 5) Prix (nouveau fonctionnement)
+                  // 4) Prix (nouveau fonctionnement)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

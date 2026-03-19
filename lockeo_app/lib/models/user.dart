@@ -30,7 +30,7 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    double _toDouble(dynamic v, [double fallback = 0.0]) {
+    double toDouble(dynamic v, [double fallback = 0.0]) {
       if (v == null) return fallback;
       if (v is num) return v.toDouble();
       if (v is String) {
@@ -39,20 +39,32 @@ class User {
       }
       return fallback;
     }
+
+    bool toBool(dynamic value, [bool fallback = false]) {
+      if (value is bool) return value;
+      if (value is num) return value != 0;
+      if (value is String) {
+        final normalized = value.trim().toLowerCase();
+        if (normalized == 'true' || normalized == '1') return true;
+        if (normalized == 'false' || normalized == '0') return false;
+      }
+      return fallback;
+    }
+
     return User(
       userId: json['user_id'],
-      lastName: json['last_name'],
-      firstName: json['first_name'],
-      email: json['email'],
-      login: json['login'],
-      phoneNumber: json['phone_number'],
-  longitude: _toDouble(json['longitude'], 0.0),
-  latitude: _toDouble(json['latitude'], 0.0),
-      postalCode: json['postal_code'],
-      city: json['city'],
-      isVerified: json['is_verified'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      lastName: (json['last_name'] ?? '').toString(),
+      firstName: (json['first_name'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      login: (json['login'] ?? '').toString(),
+      phoneNumber: (json['phone_number'] ?? '').toString(),
+      longitude: toDouble(json['longitude'], 0.0),
+      latitude: toDouble(json['latitude'], 0.0),
+      postalCode: (json['postal_code'] ?? '').toString(),
+      city: (json['city'] ?? '').toString(),
+      isVerified: toBool(json['is_verified']),
+      createdAt: (json['created_at'] ?? '').toString(),
+      updatedAt: (json['updated_at'] ?? '').toString(),
     );
   }
 

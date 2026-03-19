@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 import { Product } from '../entities/product.entity';
 import { Image } from '../entities/image.entity';
 import { User } from '../entities/user.entity';
@@ -8,12 +8,15 @@ import { Offer } from '../entities/offer.entity';
 import { Category } from '../entities/category.entity';
 import { ProductHasCategory } from '../entities/product-has-category.entity';
 import { ProductUnavailability } from '../entities/product-unavailability.entity';
+import { Reservation } from '../entities/reservation.entity';
+import { Review } from '../entities/review.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 
-export interface ProductSuggestionDto {
+export interface ProductDto {
   product_id: number;
   name: string;
   description: string | null;
+  category_ids: number[];
   price: string | number | null;
   price_3_days: string | number | null;
   price_7_days: string | number | null;
@@ -26,7 +29,89 @@ export interface ProductSuggestionDto {
   is_available: boolean;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface ProductSuggestionDto {
+  product_id: ProductDto['product_id'];
+  name: ProductDto['name'];
+  description: ProductDto['description'];
+  category_ids: ProductDto['category_ids'];
+  price: ProductDto['price'];
+  price_3_days: ProductDto['price_3_days'];
+  price_7_days: ProductDto['price_7_days'];
+  price_estimate: ProductDto['price_estimate'];
+  state: ProductDto['state'];
+  longitude: ProductDto['longitude'];
+  latitude: ProductDto['latitude'];
+  city: ProductDto['city'];
+  postal_code: ProductDto['postal_code'];
+  is_available: ProductDto['is_available'];
+  created_at: ProductDto['created_at'];
+  updated_at: ProductDto['updated_at'];
   image_uri?: string | null;
+  offer_id?: number | null;
+  offer_user_id?: number | null;
+  offer_status?: string | null;
+  offer_amount?: string | number | null;
+  offer_created_at?: Date | null;
+}
+
+export interface ProductOwnerDto {
+  user_id: number;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  login: string | null;
+  phone_number: string | null;
+  longitude: number | null;
+  latitude: number | null;
+  postal_code: string | null;
+  city: string | null;
+  is_verified: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ProductImageDto {
+  image_id: number;
+  product_id: number;
+  url: string;
+  position_image: number;
+  created_at: Date;
+}
+
+export interface ProductUnavailabilityDto {
+  unavailability_id: number;
+  product_id: number;
+  start_date_time: Date;
+  end_date_time: Date;
+}
+
+export interface ProductCategoryDto {
+  category_id: number;
+  label: string;
+  parent_id: number;
+}
+
+export interface ProductDetailDto {
+  offer: {
+    offer_id: number;
+    product_id: number;
+    user_id: number;
+    status: string;
+    amount: string | number;
+    created_at: Date;
+  };
+  product: ProductDto;
+  owner: ProductOwnerDto;
+  images: ProductImageDto[];
+  categories: ProductCategoryDto[];
+  unavailabilities: ProductUnavailabilityDto[];
+  rental_count: number;
+  owner_reviews_count: number;
+  owner_rating_average: number;
+  owner_offers_count: number;
+  other_offers: ProductSuggestionDto[];
 }
 
 export interface CreatedOfferDto {
@@ -42,7 +127,12 @@ export class ProductsService {
     const rawIds = await this.repo
       .createQueryBuilder('p')
       .select('p.product_id', 'id')
+      .distinct(true)
+      .leftJoin('p.offers', 'offer', 'offer.status = :status', {
+        status: 'open',
+      })
       .where('p.is_available = :avail', { avail: true })
+      .andWhere('offer.offer_id IS NOT NULL')
       .orderBy('RAND()')
       .limit(limit)
       .getRawMany<{ id: number }>();
@@ -50,37 +140,323 @@ export class ProductsService {
     const ids = rawIds.map((r) => r.id);
     if (ids.length === 0) return [];
 
-    const products = await this.repo
-      .createQueryBuilder('p')
-      .leftJoinAndSelect('p.images', 'img')
-      .where('p.product_id IN (:...ids)', { ids })
-      .getMany();
+    const products = await this.loadProductsForListing(ids);
 
     const order = new Map<number, number>(ids.map((id, i) => [id, i]));
     products.sort((a, b) => order.get(a.product_id)! - order.get(b.product_id)!);
 
-    return products.map((p) => ({
-      product_id: p.product_id,
-      name: p.name,
-      description: p.description ?? null,
-      price: p.price ?? null,
-      price_3_days: p.price_3_days ?? null,
-      price_7_days: p.price_7_days ?? null,
-      price_estimate: p.price_estimate ?? null,
-      state: p.state,
-      longitude: p.longitude ?? null,
-      latitude: p.latitude ?? null,
-      city: p.city,
-      postal_code: p.postal_code,
-      is_available: p.is_available,
-      created_at: p.created_at,
-      updated_at: p.updated_at,
-      image_uri:
-        p.images && p.images.length > 0
-          ? [...p.images].sort((a, b) => (a.position_image ?? 0) - (b.position_image ?? 0))[0]
-              .uri
-          : null,
-    }));
+    return products.map((p) => this.toSuggestionDto(p));
+  }
+
+  async searchProducts(
+    query: string,
+    limit: number,
+    categoryIds: number[] = [],
+    minPrice?: number,
+    maxPrice?: number,
+  ): Promise<ProductSuggestionDto[]> {
+    const normalizedQuery = query.trim();
+    if (normalizedQuery.length === 0) {
+      return [];
+    }
+
+    const normalizedCategoryIds = Array.from(
+      new Set(
+        categoryIds.filter((categoryId) => Number.isInteger(categoryId) && categoryId > 0),
+      ),
+    );
+
+    const terms = normalizedQuery
+      .toLowerCase()
+      .split(/\s+/)
+      .map((term) => term.trim())
+      .filter((term) => term.length > 0);
+
+    const idsQuery = this.repo
+      .createQueryBuilder('p')
+      .select('p.product_id', 'id')
+      .distinct(true)
+      .leftJoin('p.offers', 'offer', 'offer.status = :status', {
+        status: 'open',
+      })
+      .leftJoin('p.productCategories', 'phc')
+      .leftJoin('phc.category', 'category')
+      .where('p.is_available = :avail', { avail: true })
+      .andWhere('offer.offer_id IS NOT NULL');
+
+    terms.forEach((term, index) => {
+      const key = `term${index}`;
+      idsQuery.andWhere(
+        new Brackets((qb) => {
+          qb.where(`LOWER(p.name) LIKE :${key}`, { [key]: `%${term}%` })
+            .orWhere(`LOWER(COALESCE(p.description, '')) LIKE :${key}`, {
+              [key]: `%${term}%`,
+            })
+            .orWhere(`LOWER(category.label) LIKE :${key}`, {
+              [key]: `%${term}%`,
+            });
+        }),
+      );
+    });
+
+    if (normalizedCategoryIds.length > 0) {
+      idsQuery.andWhere('category.category_id IN (:...categoryIds)', {
+        categoryIds: normalizedCategoryIds,
+      });
+    }
+
+    if (minPrice != null) {
+      idsQuery.andWhere('p.price >= :minPrice', { minPrice });
+    }
+
+    if (maxPrice != null) {
+      idsQuery.andWhere('p.price <= :maxPrice', { maxPrice });
+    }
+
+    idsQuery.orderBy('RAND()');
+
+    const rawIds = await idsQuery.limit(limit).getRawMany<{ id: number }>();
+    const ids = rawIds.map((row) => row.id);
+
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const products = await this.loadProductsForListing(ids);
+    const order = new Map<number, number>(ids.map((id, index) => [id, index]));
+    products.sort((a, b) => order.get(a.product_id)! - order.get(b.product_id)!);
+
+    return products.map((product) => this.toSuggestionDto(product));
+  }
+
+  async getOfferDetail(offerId: number): Promise<ProductDetailDto> {
+    const offerRepo = this.repo.manager.getRepository(Offer);
+    const reservationRepo = this.repo.manager.getRepository(Reservation);
+    const reviewRepo = this.repo.manager.getRepository(Review);
+
+    const offer = await offerRepo
+      .createQueryBuilder('offer')
+      .leftJoinAndSelect('offer.product', 'product')
+      .leftJoinAndSelect('offer.owner', 'owner')
+      .leftJoinAndSelect('product.images', 'img')
+      .leftJoinAndSelect('product.productCategories', 'phc')
+      .leftJoinAndSelect('phc.category', 'category')
+      .leftJoinAndSelect('product.unavailabilities', 'unavailability')
+      .where('offer.offer_id = :offerId', { offerId })
+      .getOne();
+
+    if (!offer?.product || !offer.owner) {
+      throw new NotFoundException('Annonce introuvable');
+    }
+
+    const product = offer.product;
+    const owner = offer.owner;
+
+    const rentalCount = await reservationRepo
+      .createQueryBuilder('reservation')
+      .leftJoin('reservation.offer', 'reservationOffer')
+      .leftJoin('reservationOffer.product', 'reservationProduct')
+      .where('reservationProduct.product_id = :productId', {
+        productId: product.product_id,
+      })
+      .getCount();
+
+    const reviewStats = await reviewRepo
+      .createQueryBuilder('review')
+      .leftJoin('review.reservation', 'reservation')
+      .leftJoin('reservation.offer', 'reservationOffer')
+      .leftJoin('reservationOffer.owner', 'reviewedOwner')
+      .select('COUNT(review.review_id)', 'count')
+      .addSelect('AVG(review.rating)', 'average')
+      .where('reviewedOwner.user_id = :ownerId', { ownerId: owner.user_id })
+      .getRawOne<{ count?: string; average?: string | null }>();
+
+    const ownerOffersCount = await offerRepo
+      .createQueryBuilder('ownerOffer')
+      .leftJoin('ownerOffer.owner', 'offerOwner')
+      .where('offerOwner.user_id = :ownerId', { ownerId: owner.user_id })
+      .getCount();
+
+    const otherOffers = await this.getOwnerOtherOffers(owner.user_id, offer.offer_id, 4);
+
+    const categories = Array.from(
+      new Map(
+        (product.productCategories ?? [])
+          .map((relation) => relation.category)
+          .filter((category): category is Category => category != null)
+          .map((category) => [
+            category.category_id,
+            {
+              category_id: category.category_id,
+              label: category.label,
+              parent_id: category.parent_id ?? 0,
+            },
+          ]),
+      ).values(),
+    );
+
+    const images = (product.images ?? [])
+      .slice()
+      .sort((a, b) => (a.position_image ?? 0) - (b.position_image ?? 0))
+      .map((image) => ({
+        image_id: image.image_id,
+        product_id: product.product_id,
+        url: image.uri,
+        position_image: image.position_image ?? 0,
+        created_at: image.created_at,
+      }));
+
+    const unavailabilities = (product.unavailabilities ?? [])
+      .slice()
+      .sort((a, b) => a.start_date_time.getTime() - b.start_date_time.getTime())
+      .map((entry) => ({
+        unavailability_id: entry.unavailability_id,
+        product_id: product.product_id,
+        start_date_time: entry.start_date_time,
+        end_date_time: entry.end_date_time,
+      }));
+
+    return {
+      offer: {
+        offer_id: offer.offer_id,
+        product_id: product.product_id,
+        user_id: owner.user_id,
+        status: offer.status,
+        amount: offer.amount,
+        created_at: offer.created_at,
+      },
+      product: this.toProductDto(product),
+      owner: this.toOwnerDto(owner),
+      images,
+      categories,
+      unavailabilities,
+      rental_count: rentalCount,
+      owner_reviews_count: parseInt(reviewStats?.count ?? '0', 10) || 0,
+      owner_rating_average: Number(reviewStats?.average ?? 0) || 0,
+      owner_offers_count: ownerOffersCount,
+      other_offers: otherOffers,
+    };
+  }
+
+  private async loadProductsForListing(ids: number[]): Promise<Product[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return this.repo
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.images', 'img')
+      .leftJoinAndSelect('p.offers', 'offer', 'offer.status = :status', {
+        status: 'open',
+      })
+      .leftJoinAndSelect('offer.owner', 'offerOwner')
+      .leftJoinAndSelect('p.productCategories', 'phc')
+      .leftJoinAndSelect('phc.category', 'category')
+      .where('p.product_id IN (:...ids)', { ids })
+      .getMany();
+  }
+
+  private async getOwnerOtherOffers(
+    ownerId: number,
+    excludeOfferId: number,
+    limit: number,
+  ): Promise<ProductSuggestionDto[]> {
+    const rawIds = await this.repo
+      .createQueryBuilder('p')
+      .select('p.product_id', 'id')
+      .distinct(true)
+      .leftJoin('p.offers', 'offer', 'offer.status = :status', {
+        status: 'open',
+      })
+      .leftJoin('offer.owner', 'offerOwner')
+      .where('p.is_available = :avail', { avail: true })
+      .andWhere('offer.offer_id IS NOT NULL')
+      .andWhere('offerOwner.user_id = :ownerId', { ownerId })
+      .andWhere('offer.offer_id != :excludeOfferId', { excludeOfferId })
+      .orderBy('RAND()')
+      .limit(limit)
+      .getRawMany<{ id: number }>();
+
+    const ids = rawIds.map((row) => row.id);
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const products = await this.loadProductsForListing(ids);
+    const order = new Map<number, number>(ids.map((id, index) => [id, index]));
+    products.sort((a, b) => order.get(a.product_id)! - order.get(b.product_id)!);
+
+    return products.map((product) => this.toSuggestionDto(product));
+  }
+
+  private toProductDto(product: Product): ProductDto {
+    const categoryIds = Array.from(
+      new Set(
+        (product.productCategories ?? [])
+          .map((relation) => relation.category?.category_id)
+          .filter((categoryId): categoryId is number => typeof categoryId === 'number'),
+      ),
+    );
+
+    return {
+      product_id: product.product_id,
+      name: product.name,
+      description: product.description ?? null,
+      category_ids: categoryIds,
+      price: product.price ?? null,
+      price_3_days: product.price_3_days ?? null,
+      price_7_days: product.price_7_days ?? null,
+      price_estimate: product.price_estimate ?? null,
+      state: product.state,
+      longitude: product.longitude ?? null,
+      latitude: product.latitude ?? null,
+      city: product.city,
+      postal_code: product.postal_code,
+      is_available: product.is_available,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+    };
+  }
+
+  private toOwnerDto(user: User): ProductOwnerDto {
+    return {
+      user_id: user.user_id,
+      first_name: user.first_name ?? null,
+      last_name: user.last_name ?? null,
+      email: user.email ?? null,
+      login: user.login ?? null,
+      phone_number: user.phone_number ?? null,
+      longitude: user.longitude ?? null,
+      latitude: user.latitude ?? null,
+      postal_code: user.postal_code ?? null,
+      city: user.city ?? null,
+      is_verified: user.is_verified,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+    };
+  }
+
+  private toSuggestionDto(product: Product): ProductSuggestionDto {
+    const firstImage = (product.images ?? [])
+      .slice()
+      .sort((a, b) => (a.position_image ?? 0) - (b.position_image ?? 0))[0];
+
+    const openOffer = (product.offers ?? [])
+      .filter((offer) => offer.status === 'open')
+      .slice()
+      .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())[0];
+
+    const productDto = this.toProductDto(product);
+
+    return {
+      ...productDto,
+      image_uri: firstImage?.uri ?? null,
+      offer_id: openOffer?.offer_id ?? null,
+      offer_user_id: openOffer?.owner?.user_id ?? null,
+      offer_status: openOffer?.status ?? null,
+      offer_amount: openOffer?.amount ?? null,
+      offer_created_at: openOffer?.created_at ?? null,
+    };
   }
 
   async createOffer(ownerUserId: number, dto: CreateOfferDto): Promise<CreatedOfferDto> {

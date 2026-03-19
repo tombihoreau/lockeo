@@ -6,16 +6,22 @@ class SearchHeader extends StatelessWidget {
   final String? initialQuery;
   final VoidCallback? onBack;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onSearch;
   final bool showBackButton;
   final TextEditingController controller;
+  final FocusNode? focusNode;
 
   const SearchHeader({
     super.key,
     this.initialQuery,
     this.onBack,
     this.onChanged,
+    this.onSubmitted,
+    this.onSearch,
     this.showBackButton = true,
     required this.controller,
+    this.focusNode,
   });
 
   @override
@@ -47,7 +53,7 @@ class SearchHeader extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.arrow_back, color: Colors.white),
@@ -70,8 +76,11 @@ class SearchHeader extends StatelessWidget {
           // 🔍 Barre de recherche
           TextField(
             controller: controller,
+            focusNode: focusNode,
             onChanged: onChanged,
+            onSubmitted: onSubmitted,
             textDirection: TextDirection.ltr,
+            textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               hintText: "Objets, mot-clé...",
               hintStyle: const TextStyle(
@@ -81,15 +90,27 @@ class SearchHeader extends StatelessWidget {
               filled: true,
               fillColor: Colors.white,
               prefixIcon: const Icon(Icons.search, color: AppColors.blue900),
-              suffixIcon: (controller.text.isNotEmpty)
-                  ? IconButton(
-                      icon: const Icon(Icons.close, color: AppColors.blue900),
-                      onPressed: () {
-                        controller.clear();
-                        onChanged?.call('');
-                      },
-                    )
-                  : null,
+              suffixIcon: SizedBox(
+                width: controller.text.isNotEmpty ? 96 : 48,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (controller.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppColors.blue900),
+                        onPressed: () {
+                          controller.clear();
+                          onChanged?.call('');
+                        },
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.search, color: AppColors.blue900),
+                      onPressed: () => onSearch?.call(controller.text),
+                    ),
+                  ],
+                ),
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,

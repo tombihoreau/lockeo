@@ -38,7 +38,7 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
-    double? _toDouble(dynamic v) {
+    double? toDouble(dynamic v) {
       if (v == null) return null;
       if (v is num) return v.toDouble();
       if (v is String) {
@@ -49,24 +49,40 @@ class Product {
       return null;
     }
 
+    List<int> toIntList(dynamic value) {
+      if (value is! List) {
+        return const [];
+      }
+
+      return value
+          .map((item) {
+            if (item is int) return item;
+            if (item is num) return item.toInt();
+            if (item is String) return int.tryParse(item.trim());
+            return null;
+          })
+          .whereType<int>()
+          .toList();
+    }
+
     return Product(
       productId: json['product_id'],
-      name: json['name'],
-      description: json['description'],
-      price: _toDouble(json['price']),
-      priceEstimate: _toDouble(json['price_estimate']),
-      state: json['state'],
-      longitude: _toDouble(json['longitude']),
-      latitude: _toDouble(json['latitude']),
-      city: json['city'],
-      postalCode: json['postal_code'],
-      isAvailable: json['is_available'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-      categoryIds: List<int>.from(json['category_ids'] ?? []),
+      name: (json['name'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      price: toDouble(json['price']),
+      priceEstimate: toDouble(json['price_estimate']),
+      state: (json['state'] ?? '').toString(),
+      longitude: toDouble(json['longitude']),
+      latitude: toDouble(json['latitude']),
+      city: (json['city'] ?? '').toString(),
+      postalCode: (json['postal_code'] ?? '').toString(),
+      isAvailable: json['is_available'] == true,
+      createdAt: (json['created_at'] ?? '').toString(),
+      updatedAt: (json['updated_at'] ?? '').toString(),
+      categoryIds: toIntList(json['category_ids']),
       isFavorite: json['is_favorite'] ?? false,
-      price3Days: json['price_3_days']?.toDouble(),
-      price7Days: json['price_7_days']?.toDouble(),
+      price3Days: toDouble(json['price_3_days']),
+      price7Days: toDouble(json['price_7_days']),
     );
   }
 }

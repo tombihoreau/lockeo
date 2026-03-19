@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../services/local_data_service.dart';
+import '../models/product_detail.dart';
 import '../models/product.dart';
 import '../models/image.dart';
+import '../services/products_service.dart';
 import '../widgets/button.dart';
+import '../widgets/selected_photo_image.dart';
 import 'confirmation_reservation_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import '../theme/app_colors.dart';
@@ -27,8 +29,9 @@ class ReservationPaymentScreen extends StatefulWidget {
 }
 
 class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
-  final dataService = LocalDataService();
+  final _productsService = ProductsService();
 
+  ProductDetail? _detail;
   Product? _product;
   ImageModel? _img;
 
@@ -39,17 +42,21 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
   }
 
   Future<void> _loadData() async {
-    final offer = await dataService.getOfferById(widget.offerId);
+    final detail = await _productsService.getOfferDetail(widget.offerId);
+    final product = detail.product;
+    final productImage = detail.images.isNotEmpty
+        ? detail.images.first
+        : ImageModel(
+            imageId: 0,
+            productId: product.productId,
+            url: 'assets/images/default.jpg',
+            positionImage: 0,
+            createdAt: '',
+          );
 
-    if (offer == null) return;
-    final products = await dataService.loadProducts();
-    final images = await dataService.loadImages();
-    final product = products.firstWhere((p) => p.productId == offer.productId);
-    final productImage = images.firstWhere(
-      (img) => img.productId == product.productId,
-    );
-
+    if (!mounted) return;
     setState(() {
+      _detail = detail;
       _product = product;
       _img = productImage;
     });
@@ -105,8 +112,8 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        _img?.url ?? 'assets/images/default.jpg',
+                      child: SelectedPhotoImage(
+                        path: _img?.url ?? 'assets/images/default.jpg',
                         width: 110,
                         height: 110,
                         fit: BoxFit.cover,
@@ -305,6 +312,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                     offerId: widget.offerId,
                     startDate: widget.startDate,
                     endDate: widget.endDate,
+                    initialDetail: _detail,
                   ),
                 ),
               );

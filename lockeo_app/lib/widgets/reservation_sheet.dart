@@ -4,8 +4,8 @@ import 'package:lockeo_app/screens/reservation_payment_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import '../widgets/button.dart';
-import '../services/local_data_service.dart';
 import '../models/product.dart';
+import '../services/products_service.dart';
 import '../utils/rental_pricing.dart';
 
 class ReservationSheet extends StatefulWidget {
@@ -17,7 +17,7 @@ class ReservationSheet extends StatefulWidget {
 }
 
 class _ReservationSheetState extends State<ReservationSheet> {
-  final _dataService = LocalDataService();
+  final _productsService = ProductsService();
   DateTime? startDate;
   DateTime? endDate;
   DateTime focusedDay = DateTime.now();
@@ -33,14 +33,8 @@ class _ReservationSheetState extends State<ReservationSheet> {
   }
 
   Future<void> _loadData() async {
-    final offer = await _dataService.getOfferById(widget.offerId);
-    if (offer == null) return;
-
-    final products = await _dataService.loadProducts();
-    final product = products.firstWhere(
-      (item) => item.productId == offer.productId,
-      orElse: () => throw StateError('Produit introuvable'),
-    );
+    final detail = await _productsService.getOfferDetail(widget.offerId);
+    final product = detail.product;
 
     if (!mounted) return;
     setState(() {

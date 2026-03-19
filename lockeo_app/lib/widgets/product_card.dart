@@ -4,6 +4,7 @@ import '../models/image.dart';
 import '../theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import '../services/approx_loc_service.dart';
+import 'selected_photo_image.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -31,11 +32,23 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image en haut
-            Image.asset(
-              image.url,
+            SelectedPhotoImage(
+              path: image.url,
               height: 150,
               width: double.infinity,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 150,
+                  width: double.infinity,
+                  color: const Color(0xFFE8EDF2),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: AppColors.textGrey,
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 12),
