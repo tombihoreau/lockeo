@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/local_data_service.dart';
 import '../models/category.dart';
+import '../services/category_service.dart';
+import '../services/local_data_service.dart';
 import '../widgets/button.dart';
 import '../widgets/categories_selector.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
@@ -21,6 +22,7 @@ class FiltersPage extends StatefulWidget {
 
 class _FiltersPageState extends State<FiltersPage> {
   final dataService = LocalDataService();
+  final _categoryService = CategoryService();
 
   List<Category> _categories = [];
   List<int> _selectedCategories = [];
@@ -63,7 +65,7 @@ class _FiltersPageState extends State<FiltersPage> {
 
   Future<void> _init() async {
     // 1) charge catégories
-    final cats = await dataService.loadCategories();
+    final cats = await _loadCategories();
 
     // 2) charge produits pour min/max prix
     final priceBounds = await _loadPriceBounds();
@@ -132,6 +134,17 @@ class _FiltersPageState extends State<FiltersPage> {
 
       _isLoading = false;
     });
+  }
+
+  Future<List<Category>> _loadCategories() async {
+    try {
+      final remote = await _categoryService.fetchCategories();
+      if (remote.isNotEmpty) return remote;
+    } catch (_) {
+      // Fallback local en environnement sans backend.
+    }
+
+    return dataService.loadCategories();
   }
 
   // ---- À ADAPTER si ton champ prix n'est pas pricePerDay
@@ -308,7 +321,9 @@ class _FiltersPageState extends State<FiltersPage> {
                       activeTrackColor: AppColors.primaryBlue,
                       inactiveTrackColor: Colors.grey.shade300,
                       thumbColor: AppColors.primaryBlue,
-                      overlayColor: AppColors.primaryBlue.withOpacity(0.15),
+                      overlayColor: AppColors.primaryBlue.withValues(
+                        alpha: 0.15,
+                      ),
                     ),
                     child: Slider(
                       value: _maxDistance,
@@ -417,7 +432,9 @@ class _FiltersPageState extends State<FiltersPage> {
                       activeTrackColor: AppColors.primaryBlue,
                       inactiveTrackColor: Colors.grey.shade300,
                       thumbColor: AppColors.primaryBlue,
-                      overlayColor: AppColors.primaryBlue.withOpacity(0.15),
+                      overlayColor: AppColors.primaryBlue.withValues(
+                        alpha: 0.15,
+                      ),
                       rangeThumbShape: const RoundRangeSliderThumbShape(
                         enabledThumbRadius: 12,
                       ),

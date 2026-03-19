@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/offer.dart';
 import '../services/local_data_service.dart';
 import '../models/product.dart';
 import '../models/image.dart';
@@ -8,6 +7,7 @@ import 'confirmation_reservation_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import '../theme/app_colors.dart';
 import 'package:intl/intl.dart';
+import '../utils/rental_pricing.dart';
 
 class ReservationPaymentScreen extends StatefulWidget {
   final int offerId;
@@ -29,7 +29,6 @@ class ReservationPaymentScreen extends StatefulWidget {
 class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
   final dataService = LocalDataService();
 
-  Offer? _offer;
   Product? _product;
   ImageModel? _img;
 
@@ -51,7 +50,6 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
     );
 
     setState(() {
-      _offer = offer;
       _product = product;
       _img = productImage;
     });
@@ -59,7 +57,10 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
 
   int get _days => widget.endDate.difference(widget.startDate).inDays + 1;
 
-  double get _rentalPrice => (_product?.price ?? 0) * _days;
+  RentalPriceBreakdown get _pricing =>
+      RentalPricing.breakdownForProduct(_product!, _days);
+
+  double get _rentalPrice => _pricing.rentalPrice;
 
   double get _insurancePrice => _rentalPrice * 0.06;
 
@@ -152,7 +153,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                "${(_product?.price ?? 0).round()}€ / jour",
+                                "${_pricing.dailyRate.toStringAsFixed(2)}€ / jour",
                                 style: AppTextStyles.label.copyWith(
                                   color: AppColors.textPrimary,
                                 ),
@@ -208,7 +209,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "Location ($_days jours)",
+                      "Location ($_days jours a ${_pricing.dailyRate.toStringAsFixed(2)}€/jour)",
                       style: AppTextStyles.body.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.normal,
@@ -300,12 +301,11 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      ReservationConfirmationScreen(
-                        offerId: widget.offerId,
-                        startDate: widget.startDate,
-                        endDate: widget.endDate,
-                      ),
+                  builder: (_) => ReservationConfirmationScreen(
+                    offerId: widget.offerId,
+                    startDate: widget.startDate,
+                    endDate: widget.endDate,
+                  ),
                 ),
               );
             },

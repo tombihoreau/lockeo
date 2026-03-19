@@ -16,6 +16,8 @@ export class Product {
   @Column({ type: 'text', nullable: true }) description: string;
 
   @Column({ type: 'decimal', precision: 8, scale: 2 }) price: number;
+  @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true }) price_3_days: number;
+  @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true }) price_7_days: number;
   @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true }) price_estimate: number;
 
   @Column({ length: 50 }) state: string;

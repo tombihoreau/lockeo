@@ -4,6 +4,9 @@ import 'package:lockeo_app/screens/reservation_payment_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import '../widgets/button.dart';
+import '../services/local_data_service.dart';
+import '../models/product.dart';
+import '../utils/rental_pricing.dart';
 
 class ReservationSheet extends StatefulWidget {
   final int offerId;
@@ -14,16 +17,53 @@ class ReservationSheet extends StatefulWidget {
 }
 
 class _ReservationSheetState extends State<ReservationSheet> {
+  final _dataService = LocalDataService();
   DateTime? startDate;
   DateTime? endDate;
   DateTime focusedDay = DateTime.now();
+  Product? _product;
 
   int get offerId => widget.offerId;
   bool get hasRange => startDate != null && endDate != null;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final offer = await _dataService.getOfferById(widget.offerId);
+    if (offer == null) return;
+
+    final products = await _dataService.loadProducts();
+    final product = products.firstWhere(
+      (item) => item.productId == offer.productId,
+      orElse: () => throw StateError('Produit introuvable'),
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _product = product;
+    });
+  }
+
   bool isPastDate(DateTime day) {
     final now = DateTime.now();
     return day.isBefore(DateTime(now.year, now.month, now.day));
+  }
+
+  int get _selectedDays {
+    if (!hasRange) return 0;
+    return endDate!.difference(startDate!).inDays + 1;
+  }
+
+  double? get _estimatedRentalPrice {
+    if (_product == null || !hasRange) return null;
+    return RentalPricing.breakdownForProduct(
+      _product!,
+      _selectedDays,
+    ).rentalPrice;
   }
 
   // ✅ ne sélectionner que start/end (sinon cercles partout)
@@ -55,7 +95,7 @@ class _ReservationSheetState extends State<ReservationSheet> {
       cellPadding: EdgeInsets.zero,
 
       // ✅ barre continue (le fond du range)
-      rangeHighlightColor: AppColors.primaryBlue.withOpacity(0.15),
+      rangeHighlightColor: AppColors.primaryBlue.withValues(alpha: 0.15),
       rangeHighlightScale: 1.0,
 
       // ✅ on évite les rectangles “par case”
@@ -191,8 +231,8 @@ class _ReservationSheetState extends State<ReservationSheet> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          hasRange
-                              ? "Votre coût initial sera de 10€"
+                          hasRange && _estimatedRentalPrice != null
+                              ? "Votre coût initial sera de ${_estimatedRentalPrice!.toStringAsFixed(2)}€"
                               : "Sélectionnez une plage de dates",
                           style: const TextStyle(color: Colors.black54),
                         ),

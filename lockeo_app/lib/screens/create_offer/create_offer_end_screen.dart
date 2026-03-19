@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import '../../widgets/button.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import 'package:lockeo_app/theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../../widgets/button.dart';
+import '../../widgets/selected_photo_image.dart';
 
 class CreateOfferEndScreen extends StatelessWidget {
   final String offerTitle;
@@ -31,17 +30,8 @@ class CreateOfferEndScreen extends StatelessWidget {
       );
     }
 
-    if (offerImagePath.startsWith('assets/')) {
-      return Image.asset(
-        offerImagePath,
-        width: 90,
-        height: 90,
-        fit: BoxFit.cover,
-      );
-    }
-
-    return Image.file(
-      File(offerImagePath),
+    return SelectedPhotoImage(
+      path: offerImagePath,
       width: 90,
       height: 90,
       fit: BoxFit.cover,
@@ -83,7 +73,7 @@ class CreateOfferEndScreen extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 Text(
-                  "Vous venez de poster votre $offerCountᵉ annonce" + (offerCount > 1 ? "s" : ""),
+                  "Vous venez de poster votre $offerCountᵉ annonce${offerCount > 1 ? 's' : ''}",
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.textPrimary,
                   ),

@@ -30,12 +30,20 @@ INSERT INTO MessageTemplates (message_template_id, code, title, content) VALUES
 -- ---------------------------------------------------------
 -- 3) CATEGORIES
 -- ---------------------------------------------------------
-INSERT INTO Categories (category_id, label) VALUES
-(1, 'Bricolage'),
-(2, 'Maison'),
-(3, 'Sport'),
-(4, 'Informatique'),
-(5, 'Jardin');
+INSERT INTO Categories (category_id, label, parent_id) VALUES
+(1, 'Bricolage', 0),
+(2, 'Maison', 0),
+(3, 'Sport', 0),
+(4, 'Informatique', 0),
+(5, 'Jardin', 0),
+(6, 'Perceuse', 1),
+(7, 'Nettoyage', 2),
+(8, 'Vélo', 3),
+(9, 'Camping', 3),
+(10, 'Randonnée', 3),
+(11, 'Ordinateur', 4),
+(12, 'Tondeuse', 5),
+(13, 'Taille-haie', 5);
 
 -- ---------------------------------------------------------
 -- 4) PRODUCTS
@@ -65,11 +73,17 @@ INSERT INTO Images (image_id, product_id, uri, position_image, created_at) VALUE
 -- ---------------------------------------------------------
 INSERT INTO ProductsHasCategories (product_has_category_id, product_id, category_id) VALUES
 (1, 1, 1),  -- Perceuse -> Bricolage
-(2, 2, 5),  -- Tondeuse -> Jardin
-(3, 3, 3),  -- Vélo -> Sport
-(4, 4, 4),  -- PC -> Informatique
-(5, 5, 2),  -- Kärcher -> Maison
-(6, 6, 3);  -- Tente -> Sport
+(2, 1, 6),  -- Perceuse -> Perceuse
+(3, 2, 5),  -- Tondeuse -> Jardin
+(4, 2, 12), -- Tondeuse -> Tondeuse
+(5, 3, 3),  -- Vélo -> Sport
+(6, 3, 8),  -- Vélo -> Vélo
+(7, 4, 4),  -- PC -> Informatique
+(8, 4, 11), -- PC -> Ordinateur
+(9, 5, 2),  -- Kärcher -> Maison
+(10, 5, 7), -- Kärcher -> Nettoyage
+(11, 6, 3), -- Tente -> Sport
+(12, 6, 9); -- Tente -> Camping
 
 -- ---------------------------------------------------------
 -- 7) INDISPONIBILITÉS PRODUIT

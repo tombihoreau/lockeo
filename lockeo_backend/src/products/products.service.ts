@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Product } from '../entities/product.entity';
@@ -15,6 +15,8 @@ export interface ProductSuggestionDto {
   name: string;
   description: string | null;
   price: string | number | null;
+  price_3_days: string | number | null;
+  price_7_days: string | number | null;
   price_estimate: string | number | null;
   state: string;
   longitude: number | null;
@@ -62,6 +64,8 @@ export class ProductsService {
       name: p.name,
       description: p.description ?? null,
       price: p.price ?? null,
+      price_3_days: p.price_3_days ?? null,
+      price_7_days: p.price_7_days ?? null,
       price_estimate: p.price_estimate ?? null,
       state: p.state,
       longitude: p.longitude ?? null,
@@ -102,6 +106,8 @@ export class ProductsService {
           name: dto.title.trim(),
           description: dto.description?.trim() ?? '',
           price: dto.pricePerDay,
+          price_3_days: dto.price3Days ?? undefined,
+          price_7_days: dto.price7Days ?? undefined,
           price_estimate: dto.priceEstimate ?? undefined,
           state: dto.state.trim(),
           city: normalizedCity.length > 0 ? normalizedCity : owner.city || 'Ville',
@@ -132,7 +138,42 @@ export class ProductsService {
       const uniqueCategoryIds = Array.from(new Set(dto.categoryIds ?? []));
       if (uniqueCategoryIds.length > 0) {
         const cats = await categoryRepo.findBy({ category_id: In(uniqueCategoryIds) });
+
+        if (cats.length !== uniqueCategoryIds.length) {
+          throw new BadRequestException('Une ou plusieurs categories sont invalides');
+        }
+
+        const rootParentIds = new Set(
+          cats.map((cat) => (cat.parent_id === 0 ? cat.category_id : cat.parent_id)),
+        );
+
+        if (rootParentIds.size > 1) {
+          throw new BadRequestException(
+            'Les categories doivent appartenir a une seule categorie parente',
+          );
+        }
+
+        const parentCategories = cats.filter((cat) => cat.parent_id === 0);
+        if (parentCategories.length > 1) {
+          throw new BadRequestException(
+            'Une seule categorie parente peut etre selectionnee',
+          );
+        }
+
+        const rootParentId = Array.from(rootParentIds)[0];
+        const normalizedIds = new Set<number>([rootParentId]);
+
         for (const cat of cats) {
+          if (cat.parent_id !== 0) {
+            normalizedIds.add(cat.category_id);
+          }
+        }
+
+        const normalizedCategories = await categoryRepo.findBy({
+          category_id: In(Array.from(normalizedIds)),
+        });
+
+        for (const cat of normalizedCategories) {
           await phcRepo.save(
             phcRepo.create({
               product,

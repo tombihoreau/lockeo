@@ -35,6 +35,16 @@ export class CreateOfferDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  price3Days?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  price7Days?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   priceEstimate?: number;
 
   @IsOptional()

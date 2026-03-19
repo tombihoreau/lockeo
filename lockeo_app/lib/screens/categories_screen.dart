@@ -16,11 +16,14 @@ class CategoriesScreen extends StatelessWidget {
   IconData _iconForLabel(String label) {
     final normalized = label.toLowerCase();
     if (normalized.contains('vélo') || normalized.contains('velo')) {
-      return LucideIcons.mountainSnow;
+      return LucideIcons.bike;
     }
-    if (normalized.contains('nautique')) return LucideIcons.waves;
-    if (normalized.contains('randonnée')) return LucideIcons.trees;
-    if (normalized.contains('sport de balle')) return LucideIcons.dribbble;
+    if (normalized.contains('sport')) return LucideIcons.dumbbell;
+    if (normalized.contains('bricolage')) return LucideIcons.hammer;
+    if (normalized.contains('maison')) return LucideIcons.home;
+    if (normalized.contains('informatique')) return LucideIcons.monitor;
+    if (normalized.contains('jardin')) return LucideIcons.trees;
+    if (normalized.contains('randonnée')) return LucideIcons.mountain;
     return LucideIcons.box;
   }
 
@@ -42,9 +45,11 @@ class CategoriesScreen extends StatelessWidget {
 
   List<Category> _visibleCategories(List<Category> all) {
     if (parentCategoryId == null) {
-      return all.where((c) => c.parentId == null).toList();
+      return all.where((c) => c.isParent).toList()
+        ..sort((a, b) => a.label.compareTo(b.label));
     }
-    return all.where((c) => c.parentId == parentCategoryId).toList();
+    return all.where((c) => c.parentId == parentCategoryId).toList()
+      ..sort((a, b) => a.label.compareTo(b.label));
   }
 
   void _openCategory(
@@ -189,8 +194,6 @@ class CategoriesScreen extends StatelessWidget {
                 }
 
                 final category = categories[isChildrenPage ? index - 1 : index];
-                final hasChildren = _hasChildren(all, category.categoryId);
-
                 return InkWell(
                   onTap: () => _openCategory(context, category, all),
                   child: Padding(

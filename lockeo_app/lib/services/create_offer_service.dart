@@ -12,8 +12,8 @@ class CreatedOfferResult {
 
 class CreateOfferService {
   CreateOfferService({ApiClient? apiClient, LocationService? locationService})
-      : _api = apiClient ?? ApiClient(),
-        _locationService = locationService ?? LocationService();
+    : _api = apiClient ?? ApiClient(),
+      _locationService = locationService ?? LocationService();
 
   final ApiClient _api;
   final LocationService _locationService;
@@ -46,7 +46,8 @@ class CreateOfferService {
         'description': (draft.description ?? '').trim(),
         'state': (draft.state ?? '').trim(),
         'pricePerDay': draft.pricePerDay,
-        'priceEstimate': draft.pricePerWeek,
+        'price3Days': draft.price3Days,
+        'price7Days': draft.pricePerWeek,
         'city': parsed.city,
         'postalCode': parsed.postalCode,
         'latitude': latLng?.lat,
