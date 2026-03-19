@@ -10,7 +10,7 @@ class ChatSocketService {
           baseUrl ??
               const String.fromEnvironment(
                 'WS_BASE_URL',
-                defaultValue: 'http://localhost:3000',
+                defaultValue: 'http://jules.demai.rennes.mds-project.fr',
               ),
         );
 

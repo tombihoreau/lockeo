@@ -4,7 +4,13 @@ import 'package:http/http.dart' as http;
 class ApiClient {
   ApiClient({http.Client? client, String? baseUrl})
       : _client = client ?? http.Client(),
-        _baseUrl = _normalizeBaseUrl(baseUrl ?? const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:3000'));
+        _baseUrl = _normalizeBaseUrl(
+          baseUrl ??
+              const String.fromEnvironment(
+                'API_BASE_URL',
+                defaultValue: 'http://jules.demai.rennes.mds-project.fr/lockeo/api',
+              ),
+        );
 
   final http.Client _client;
   final String _baseUrl;
@@ -30,7 +36,17 @@ class ApiClient {
   }
 
   Uri _uri(String path, [Map<String, dynamic>? query]) {
-    return Uri.parse(_baseUrl).replace(path: path, queryParameters: query?.map((k, v) => MapEntry(k, v.toString())));
+    final baseUri = Uri.parse(_baseUrl);
+    final normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+    final baseSegments = baseUri.pathSegments.where((segment) => segment.isNotEmpty);
+    final pathSegments = normalizedPath.isEmpty
+        ? const <String>[]
+        : normalizedPath.split('/').where((segment) => segment.isNotEmpty);
+
+    return baseUri.replace(
+      pathSegments: [...baseSegments, ...pathSegments],
+      queryParameters: query?.map((k, v) => MapEntry(k, v.toString())),
+    );
   }
 
   Future<Map<String, dynamic>> getJson(String path, {Map<String, dynamic>? query}) async {
