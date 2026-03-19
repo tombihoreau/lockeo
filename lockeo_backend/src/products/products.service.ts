@@ -156,15 +156,15 @@ export class ProductsService {
     maxPrice?: number,
   ): Promise<ProductSuggestionDto[]> {
     const normalizedQuery = query.trim();
-    if (normalizedQuery.length === 0) {
-      return [];
-    }
-
     const normalizedCategoryIds = Array.from(
       new Set(
         categoryIds.filter((categoryId) => Number.isInteger(categoryId) && categoryId > 0),
       ),
     );
+
+    if (normalizedQuery.length === 0 && normalizedCategoryIds.length === 0) {
+      return [];
+    }
 
     const terms = normalizedQuery
       .toLowerCase()

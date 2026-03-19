@@ -22,14 +22,15 @@ class SearchResultsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final trimmedQuery = searchQuery.trim();
+    final hasCategoryFilter = selectedCategories.isNotEmpty;
 
-    if (trimmedQuery.isEmpty) {
+    if (trimmedQuery.isEmpty && !hasCategoryFilter) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         onCountChanged?.call(0);
       });
 
       return const Center(
-        child: Text("Saisissez un mot-clé puis appuyez sur la loupe"),
+        child: Text("Saisissez un mot-clé ou choisissez une catégorie"),
       );
     }
 
