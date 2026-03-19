@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Favorite } from '../entities/favorite.entity';
+import { Product } from '../entities/product.entity';
 
 export interface FavoriteProductDto {
   product_id: number;
@@ -23,10 +24,48 @@ export interface FavoriteProductDto {
 
 @Injectable()
 export class FavoritesService {
-  constructor(@InjectRepository(Favorite) private readonly repo: Repository<Favorite>) {}
+  constructor(
+    @InjectRepository(Favorite) private readonly repo: Repository<Favorite>,
+  ) {}
 
-  async getRecentFavorites(userId: number, limit: number): Promise<FavoriteProductDto[]> {
-    const favorites = await this.repo.createQueryBuilder('f')
+  private toFavoriteProductDto(favorite: Favorite): FavoriteProductDto {
+    const product = favorite.product as Product | null | undefined;
+    if (!product) {
+      throw new Error('Favorite product relation is missing');
+    }
+
+    const imageUri =
+      product.images && product.images.length > 0
+        ? ([...product.images].sort(
+            (a, b) => (a.position_image ?? 0) - (b.position_image ?? 0),
+          )[0]?.uri ?? null)
+        : null;
+
+    return {
+      product_id: product.product_id,
+      name: product.name,
+      description: product.description ?? null,
+      price: product.price ?? null,
+      price_estimate: product.price_estimate ?? null,
+      state: product.state,
+      longitude: product.longitude ?? null,
+      latitude: product.latitude ?? null,
+      city: product.city,
+      postal_code: product.postal_code,
+      is_available: product.is_available,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      image_uri: imageUri,
+      favorited_at: favorite.created_at,
+    };
+  }
+
+  async getRecentFavorites(
+    userId: number,
+    limit: number,
+  ): Promise<FavoriteProductDto[]> {
+    const favorites = await this.repo
+      .createQueryBuilder('f')
       .leftJoinAndSelect('f.product', 'p')
       .leftJoinAndSelect('p.images', 'img')
       .where('f.user = :userId', { userId })
@@ -34,29 +73,6 @@ export class FavoritesService {
       .limit(limit)
       .getMany();
 
-    return favorites.map((f) => {
-      const p = f.product;
-      const imageUri = (p?.images && p.images.length > 0)
-        ? [...p.images].sort((a, b) => (a.position_image ?? 0) - (b.position_image ?? 0))[0].uri
-        : null;
-
-      return {
-        product_id: p.product_id,
-        name: p.name,
-        description: p.description ?? null,
-        price: (p as any).price ?? null,
-        price_estimate: (p as any).price_estimate ?? null,
-        state: p.state,
-        longitude: p.longitude ?? null,
-        latitude: p.latitude ?? null,
-        city: p.city,
-        postal_code: p.postal_code,
-        is_available: p.is_available,
-        created_at: p.created_at,
-        updated_at: p.updated_at,
-        image_uri: imageUri,
-        favorited_at: f.created_at,
-      };
-    });
+    return favorites.map((favorite) => this.toFavoriteProductDto(favorite));
   }
 }

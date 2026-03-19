@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -18,7 +27,9 @@ export class MessagingController {
   constructor(private readonly messagingService: MessagingService) {}
 
   @Post('ensure')
-  @ApiOperation({ summary: 'Trouver ou créer une conversation entre 2 utilisateurs' })
+  @ApiOperation({
+    summary: 'Trouver ou créer une conversation entre 2 utilisateurs',
+  })
   async ensureConversation(
     @Req() req: RequestWithUser,
     @Body() body: EnsureConversationDto,
@@ -30,7 +41,9 @@ export class MessagingController {
   }
 
   @Get()
-  @ApiOperation({ summary: "Lister les conversations de l'utilisateur connecté" })
+  @ApiOperation({
+    summary: "Lister les conversations de l'utilisateur connecté",
+  })
   async listConversations(@Req() req: RequestWithUser) {
     return this.messagingService.listConversationsForUser(req.user.userId);
   }

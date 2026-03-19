@@ -1,5 +1,9 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Offer } from './offer.entity';
@@ -16,7 +20,8 @@ export class Product {
   @Column({ type: 'text', nullable: true }) description: string;
 
   @Column({ type: 'decimal', precision: 8, scale: 2 }) price: number;
-  @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true }) price_estimate: number;
+  @Column({ type: 'decimal', precision: 8, scale: 2, nullable: true })
+  price_estimate: number;
 
   @Column({ length: 50 }) state: string;
 
@@ -27,8 +32,10 @@ export class Product {
 
   @Column({ type: 'boolean', default: true }) is_available: boolean;
 
-  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' }) created_at: Date;
-  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' }) updated_at: Date;
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  updated_at: Date;
 
   // Owner
   @ManyToOne(() => User, (u) => u.products, { onDelete: 'CASCADE' })
@@ -36,6 +43,8 @@ export class Product {
 
   @OneToMany(() => Offer, (o) => o.product) offers: Offer[];
   @OneToMany(() => Image, (i) => i.product, { cascade: true }) images: Image[];
-  @OneToMany(() => ProductHasCategory, (phc) => phc.product, { cascade: true }) productCategories: ProductHasCategory[];
-  @OneToMany(() => ProductUnavailability, (pu) => pu.product, { cascade: true }) unavailabilities: ProductUnavailability[];
+  @OneToMany(() => ProductHasCategory, (phc) => phc.product, { cascade: true })
+  productCategories: ProductHasCategory[];
+  @OneToMany(() => ProductUnavailability, (pu) => pu.product, { cascade: true })
+  unavailabilities: ProductUnavailability[];
 }

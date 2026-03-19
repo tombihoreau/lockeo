@@ -7,7 +7,7 @@ import 'reflect-metadata';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-// Sécurité/CORS
+  // Sécurité/CORS
   app.enableCors();
   app.setGlobalPrefix('api');
 
@@ -31,15 +31,15 @@ async function bootstrap() {
     .addTag('auth')
     .addTag('users')
     .addBearerAuth() // JWT
-    .addTag('Users') 
+    .addTag('Users')
     .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('/api/docs', app, document, {
-      swaggerOptions: {
-        persistAuthorization: true, // garde le token entre les refresh
-      },
-    });
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('/api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true, // garde le token entre les refresh
+    },
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }

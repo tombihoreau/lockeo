@@ -1,5 +1,19 @@
-import { BadRequestException, Body, Controller,Get, Post, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -16,7 +30,10 @@ interface RequestWithUser extends Request {
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private users: UsersService, private auth: AuthService) {}
+  constructor(
+    private users: UsersService,
+    private auth: AuthService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Créer un compte (hash bcrypt)' })

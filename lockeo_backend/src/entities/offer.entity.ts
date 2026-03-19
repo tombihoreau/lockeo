@@ -1,5 +1,9 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Product } from './product.entity';
@@ -12,7 +16,8 @@ export class Offer {
 
   @Column({ length: 50 }) status: string;
   @Column({ type: 'decimal', precision: 8, scale: 2 }) amount: number;
-  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' }) created_at: Date;
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
 
   @ManyToOne(() => User, (u) => u.offers, { onDelete: 'CASCADE' })
   owner: User;

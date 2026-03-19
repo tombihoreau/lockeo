@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../entities/product.entity';
-import { Image } from '../entities/image.entity';
 
 export interface ProductSuggestionDto {
   product_id: number;
@@ -22,12 +21,15 @@ export interface ProductSuggestionDto {
 }
 @Injectable()
 export class ProductsService {
-  constructor(@InjectRepository(Product) private readonly repo: Repository<Product>) {}
+  constructor(
+    @InjectRepository(Product) private readonly repo: Repository<Product>,
+  ) {}
 
   async getSuggestions(limit: number): Promise<ProductSuggestionDto[]> {
     // Étape 1: tirer au sort des IDs de produits (sans JOIN) pour éviter le
     // problème LIMIT + LEFT JOIN (qui peut réduire le nombre d'éléments après déduplication)
-    const rawIds = await this.repo.createQueryBuilder('p')
+    const rawIds = await this.repo
+      .createQueryBuilder('p')
       .select('p.product_id', 'id')
       .where('p.is_available = :avail', { avail: true })
       .orderBy('RAND()')
@@ -38,14 +40,17 @@ export class ProductsService {
     if (ids.length === 0) return [];
 
     // Étape 2: charger les produits avec leurs images pour ces IDs
-    const products = await this.repo.createQueryBuilder('p')
+    const products = await this.repo
+      .createQueryBuilder('p')
       .leftJoinAndSelect('p.images', 'img')
       .where('p.product_id IN (:...ids)', { ids })
       .getMany();
 
     // Conserver l'ordre aléatoire tiré à l'étape 1
     const order = new Map<number, number>(ids.map((id, i) => [id, i]));
-    products.sort((a, b) => (order.get(a.product_id)! - order.get(b.product_id)!));
+    products.sort(
+      (a, b) => order.get(a.product_id)! - order.get(b.product_id)!,
+    );
 
     return products.map((p) => ({
       product_id: p.product_id,
@@ -61,9 +66,12 @@ export class ProductsService {
       is_available: p.is_available,
       created_at: p.created_at,
       updated_at: p.updated_at,
-      image_uri: (p.images && p.images.length > 0)
-        ? [...p.images].sort((a,b)=> (a.position_image??0)-(b.position_image??0))[0].uri
-        : null,
+      image_uri:
+        p.images && p.images.length > 0
+          ? ([...p.images].sort(
+              (a, b) => (a.position_image ?? 0) - (b.position_image ?? 0),
+            )[0]?.uri ?? null)
+          : null,
     }));
   }
 }

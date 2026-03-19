@@ -10,6 +10,8 @@ export class ProductHasCategory {
   @ManyToOne(() => Product, (p) => p.productCategories, { onDelete: 'CASCADE' })
   product: Product;
 
-  @ManyToOne(() => Category, (c) => c.productCategories, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Category, (c) => c.productCategories, {
+    onDelete: 'CASCADE',
+  })
   category: Category;
 }

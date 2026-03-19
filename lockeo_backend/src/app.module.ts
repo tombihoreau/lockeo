@@ -29,10 +29,10 @@ import { MessagingModule } from './messaging/messaging.module';
 
 @Module({
   imports: [
-    UsersModule, 
-    ConfigModule.forRoot({ isGlobal: true }), 
-    CategoriesModule, 
-    ProductsModule, 
+    UsersModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+    CategoriesModule,
+    ProductsModule,
     FavoritesModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -41,8 +41,10 @@ import { MessagingModule } from './messaging/messaging.module';
         const nodeEnv = config.get<string>('NODE_ENV', 'development');
         const isProd = nodeEnv === 'production';
         // Keep schema changes controlled through migrations by default.
-        const synchronize = config.get<string>('DB_SYNCHRONIZE', 'false') === 'true';
-        const dropSchema = config.get<string>('DB_DROP_SCHEMA', 'false') === 'true';
+        const synchronize =
+          config.get<string>('DB_SYNCHRONIZE', 'false') === 'true';
+        const dropSchema =
+          config.get<string>('DB_DROP_SCHEMA', 'false') === 'true';
 
         return {
           type: 'mysql',
@@ -53,10 +55,22 @@ import { MessagingModule } from './messaging/messaging.module';
           database: config.get<string>('DB_NAME'),
           autoLoadEntities: true,
           entities: [
-            User, Product, Offer, Reservation, Review, Favorite,
-            Conversation, Message, MessageTemplate, Image,
-            ProductUnavailability, Category, ProductHasCategory,
-            NotificationTemplate, UserNotification, NotificationPreference,
+            User,
+            Product,
+            Offer,
+            Reservation,
+            Review,
+            Favorite,
+            Conversation,
+            Message,
+            MessageTemplate,
+            Image,
+            ProductUnavailability,
+            Category,
+            ProductHasCategory,
+            NotificationTemplate,
+            UserNotification,
+            NotificationPreference,
           ],
           // Dev/test: autoriser la synchro et (optionnel) drop de schéma
           synchronize,
@@ -71,6 +85,6 @@ import { MessagingModule } from './messaging/messaging.module';
     MessagingModule,
   ],
   controllers: [AppController],
-  providers: [AppService]
+  providers: [AppService],
 })
 export class AppModule {}

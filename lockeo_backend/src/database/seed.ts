@@ -42,9 +42,36 @@ async function runSeed() {
   if ((await userRepo.count()) === 0) {
     const passwordHash = await bcrypt.hash('Password123!', 10);
     const users = [
-      userRepo.create({ email: 'alice@example.com', login: 'alice', password_hash: passwordHash, first_name: 'Alice', last_name: 'Martin', city: 'Paris', postal_code: '75001', is_verified: true }),
-      userRepo.create({ email: 'bob@example.com', login: 'bob', password_hash: passwordHash, first_name: 'Bob', last_name: 'Durand', city: 'Lyon', postal_code: '69001', is_verified: false }),
-      userRepo.create({ email: 'carol@example.com', login: 'carol', password_hash: passwordHash, first_name: 'Carol', last_name: 'Petit', city: 'Marseille', postal_code: '13001', is_verified: true }),
+      userRepo.create({
+        email: 'alice@example.com',
+        login: 'alice',
+        password_hash: passwordHash,
+        first_name: 'Alice',
+        last_name: 'Martin',
+        city: 'Paris',
+        postal_code: '75001',
+        is_verified: true,
+      }),
+      userRepo.create({
+        email: 'bob@example.com',
+        login: 'bob',
+        password_hash: passwordHash,
+        first_name: 'Bob',
+        last_name: 'Durand',
+        city: 'Lyon',
+        postal_code: '69001',
+        is_verified: false,
+      }),
+      userRepo.create({
+        email: 'carol@example.com',
+        login: 'carol',
+        password_hash: passwordHash,
+        first_name: 'Carol',
+        last_name: 'Petit',
+        city: 'Marseille',
+        postal_code: '13001',
+        is_verified: true,
+      }),
     ];
     await userRepo.save(users);
     console.log('Users insérés');
@@ -52,8 +79,14 @@ async function runSeed() {
 
   // Seed Categories
   if ((await categoryRepo.count()) === 0) {
-    const categories = ['Vélo', 'Sports d\'hiver', 'Natation', 'Randonnée', 'Camping', 'Escalade']
-      .map(label => categoryRepo.create({ label }));
+    const categories = [
+      'Vélo',
+      "Sports d'hiver",
+      'Natation',
+      'Randonnée',
+      'Camping',
+      'Escalade',
+    ].map((label) => categoryRepo.create({ label }));
     await categoryRepo.save(categories);
     console.log('Categories insérées');
   }
@@ -64,20 +97,70 @@ async function runSeed() {
   // Seed Products
   if ((await productRepo.count()) === 0) {
     const products = [
-      productRepo.create({ name: 'VTT Pro', description: 'VTT tout-suspendu en excellent état', price: 25.00, price_estimate: 900.00, state: 'very_good', city: 'Paris', postal_code: '75001', owner: users[0], is_available: true }),
-      productRepo.create({ name: 'Tente 2 places', description: 'Légère et compacte', price: 10.00, price_estimate: 120.00, state: 'good', city: 'Lyon', postal_code: '69001', owner: users[1], is_available: true }),
-      productRepo.create({ name: 'Chaussures de randonnée', description: 'Imperméables, taille 42', price: 8.00, price_estimate: 80.00, state: 'used', city: 'Marseille', postal_code: '13001', owner: users[2], is_available: true }),
+      productRepo.create({
+        name: 'VTT Pro',
+        description: 'VTT tout-suspendu en excellent état',
+        price: 25.0,
+        price_estimate: 900.0,
+        state: 'very_good',
+        city: 'Paris',
+        postal_code: '75001',
+        owner: users[0],
+        is_available: true,
+      }),
+      productRepo.create({
+        name: 'Tente 2 places',
+        description: 'Légère et compacte',
+        price: 10.0,
+        price_estimate: 120.0,
+        state: 'good',
+        city: 'Lyon',
+        postal_code: '69001',
+        owner: users[1],
+        is_available: true,
+      }),
+      productRepo.create({
+        name: 'Chaussures de randonnée',
+        description: 'Imperméables, taille 42',
+        price: 8.0,
+        price_estimate: 80.0,
+        state: 'used',
+        city: 'Marseille',
+        postal_code: '13001',
+        owner: users[2],
+        is_available: true,
+      }),
     ];
     await productRepo.save(products);
     console.log('Products insérés');
 
     // Images
     const images = [
-      imageRepo.create({ uri: 'default.jpg', position_image: 0, product: products[0] }),
-      imageRepo.create({ uri: 'vtt1.jpg', position_image: 1, product: products[0] }),
-      imageRepo.create({ uri: 'vtt2.jpg', position_image: 2, product: products[0] }),
-      imageRepo.create({ uri: 'default.jpg', position_image: 0, product: products[1] }),
-      imageRepo.create({ uri: 'default.jpg', position_image: 0, product: products[2] }),
+      imageRepo.create({
+        uri: 'default.jpg',
+        position_image: 0,
+        product: products[0],
+      }),
+      imageRepo.create({
+        uri: 'vtt1.jpg',
+        position_image: 1,
+        product: products[0],
+      }),
+      imageRepo.create({
+        uri: 'vtt2.jpg',
+        position_image: 2,
+        product: products[0],
+      }),
+      imageRepo.create({
+        uri: 'default.jpg',
+        position_image: 0,
+        product: products[1],
+      }),
+      imageRepo.create({
+        uri: 'default.jpg',
+        position_image: 0,
+        product: products[2],
+      }),
     ];
     await imageRepo.save(images);
     console.log('Images insérées');
@@ -90,8 +173,9 @@ async function runSeed() {
     ];
     for (const [prod, catLabels] of map) {
       for (const label of catLabels) {
-        const c = categories.find(c => c.label === label);
-        if (c) await phcRepo.save(phcRepo.create({ product: prod, category: c }));
+        const c = categories.find((c) => c.label === label);
+        if (c)
+          await phcRepo.save(phcRepo.create({ product: prod, category: c }));
       }
     }
     console.log('Associations produit-catégorie insérées');
@@ -102,22 +186,44 @@ async function runSeed() {
   // Offers
   if ((await offerRepo.count()) === 0) {
     const offers = [
-      offerRepo.create({ status: 'open', amount: 25.00, owner: users[0], product: products[0] }),
-      offerRepo.create({ status: 'open', amount: 10.00, owner: users[1], product: products[1] }),
+      offerRepo.create({
+        status: 'open',
+        amount: 25.0,
+        owner: users[0],
+        product: products[0],
+      }),
+      offerRepo.create({
+        status: 'open',
+        amount: 10.0,
+        owner: users[1],
+        product: products[1],
+      }),
     ];
     await offerRepo.save(offers);
     console.log('Offers insérées');
 
     // Reservations
     const reservations = [
-      reservationRepo.create({ start_date: new Date(), end_date: new Date(Date.now() + 2*86400000), status: 'pending', final_price: 50.00, offer: offers[0], renter: users[1] }),
+      reservationRepo.create({
+        start_date: new Date(),
+        end_date: new Date(Date.now() + 2 * 86400000),
+        status: 'pending',
+        final_price: 50.0,
+        offer: offers[0],
+        renter: users[1],
+      }),
     ];
     await reservationRepo.save(reservations);
     console.log('Reservations insérées');
 
     // Reviews
     const reviews = [
-      reviewRepo.create({ rating: 5, comment: 'Super matériel, rien à redire.', user: users[1], reservation: reservations[0] }),
+      reviewRepo.create({
+        rating: 5,
+        comment: 'Super matériel, rien à redire.',
+        user: users[1],
+        reservation: reservations[0],
+      }),
     ];
     await reviewRepo.save(reviews);
     console.log('Reviews insérées');
@@ -136,8 +242,16 @@ async function runSeed() {
   // Notification templates
   if ((await notifTplRepo.count()) === 0) {
     const templates = [
-      notifTplRepo.create({ code: 'WELCOME', title: 'Bienvenue', content: 'Bienvenue sur Lockeo!' }),
-      notifTplRepo.create({ code: 'OFFER_UPDATE', title: 'Mise à jour offre', content: 'Votre offre a été mise à jour.' }),
+      notifTplRepo.create({
+        code: 'WELCOME',
+        title: 'Bienvenue',
+        content: 'Bienvenue sur Lockeo!',
+      }),
+      notifTplRepo.create({
+        code: 'OFFER_UPDATE',
+        title: 'Mise à jour offre',
+        content: 'Votre offre a été mise à jour.',
+      }),
     ];
     await notifTplRepo.save(templates);
     console.log('NotificationTemplates insérées');
@@ -145,8 +259,16 @@ async function runSeed() {
     // User notifications
     const tmplAll = await notifTplRepo.find();
     const userNotifications = [
-      userNotifRepo.create({ template: tmplAll[0], destinationUser: users[0], status: 'sent' }),
-      userNotifRepo.create({ template: tmplAll[1], destinationUser: users[1], status: 'read' }),
+      userNotifRepo.create({
+        template: tmplAll[0],
+        destinationUser: users[0],
+        status: 'sent',
+      }),
+      userNotifRepo.create({
+        template: tmplAll[1],
+        destinationUser: users[1],
+        status: 'read',
+      }),
     ];
     await userNotifRepo.save(userNotifications);
     console.log('UserNotifications insérées');
@@ -165,11 +287,25 @@ async function runSeed() {
 
   // Conversations & messages
   if ((await convRepo.count()) === 0) {
-    const conv = convRepo.create({ renter: users[1], owner: users[0], created_at: new Date() });
+    const conv = convRepo.create({
+      renter: users[1],
+      owner: users[0],
+      created_at: new Date(),
+    });
     await convRepo.save(conv);
     const msgs = [
-      messageRepo.create({ conversation: conv, sender: users[1], content: 'Bonjour, le VTT est-il disponible ?', created_at: new Date() }),
-      messageRepo.create({ conversation: conv, sender: users[0], content: 'Oui, il est disponible cette semaine.', created_at: new Date() }),
+      messageRepo.create({
+        conversation: conv,
+        sender: users[1],
+        content: 'Bonjour, le VTT est-il disponible ?',
+        created_at: new Date(),
+      }),
+      messageRepo.create({
+        conversation: conv,
+        sender: users[0],
+        content: 'Oui, il est disponible cette semaine.',
+        created_at: new Date(),
+      }),
     ];
     await messageRepo.save(msgs);
     console.log('Conversation et Messages insérés');
@@ -177,7 +313,11 @@ async function runSeed() {
 
   // Product unavailabilities
   if ((await unavailabilityRepo.count()) === 0 && products.length) {
-    const unav = unavailabilityRepo.create({ product: products[0], start_date_time: new Date(Date.now() + 3*86400000), end_date_time: new Date(Date.now() + 5*86400000) });
+    const unav = unavailabilityRepo.create({
+      product: products[0],
+      start_date_time: new Date(Date.now() + 3 * 86400000),
+      end_date_time: new Date(Date.now() + 5 * 86400000),
+    });
     await unavailabilityRepo.save(unav);
     console.log('ProductUnavailability insérée');
   }
@@ -186,7 +326,7 @@ async function runSeed() {
   await AppDataSource.destroy();
 }
 
-runSeed().catch(err => {
+runSeed().catch((err) => {
   console.error('Erreur seed:', err);
   process.exit(1);
 });

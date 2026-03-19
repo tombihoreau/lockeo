@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToOne,
+} from 'typeorm';
 import { Offer } from './offer.entity';
 import { User } from './user.entity';
 import { Review } from './review.entity';
@@ -15,8 +21,10 @@ export class Reservation {
   @Column({ type: 'decimal', precision: 8, scale: 2 }) final_price: number;
   @Column({ length: 50, nullable: true }) verification_code: string;
 
-  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' }) created_at: Date;
-  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' }) updated_at: Date;
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  updated_at: Date;
 
   @ManyToOne(() => Offer, (o) => o.reservations, { onDelete: 'CASCADE' })
   offer: Offer;
@@ -29,4 +37,3 @@ export class Reservation {
   @OneToOne(() => Review, (rv) => rv.reservation)
   review: Review;
 }
-  

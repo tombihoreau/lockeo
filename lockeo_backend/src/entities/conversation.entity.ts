@@ -1,5 +1,9 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Message } from './message.entity';
@@ -13,7 +17,9 @@ export class Conversation {
   created_at: Date;
 
   // participants
-  @ManyToOne(() => User, (u) => u.conversationsAsRenter, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (u) => u.conversationsAsRenter, {
+    onDelete: 'CASCADE',
+  })
   renter: User;
 
   @ManyToOne(() => User, (u) => u.conversationsAsOwner, { onDelete: 'CASCADE' })

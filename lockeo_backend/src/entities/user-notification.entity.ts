@@ -7,7 +7,10 @@ export class UserNotification {
   @PrimaryGeneratedColumn()
   user_notification_id: number;
 
-  @ManyToOne(() => NotificationTemplate, (t) => t.userNotifications, { onDelete: 'SET NULL', nullable: true })
+  @ManyToOne(() => NotificationTemplate, (t) => t.userNotifications, {
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
   template: NotificationTemplate;
 
   @ManyToOne(() => User, (u) => u.notifications, { onDelete: 'CASCADE' })

@@ -6,7 +6,10 @@ import { User } from '../entities/user.entity';
 
 @Injectable()
 export class AuthService {
-  constructor(private users: UsersService, private jwt: JwtService) {}
+  constructor(
+    private users: UsersService,
+    private jwt: JwtService,
+  ) {}
 
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.users.findByEmail(email);

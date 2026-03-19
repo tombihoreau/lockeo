@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation } from '../entities/conversation.entity';
@@ -49,7 +54,9 @@ export class MessagingService {
     private readonly userRepo: Repository<User>,
   ) {}
 
-  private async getConversationOrThrow(conversationId: number): Promise<Conversation> {
+  private async getConversationOrThrow(
+    conversationId: number,
+  ): Promise<Conversation> {
     const conversation = await this.conversationRepo.findOne({
       where: { conversation_id: conversationId },
       relations: ['renter', 'owner'],
@@ -62,7 +69,10 @@ export class MessagingService {
     return conversation;
   }
 
-  async assertConversationMembership(conversationId: number, userId: number): Promise<void> {
+  async assertConversationMembership(
+    conversationId: number,
+    userId: number,
+  ): Promise<void> {
     const conversation = await this.getConversationOrThrow(conversationId);
     const isRenter = conversation.renter?.user_id === userId;
     const isOwner = conversation.owner?.user_id === userId;
@@ -72,7 +82,10 @@ export class MessagingService {
     }
   }
 
-  async listMessages(conversationId: number, userId: number): Promise<MessagePayload[]> {
+  async listMessages(
+    conversationId: number,
+    userId: number,
+  ): Promise<MessagePayload[]> {
     await this.assertConversationMembership(conversationId, userId);
 
     const messages = await this.messageRepo.find({
@@ -84,7 +97,9 @@ export class MessagingService {
     return messages.map((m) => this.toPayload(m));
   }
 
-  async listConversationsForUser(userId: number): Promise<ConversationListItemPayload[]> {
+  async listConversationsForUser(
+    userId: number,
+  ): Promise<ConversationListItemPayload[]> {
     const conversations = await this.conversationRepo.find({
       where: [{ renter: { user_id: userId } }, { owner: { user_id: userId } }],
       relations: ['renter', 'owner'],
@@ -94,10 +109,14 @@ export class MessagingService {
     const rows = await Promise.all(
       conversations.map(async (conversation) => {
         const otherUser =
-          conversation.renter?.user_id === userId ? conversation.owner : conversation.renter;
+          conversation.renter?.user_id === userId
+            ? conversation.owner
+            : conversation.renter;
 
         const lastMessage = await this.messageRepo.findOne({
-          where: { conversation: { conversation_id: conversation.conversation_id } },
+          where: {
+            conversation: { conversation_id: conversation.conversation_id },
+          },
           relations: ['sender'],
           order: { created_at: 'DESC', message_id: 'DESC' },
         });
@@ -135,9 +154,14 @@ export class MessagingService {
     return rows;
   }
 
-  async ensureConversationBetweenUsers(currentUserId: number, otherUserId: number): Promise<EnsureConversationPayload> {
+  async ensureConversationBetweenUsers(
+    currentUserId: number,
+    otherUserId: number,
+  ): Promise<EnsureConversationPayload> {
     if (currentUserId === otherUserId) {
-      throw new BadRequestException('Impossible de créer une conversation avec soi-même');
+      throw new BadRequestException(
+        'Impossible de créer une conversation avec soi-même',
+      );
     }
 
     const [currentUser, otherUser] = await Promise.all([
@@ -182,11 +206,17 @@ export class MessagingService {
     };
   }
 
-  async sendMessage(conversationId: number, senderUserId: number, text: string): Promise<MessagePayload> {
+  async sendMessage(
+    conversationId: number,
+    senderUserId: number,
+    text: string,
+  ): Promise<MessagePayload> {
     await this.assertConversationMembership(conversationId, senderUserId);
 
     const [conversation, sender] = await Promise.all([
-      this.conversationRepo.findOne({ where: { conversation_id: conversationId } }),
+      this.conversationRepo.findOne({
+        where: { conversation_id: conversationId },
+      }),
       this.userRepo.findOne({ where: { user_id: senderUserId } }),
     ]);
 

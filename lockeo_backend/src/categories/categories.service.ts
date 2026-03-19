@@ -10,7 +10,9 @@ export interface CategoryDto {
 
 @Injectable()
 export class CategoriesService {
-  constructor(@InjectRepository(Category) private readonly repo: Repository<Category>) {}
+  constructor(
+    @InjectRepository(Category) private readonly repo: Repository<Category>,
+  ) {}
 
   async findAll(): Promise<CategoryDto[]> {
     const categories = await this.repo.find();

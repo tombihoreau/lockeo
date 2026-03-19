@@ -20,11 +20,24 @@ type AuthPayload = {
   sub?: number;
 };
 
+type SocketAuth = {
+  token?: unknown;
+};
+
+type SocketHandshake = {
+  auth?: SocketAuth;
+  headers: {
+    authorization?: string | string[];
+  };
+};
+
 @WebSocketGateway({
   cors: { origin: '*' },
 })
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class MessagingGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -56,12 +69,18 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
     @MessageBody() body: JoinConversationDto,
   ): Promise<void> {
     const userId = this.getUserIdFromClient(client);
-    await this.messagingService.assertConversationMembership(body.conversationId, userId);
+    await this.messagingService.assertConversationMembership(
+      body.conversationId,
+      userId,
+    );
 
     const room = this.roomFor(body.conversationId);
     await client.join(room);
 
-    const history = await this.messagingService.listMessages(body.conversationId, userId);
+    const history = await this.messagingService.listMessages(
+      body.conversationId,
+      userId,
+    );
     client.emit('conversation:history', {
       conversationId: body.conversationId,
       messages: history,
@@ -85,11 +104,17 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
     const userId = this.getUserIdFromClient(client);
     const text = body.text.trim();
     if (!text) {
-      client.emit('chat:error', { message: 'Le message ne peut pas être vide' });
+      client.emit('chat:error', {
+        message: 'Le message ne peut pas être vide',
+      });
       return;
     }
 
-    const message = await this.messagingService.sendMessage(body.conversationId, userId, text);
+    const message = await this.messagingService.sendMessage(
+      body.conversationId,
+      userId,
+      text,
+    );
     const room = this.roomFor(body.conversationId);
 
     this.server.to(room).emit('conversation:new_message', {
@@ -104,7 +129,10 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
     @MessageBody() body: TypingDto,
   ): Promise<void> {
     const userId = this.getUserIdFromClient(client);
-    await this.messagingService.assertConversationMembership(body.conversationId, userId);
+    await this.messagingService.assertConversationMembership(
+      body.conversationId,
+      userId,
+    );
 
     const room = this.roomFor(body.conversationId);
     client.to(room).emit('conversation:typing', {
@@ -131,12 +159,13 @@ export class MessagingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   private extractBearerToken(client: Socket): string {
-    const authToken = client.handshake.auth?.token;
+    const handshake = client.handshake as SocketHandshake;
+    const authToken = handshake.auth?.token;
     if (typeof authToken === 'string' && authToken.trim().length > 0) {
       return authToken.trim();
     }
 
-    const rawHeader = client.handshake.headers.authorization;
+    const rawHeader = handshake.headers.authorization;
     if (typeof rawHeader === 'string' && rawHeader.startsWith('Bearer ')) {
       return rawHeader.slice(7).trim();
     }

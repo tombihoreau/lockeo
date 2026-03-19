@@ -16,7 +16,9 @@ export type CreateUserInput = {
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly repo: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly repo: Repository<User>,
+  ) {}
 
   async findByEmail(email: string): Promise<User | null> {
     return this.repo.findOne({ where: { email: ILike(email) } });
@@ -29,8 +31,8 @@ export class UsersService {
   async create(input: CreateUserInput): Promise<User> {
     const email = input.email.trim().toLowerCase();
 
-  const rawLogin = input.login?.trim();
-  const login = rawLogin && rawLogin.length > 0 ? rawLogin : null;
+    const rawLogin = input.login?.trim();
+    const login = rawLogin && rawLogin.length > 0 ? rawLogin : null;
 
     const where = [{ email }, ...(login != null ? [{ login }] : [])];
     const exists = await this.repo.findOne({ where });
