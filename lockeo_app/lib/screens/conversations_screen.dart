@@ -5,7 +5,6 @@ import 'conversation_screen.dart';
 import 'home_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import '../utils/app_navigator.dart';
 import '../widgets/main_scaffold.dart';
 
 class ConversationsScreen extends StatefulWidget {
@@ -122,73 +121,84 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     );
   }
 
-  Future<void> _onBackPressed() async {
-    await AppNavigator.back(
-      context,
-      fallbackBuilder: (_) =>
-          const MainScaffold(currentIndex: 0, child: HomeScreen()),
+  void _goToHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainScaffold(
+          currentIndex: 0,
+          child: HomeScreen(),
+        ),
+      ),
+      (route) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        elevation: 0,
-        centerTitle: false,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: _onBackPressed,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _goToHome();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          elevation: 0,
+          centerTitle: false,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: _goToHome,
+          ),
+          title: Text(
+            "Messagerie",
+            style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
+          ),
         ),
-        title: Text(
-          "Messagerie",
-          style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
-        ),
-      ),
-      body: SafeArea(
-        child: FutureBuilder<_ConversationsVm>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text("Erreur: ${snapshot.error}"),
-              );
-            }
-
-            final rows = snapshot.data?.rows ?? [];
-            if (rows.isEmpty) {
-              return const Center(child: Text("Aucune conversation"));
-            }
-
-            return ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 21),
-              itemCount: rows.length,
-              separatorBuilder: (_, __) => const Padding(
-                padding: EdgeInsets.only(left: 0), // aligné après l’avatar
-                child: Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Color(0xFFE5E5E5),
-                ),
-              ),
-              itemBuilder: (context, i) {
-                final row = rows[i];
-                return _ConversationTile(
-                  title: row.title,
-                  lastMessage: row.lastText,
-                  timeLabel: row.timeLabel,
-                  unreadCount: row.unreadCount,
-                  onTap: () => _openConversation(row.conversationId),
+        body: SafeArea(
+          child: FutureBuilder<_ConversationsVm>(
+            future: _future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text("Erreur: ${snapshot.error}"),
                 );
-              },
-            );
-          },
+              }
+
+              final rows = snapshot.data?.rows ?? [];
+              if (rows.isEmpty) {
+                return const Center(child: Text("Aucune conversation"));
+              }
+
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 21),
+                itemCount: rows.length,
+                separatorBuilder: (_, __) => const Padding(
+                  padding: EdgeInsets.only(left: 0),
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Color(0xFFE5E5E5),
+                  ),
+                ),
+                itemBuilder: (context, i) {
+                  final row = rows[i];
+                  return _ConversationTile(
+                    title: row.title,
+                    lastMessage: row.lastText,
+                    timeLabel: row.timeLabel,
+                    unreadCount: row.unreadCount,
+                    onTap: () => _openConversation(row.conversationId),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );
