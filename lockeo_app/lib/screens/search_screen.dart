@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lockeo_app/utils/app_navigator.dart';
 import '../screens/filters_screen.dart';
 import '../widgets/search_header.dart';
 import '../widgets/search_results_grid.dart';
-import '../widgets/main_scaffold.dart';
-import 'home_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 
@@ -33,16 +30,9 @@ class _SearchPageState extends State<SearchPage> {
   String _submittedQuery = '';
   int _resultCount = 0;
   List<int> _selectedCategories = [];
-  double? _maxDistance;
   RangeValues? _priceRange;
-  late String _sortBy;
-  late bool _favoritesOnly;
   bool get _hasActiveFilters {
-    return _selectedCategories.isNotEmpty ||
-        _maxDistance != null ||
-        _priceRange != null ||
-        _sortBy != "Prix" ||
-        _favoritesOnly;
+    return _selectedCategories.isNotEmpty || _priceRange != null;
   }
 
   @override
@@ -52,8 +42,6 @@ class _SearchPageState extends State<SearchPage> {
     _draftQuery = widget.initialQuery ?? '';
     _submittedQuery = widget.initialQuery ?? '';
     _selectedCategories = widget.initialCategoryIds ?? [];
-    _sortBy = widget.initialSortBy;
-    _favoritesOnly = widget.favoritesOnly;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNode);
@@ -128,10 +116,7 @@ class _SearchPageState extends State<SearchPage> {
                                 searchQuery: _draftQuery,
                                 initialFilters: {
                                   'categories': _selectedCategories,
-                                  'maxDistance': _maxDistance,
                                   'priceRange': _priceRange,
-                                  'sortBy': _sortBy,
-                                  'favoritesOnly': _favoritesOnly,
                                 },
                               ),
                             ),
@@ -142,16 +127,8 @@ class _SearchPageState extends State<SearchPage> {
                               _selectedCategories = List<int>.from(
                                 result['categories'] ?? [],
                               );
-                              final maxDistance = result['maxDistance'];
-                              _maxDistance = maxDistance is num
-                                  ? maxDistance.toDouble()
-                                  : null;
                               _priceRange =
                                   result['priceRange'] as RangeValues?;
-                              _sortBy =
-                                  (result['sortBy'] ?? "Prix").toString();
-                              _favoritesOnly =
-                                  result['favoritesOnly'] == true;
                             });
                           }
                         },
@@ -183,13 +160,11 @@ class _SearchPageState extends State<SearchPage> {
                   Expanded(
                     child: SearchResultsGrid(
                       key: ValueKey(
-                        "$_submittedQuery-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy-$_favoritesOnly",
+                        "$_submittedQuery-$_selectedCategories-$_priceRange",
                       ),
                       searchQuery: _submittedQuery,
                       selectedCategories: _selectedCategories,
                       priceRange: _priceRange,
-                      sortBy: _sortBy,
-                      favoritesOnly: _favoritesOnly,
                       onCountChanged: (count) {
                         if (count != _resultCount) {
                           setState(() {

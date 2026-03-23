@@ -192,7 +192,7 @@ class _ReservationSheetState extends State<ReservationSheet> {
 
   @override
   Widget build(BuildContext context) {
-    double bottomSize = 110;
+    const double bottomSize = 148;
 
     return Container(
       decoration: const BoxDecoration(
@@ -302,9 +302,9 @@ class _ReservationSheetState extends State<ReservationSheet> {
                   right: 0,
                   bottom: 0,
                   child: Container(
-                    height: bottomSize,
+                    constraints: const BoxConstraints(minHeight: bottomSize),
                     // ✅ collé au bas de l'écran (pas de padding parent)
-                    padding: EdgeInsets.fromLTRB(24, 20, 20, 32),
+                    padding: const EdgeInsets.fromLTRB(24, 20, 20, 32),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       // ✅ bloc “collé bas” : coins arrondis uniquement en haut (optionnel)
@@ -322,6 +322,7 @@ class _ReservationSheetState extends State<ReservationSheet> {
                               ? "Votre coût initial sera de ${_estimatedRentalPrice!.toStringAsFixed(2)}€"
                               : "Sélectionnez un ou plusieurs jours",
                           style: const TextStyle(color: Colors.black54),
+                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 12),
                         CustomButton(

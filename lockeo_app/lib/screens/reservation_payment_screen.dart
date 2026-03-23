@@ -48,24 +48,38 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
   }
 
   Future<void> _loadData() async {
-    final detail = await _productsService.getOfferDetail(widget.offerId);
-    final product = detail.product;
-    final productImage = detail.images.isNotEmpty
-        ? detail.images.first
-        : ImageModel(
-            imageId: 0,
-            productId: product.productId,
-            url: 'assets/images/default.jpg',
-            positionImage: 0,
-            createdAt: '',
-          );
-
-    if (!mounted) return;
     setState(() {
-      _detail = detail;
-      _product = product;
-      _img = productImage;
+      _isLoading = true;
+      _loadError = null;
     });
+
+    try {
+      final detail = await _productsService.getOfferDetail(widget.offerId);
+      final product = detail.product;
+      final productImage = detail.images.isNotEmpty
+          ? detail.images.first
+          : ImageModel(
+              imageId: 0,
+              productId: product.productId,
+              url: 'assets/images/default.jpg',
+              positionImage: 0,
+              createdAt: '',
+            );
+
+      if (!mounted) return;
+      setState(() {
+        _detail = detail;
+        _product = product;
+        _img = productImage;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = "Impossible de charger les informations de la location.";
+        _isLoading = false;
+      });
+    }
   }
 
   int get _days => widget.endDate.difference(widget.startDate).inDays + 1;
