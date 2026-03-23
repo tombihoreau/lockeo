@@ -30,5 +30,7 @@ jobs:
             echo "Pulling & restarting services"
             docker compose pull
             docker compose up -d
+            echo "Running seed on backend container"
+            docker exec lockeo-backend npm run seed:prod
             echo "Done. Current containers:"
             docker compose ps
