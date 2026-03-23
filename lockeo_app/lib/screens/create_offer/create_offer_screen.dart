@@ -40,7 +40,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   List<Category> _categories = [];
   List<int> _selectedCategories = [];
 
-  List<String> photos = [];
+  List<XFile> photos = [];
 
   final ImagePicker _picker = ImagePicker();
 
@@ -80,7 +80,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
 
     if (image != null) {
-      setState(() => photos.add(image.path));
+      setState(() => photos.add(image));
     }
   }
 
@@ -170,7 +170,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   }
 
   Widget buildPhotosPicker({
-    required List<String> photos,
+    required List<XFile> photos,
     required VoidCallback pickPhoto,
     required VoidCallback onChanged,
   }) {
@@ -201,7 +201,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(radius),
                 child: SelectedPhotoImage(
-                  path: photos[index],
+                  path: photos[index].path,
                   fit: BoxFit.cover,
                 ),
               )

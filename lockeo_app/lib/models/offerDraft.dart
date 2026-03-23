@@ -1,10 +1,12 @@
+import 'package:image_picker/image_picker.dart';
+
 class OfferDraft {
   String? title;
   String? description;
   String? state;
   String? location;
   List<int> categories;
-  List<String> photos;
+  List<XFile> photos;
   double? pricePerDay;
   double? price3Days;
   double? pricePerWeek;

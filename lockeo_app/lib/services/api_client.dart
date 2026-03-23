@@ -5,8 +5,8 @@ import 'backend_config.dart';
 
 class ApiClient {
   ApiClient({http.Client? client, String? baseUrl})
-      : _client = client ?? http.Client(),
-        _baseUrl = baseUrl ?? BackendConfig.apiBaseUrl;
+    : _client = client ?? http.Client(),
+      _baseUrl = baseUrl ?? BackendConfig.apiBaseUrl;
 
   final http.Client _client;
   final String _baseUrl;
@@ -17,10 +17,16 @@ class ApiClient {
     _bearerToken = token;
   }
 
+  Uri buildUri(String path, {Map<String, dynamic>? query}) {
+    return _uri(path, query);
+  }
+
   Uri _uri(String path, [Map<String, dynamic>? query]) {
     final baseUri = Uri.parse(_baseUrl);
     final normalizedPath = path.startsWith('/') ? path.substring(1) : path;
-    final baseSegments = baseUri.pathSegments.where((segment) => segment.isNotEmpty);
+    final baseSegments = baseUri.pathSegments.where(
+      (segment) => segment.isNotEmpty,
+    );
     final pathSegments = normalizedPath.isEmpty
         ? const <String>[]
         : normalizedPath.split('/').where((segment) => segment.isNotEmpty);

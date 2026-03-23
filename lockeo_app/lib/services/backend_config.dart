@@ -4,16 +4,14 @@ import 'package:http/http.dart' as http;
 class BackendConfig {
   BackendConfig._();
 
-  static const String _defaultRemoteApiBaseUrl =
-      String.fromEnvironment(
-        'API_BASE_URL',
-        defaultValue: 'http://jules.demai.rennes.mds-project.fr/lockeo/api',
-      );
-  static const String _defaultRemoteWsBaseUrl =
-      String.fromEnvironment(
-        'WS_BASE_URL',
-        defaultValue: 'http://jules.demai.rennes.mds-project.fr',
-      );
+  static const String _defaultRemoteApiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://jules.demai.rennes.mds-project.fr/lockeo/api',
+  );
+  static const String _defaultRemoteWsBaseUrl = String.fromEnvironment(
+    'WS_BASE_URL',
+    defaultValue: 'http://jules.demai.rennes.mds-project.fr',
+  );
   static const bool _useAndroidEmulatorHost = bool.fromEnvironment(
     'ANDROID_EMULATOR',
     defaultValue: false,
@@ -25,6 +23,37 @@ class BackendConfig {
 
   static String get apiBaseUrl => _resolvedApiBaseUrl;
   static String get wsBaseUrl => _resolvedWsBaseUrl;
+
+  static String resolveApiUrl(String rawPath) {
+    final value = rawPath.trim();
+    if (value.isEmpty) return value;
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    final baseUri = Uri.parse(_resolvedApiBaseUrl);
+    final baseSegments = baseUri.pathSegments
+        .where((segment) => segment.isNotEmpty)
+        .toList();
+    final pathSegments = value
+        .split('/')
+        .where((segment) => segment.isNotEmpty)
+        .toList();
+
+    if (pathSegments.isNotEmpty &&
+        baseSegments.isNotEmpty &&
+        pathSegments.first == baseSegments.last) {
+      pathSegments.removeAt(0);
+    }
+
+    return baseUri
+        .replace(
+          pathSegments: [...baseSegments, ...pathSegments],
+          queryParameters: null,
+          fragment: null,
+        )
+        .toString();
+  }
 
   static bool get isLocalEnvironment {
     final apiHost = Uri.parse(_resolvedApiBaseUrl).host;
@@ -63,7 +92,8 @@ class BackendConfig {
     _initialized = true;
   }
 
-  static List<({String apiBaseUrl, String wsBaseUrl})> _preferredLocalTargets() {
+  static List<({String apiBaseUrl, String wsBaseUrl})>
+  _preferredLocalTargets() {
     if (kIsWeb) {
       return const [
         (

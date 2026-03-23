@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
   Param,
@@ -7,9 +8,18 @@ import {
   Post,
   Query,
   Req,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { ProductDetailDto, ProductSuggestionDto } from './products.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -18,6 +28,31 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationStatusDto } from './dto/update-reservation-status.dto';
 import type { Request } from 'express';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
+import { extname, join } from 'path';
+import { mkdirSync } from 'fs';
+
+const { diskStorage } = require('multer');
+
+const productUploadsDir = join(process.cwd(), 'uploads', 'products');
+const allowedImageExtensions = new Set([
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.webp',
+  '.gif',
+]);
+
+mkdirSync(productUploadsDir, { recursive: true });
+
+function slugifyFilename(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+}
 
 interface RequestWithUser extends Request {
   user: AuthenticatedUser;
@@ -72,6 +107,82 @@ export class ProductsController {
   ): Promise<ProductDetailDto> {
     const parsedOfferId = parseInt(offerId, 10);
     return this.products.getOfferDetail(parsedOfferId);
+  }
+
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  @Post('uploads')
+  @UseInterceptors(
+    FilesInterceptor('files', 5, {
+      storage: diskStorage({
+        destination: productUploadsDir,
+        filename: (
+          _req: Request,
+          file: { originalname?: string },
+          cb: (error: Error | null, filename: string) => void,
+        ) => {
+          const originalName = file.originalname ?? 'image.jpg';
+          const extension = extname(originalName).toLowerCase();
+          const baseName = originalName.slice(
+            0,
+            Math.max(0, originalName.length - extension.length),
+          );
+          const safeBaseName = slugifyFilename(baseName) || 'image';
+          const uniqueSuffix =
+            Date.now().toString(36) + '-' + Math.round(Math.random() * 1e9);
+
+          cb(null, `${safeBaseName}-${uniqueSuffix}${extension || '.jpg'}`);
+        },
+      }),
+      fileFilter: (
+        _req: Request,
+        file: { originalname?: string },
+        cb: (error: Error | null, acceptFile: boolean) => void,
+      ) => {
+        const extension = extname(file.originalname ?? '').toLowerCase();
+        if (!allowedImageExtensions.has(extension)) {
+          cb(
+            new BadRequestException(
+              'Seuls les fichiers jpg, jpeg, png, webp et gif sont acceptes',
+            ) as Error,
+            false,
+          );
+          return;
+        }
+
+        cb(null, true);
+      },
+      limits: {
+        files: 5,
+        fileSize: 5 * 1024 * 1024,
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
+  @ApiOperation({
+    summary: 'Uploader des images produit avant la creation d une annonce',
+  })
+  async uploadProductImages(
+    @UploadedFiles() files: Array<{ filename: string }> = [],
+  ): Promise<{ urls: string[] }> {
+    if (files.length === 0) {
+      throw new BadRequestException('Aucune image recue');
+    }
+
+    return {
+      urls: files.map((file) => `uploads/products/${file.filename}`),
+    };
   }
 
   @ApiBearerAuth('access-token')
