@@ -136,6 +136,12 @@ export interface UpdatedReservationStatusDto {
   status: string;
 }
 
+function sanitizePostalCode(value: string | null | undefined): string {
+  const normalized = (value ?? '').trim();
+  if (!normalized) return '';
+  return /^0+$/.test(normalized) ? '' : normalized;
+}
+
 @Injectable()
 export class ProductsService {
   constructor(
@@ -529,7 +535,7 @@ export class ProductsService {
       }
 
       const normalizedCity = (dto.city ?? '').trim();
-      const normalizedPostal = (dto.postalCode ?? '').trim();
+      const normalizedPostal = sanitizePostalCode(dto.postalCode);
 
       const product = await productRepo.save(
         productRepo.create({
@@ -545,7 +551,7 @@ export class ProductsService {
           postal_code:
             normalizedPostal.length > 0
               ? normalizedPostal
-              : owner.postal_code || '00000',
+              : sanitizePostalCode(owner.postal_code),
           latitude: dto.latitude ?? undefined,
           longitude: dto.longitude ?? undefined,
           is_available: true,

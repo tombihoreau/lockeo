@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../services/chat_socket_service.dart';
 import '../services/auth_session.dart';
+import '../services/app_notifications_realtime_service.dart';
 import '../services/conversations_service.dart';
 import '../services/products_service.dart';
 import '../models/message.dart';
@@ -70,7 +71,8 @@ class ConversationScreen extends StatefulWidget {
   State<ConversationScreen> createState() => _ConversationScreenState();
 }
 
-class _ConversationScreenState extends State<ConversationScreen> {
+class _ConversationScreenState extends State<ConversationScreen>
+    with WidgetsBindingObserver {
   final _chatSocketService = ChatSocketService();
   final _conversationsService = ConversationsService();
   final _productsService = ProductsService();
@@ -100,28 +102,32 @@ class _ConversationScreenState extends State<ConversationScreen> {
   bool _checkoutCongratsShown = false;
   StreamSubscription<ConversationHistoryEvent>? _historySub;
   StreamSubscription<ConversationMessageEvent>? _newMessageSub;
-  StreamSubscription<ChatNotificationEvent>? _notificationSub;
   StreamSubscription<ConversationTypingEvent>? _typingSub;
   StreamSubscription<String>? _socketErrorSub;
-  OverlayEntry? _notificationOverlay;
-  Timer? _notificationOverlayTimer;
   Timer? _typingStopTimer;
+  double _lastBottomInset = 0;
 
   @override
   void initState() {
     super.initState();
+    AppNotificationsRealtimeService.instance.setActiveConversation(
+      widget.conversationId,
+    );
+    WidgetsBinding.instance.addObserver(this);
     _load();
   }
 
   @override
   void dispose() {
+    if (AppNotificationsRealtimeService.instance.activeConversationId ==
+        widget.conversationId) {
+      AppNotificationsRealtimeService.instance.setActiveConversation(null);
+    }
+    WidgetsBinding.instance.removeObserver(this);
     _historySub?.cancel();
     _newMessageSub?.cancel();
-    _notificationSub?.cancel();
     _typingSub?.cancel();
     _socketErrorSub?.cancel();
-    _notificationOverlayTimer?.cancel();
-    _removeNotificationOverlay();
     _typingStopTimer?.cancel();
     if (_socketConnected) {
       _chatSocketService.emitTyping(
@@ -134,6 +140,22 @@ class _ConversationScreenState extends State<ConversationScreen> {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (!mounted) return;
+
+    final view = View.of(context);
+    final bottomInset = view.viewInsets.bottom / view.devicePixelRatio;
+    final keyboardWasVisible = _lastBottomInset > 0;
+    final keyboardIsVisible = bottomInset > 0;
+    _lastBottomInset = bottomInset;
+
+    if (keyboardWasVisible != keyboardIsVisible) {
+      _scheduleScrollToBottom(animated: false);
+    }
   }
 
   Future<void> _load() async {
@@ -333,14 +355,31 @@ class _ConversationScreenState extends State<ConversationScreen> {
     }
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({bool animated = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
+      final target = _scrollController.position.maxScrollExtent;
+      if (animated) {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+        return;
+      }
+      _scrollController.jumpTo(target);
+    });
+  }
+
+  void _scheduleScrollToBottom({bool animated = true}) {
+    _scrollToBottom(animated: animated);
+    Future<void>.delayed(const Duration(milliseconds: 120), () {
+      if (!mounted) return;
+      _scrollToBottom(animated: false);
+    });
+    Future<void>.delayed(const Duration(milliseconds: 280), () {
+      if (!mounted) return;
+      _scrollToBottom(animated: false);
     });
   }
 
@@ -376,6 +415,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
       text: text,
     );
     _controller.clear();
+    _scheduleScrollToBottom(animated: false);
+    FocusScope.of(context).unfocus();
+    _scheduleScrollToBottom(animated: false);
   }
 
   void _onComposerChanged(String value) {
@@ -415,7 +457,6 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
     _historySub?.cancel();
     _newMessageSub?.cancel();
-    _notificationSub?.cancel();
     _typingSub?.cancel();
     _socketErrorSub?.cancel();
 
@@ -425,7 +466,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
         _messages = event.messages;
       });
       _markAllIncomingAsRead();
-      _scrollToBottom();
+      _scheduleScrollToBottom(animated: false);
     });
 
     _newMessageSub = _chatSocketService.newMessageStream.listen((event) {
@@ -442,22 +483,13 @@ class _ConversationScreenState extends State<ConversationScreen> {
         }
       });
       _markAllIncomingAsRead();
-      _scrollToBottom();
+      _scheduleScrollToBottom();
     });
 
     _typingSub = _chatSocketService.typingStream.listen((event) {
       if (!mounted || event.conversationId != widget.conversationId) return;
       if (event.senderUserId == _currentUserId) return;
       setState(() => _isOtherUserTyping = event.isTyping);
-    });
-
-    _notificationSub = _chatSocketService.notificationStream.listen((event) {
-      if (!mounted) return;
-      if (event.destinationUserId != _currentUserId) return;
-      _showTopNotification(
-        title: event.title,
-        body: event.body,
-      );
     });
 
     _socketErrorSub = _chatSocketService.errorStream.listen((_) {
@@ -488,48 +520,6 @@ class _ConversationScreenState extends State<ConversationScreen> {
     } finally {
       _isConnectingSocket = false;
     }
-  }
-
-  void _showTopNotification({
-    required String title,
-    required String body,
-  }) {
-    _notificationOverlayTimer?.cancel();
-    _removeNotificationOverlay();
-
-    final overlay = Overlay.of(context);
-
-    _notificationOverlay = OverlayEntry(
-      builder: (context) {
-        final topPadding = MediaQuery.of(context).padding.top;
-        return Positioned(
-          top: topPadding + 12,
-          left: 16,
-          right: 16,
-          child: Material(
-            color: Colors.transparent,
-            child: SafeArea(
-              bottom: false,
-              child: _ConversationNotificationBanner(
-                title: title,
-                body: body,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    overlay.insert(_notificationOverlay!);
-    _notificationOverlayTimer = Timer(
-      const Duration(seconds: 3),
-      _removeNotificationOverlay,
-    );
-  }
-
-  void _removeNotificationOverlay() {
-    _notificationOverlay?.remove();
-    _notificationOverlay = null;
   }
 
   // -------------------------
@@ -672,7 +662,6 @@ class _ConversationScreenState extends State<ConversationScreen> {
   Widget build(BuildContext context) {
     final lightBg = const Color(0xFFF5F7FA);
     final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-    final displayedMessages = _messages.reversed.toList();
 
     return PopScope(
       canPop: false,
@@ -686,66 +675,67 @@ class _ConversationScreenState extends State<ConversationScreen> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  Container(
-                    color: Colors.white,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        top: MediaQuery.of(context).padding.top + 8,
-                      ),
-                      child: ConversationHeader(
-                        role: _role,
-                        status: _reservationStatus,
-                        productTitle:
-                            _reservationContext?.productTitle ??
-                            _product?.name ??
-                            widget.initialArgs?.productTitle ??
-                            "",
-                        priceLabel:
-                            "${(_reservationContext?.pricePerDay ?? _product?.price ?? widget.initialArgs?.pricePerDay ?? 0).toStringAsFixed(0)}€/jour",
-                        totalPrice:
-                            _reservationContext?.totalPrice ??
-                            widget.initialArgs?.totalPrice,
-                        totalDays:
-                            _reservationContext?.totalDays ??
-                            widget.initialArgs?.totalDays,
-                        dateLabel: _reservation != null
-                            ? _formatRangeLabel(_reservation)
-                            : _fallbackDateLabel,
-                        otherUserName: _otherUserName.isNotEmpty
-                            ? _otherUserName
-                            : (widget.initialArgs?.otherUserName ?? ""),
-                        imagePath:
-                            _reservationContext?.imagePath ??
-                            _productImage?.url ??
-                            widget.initialArgs?.imagePath ??
-                            'assets/images/default.jpg',
-                        cityLabel:
-                            _reservationContext?.cityLabel ??
-                            _product?.city ??
-                            widget.initialArgs?.cityLabel ??
-                            "",
-                        postalCodeLabel:
-                            _reservationContext?.postalCodeLabel ??
-                            _product?.postalCode ??
-                            widget.initialArgs?.postalCodeLabel ??
-                            "",
-                        pricePerDay:
-                            _reservationContext?.pricePerDay ??
-                            _product?.price ??
-                            widget.initialArgs?.pricePerDay ??
-                            0,
-                        onAccept: _acceptReservation,
-                        onDecline: _declineReservation,
-                        onOpenInventory: _openInventory,
-                        onValidateInventory: _validateInventory,
-                        onMakeOffer: _openOfferSheet,
-                        rentalEndDate:
-                            _reservationContext?.endDate ??
-                            _reservation?.endDate ??
-                            widget.initialArgs?.endDate,
+                  if (!keyboardVisible)
+                    Container(
+                      color: Colors.white,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          top: MediaQuery.of(context).padding.top + 8,
+                        ),
+                        child: ConversationHeader(
+                          role: _role,
+                          status: _reservationStatus,
+                          productTitle:
+                              _reservationContext?.productTitle ??
+                              _product?.name ??
+                              widget.initialArgs?.productTitle ??
+                              "",
+                          priceLabel:
+                              "${(_reservationContext?.pricePerDay ?? _product?.price ?? widget.initialArgs?.pricePerDay ?? 0).toStringAsFixed(0)}€/jour",
+                          totalPrice:
+                              _reservationContext?.totalPrice ??
+                              widget.initialArgs?.totalPrice,
+                          totalDays:
+                              _reservationContext?.totalDays ??
+                              widget.initialArgs?.totalDays,
+                          dateLabel: _reservation != null
+                              ? _formatRangeLabel(_reservation)
+                              : _fallbackDateLabel,
+                          otherUserName: _otherUserName.isNotEmpty
+                              ? _otherUserName
+                              : (widget.initialArgs?.otherUserName ?? ""),
+                          imagePath:
+                              _reservationContext?.imagePath ??
+                              _productImage?.url ??
+                              widget.initialArgs?.imagePath ??
+                              'assets/images/default.jpg',
+                          cityLabel:
+                              _reservationContext?.cityLabel ??
+                              _product?.city ??
+                              widget.initialArgs?.cityLabel ??
+                              "",
+                          postalCodeLabel:
+                              _reservationContext?.postalCodeLabel ??
+                              _product?.postalCode ??
+                              widget.initialArgs?.postalCodeLabel ??
+                              "",
+                          pricePerDay:
+                              _reservationContext?.pricePerDay ??
+                              _product?.price ??
+                              widget.initialArgs?.pricePerDay ??
+                              0,
+                          onAccept: _acceptReservation,
+                          onDecline: _declineReservation,
+                          onOpenInventory: _openInventory,
+                          onValidateInventory: _validateInventory,
+                          onMakeOffer: _openOfferSheet,
+                          rentalEndDate:
+                              _reservationContext?.endDate ??
+                              _reservation?.endDate ??
+                              widget.initialArgs?.endDate,
+                        ),
                       ),
                     ),
-                  ),
 
                   Expanded(
                     child: ListView.builder(
@@ -804,76 +794,6 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final h = local.hour.toString().padLeft(2, '0');
     final min = local.minute.toString().padLeft(2, '0');
     return "$h:$min";
-  }
-}
-
-class _ConversationNotificationBanner extends StatelessWidget {
-  final String title;
-  final String body;
-
-  const _ConversationNotificationBanner({
-    required this.title,
-    required this.body,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE8F1FF),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.notifications_none,
-              color: AppColors.primaryBlue,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  body,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

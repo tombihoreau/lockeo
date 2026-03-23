@@ -28,6 +28,8 @@ import 'package:lockeo_app/services/backend_config.dart';
 import 'package:lockeo_app/services/chat_socket_service.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+final RouteObserver<PageRoute<dynamic>> appRouteObserver =
+    RouteObserver<PageRoute<dynamic>>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +55,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: appNavigatorKey,
+      navigatorObservers: [appRouteObserver],
       locale: const Locale('fr', 'FR'),
       supportedLocales: const [Locale('fr', 'FR')],
       localizationsDelegates: const [
@@ -76,7 +79,7 @@ class _MyAppState extends State<MyApp> {
           elevation: 0,
         ),
       ),
-      initialRoute: '/login',
+      initialRoute: '/welcome',
 
       // 🧱 Routes statiques
       routes: {
@@ -258,6 +261,11 @@ class _GlobalNotificationsOverlayState extends State<GlobalNotificationsOverlay>
   }
 
   void _showNotification(ChatNotificationEvent event) {
+    if (AppNotificationsRealtimeService.instance.activeConversationId ==
+        event.conversationId) {
+      return;
+    }
+
     _latestNotification = event;
     _overlayTimer?.cancel();
     if (mounted) {

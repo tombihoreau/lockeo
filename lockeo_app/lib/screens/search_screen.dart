@@ -70,7 +70,11 @@ class _SearchPageState extends State<SearchPage> {
             onChanged: (value) => setState(() => _draftQuery = value),
             onSubmitted: (value) => _submitSearch(value),
             onSearch: (value) => _submitSearch(value),
-            onBack: () => Navigator.pop(context),
+            onBack: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/',
+              (route) => false,
+            ),
           ),
 
           // 🧱 Résultats

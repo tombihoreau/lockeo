@@ -20,8 +20,14 @@ class AppNotificationsRealtimeService {
   bool _isConnecting = false;
   bool _isConnected = false;
   String? _connectedToken;
+  int? _activeConversationId;
 
   Stream<ChatNotificationEvent> get notificationsStream => _controller.stream;
+  int? get activeConversationId => _activeConversationId;
+
+  void setActiveConversation(int? conversationId) {
+    _activeConversationId = conversationId;
+  }
 
   Future<void> ensureConnected() async {
     final token = AuthSession.instance.accessToken?.trim();

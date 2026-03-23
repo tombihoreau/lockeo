@@ -73,8 +73,34 @@ class ConversationHeader extends StatelessWidget {
     this.onValidateInventory,
   });
 
+  String get _locationLabel {
+    final city = cityLabel.trim();
+    final postalCode = _sanitizePostalCode(postalCodeLabel);
+
+    if (city.isNotEmpty && postalCode.isNotEmpty) {
+      return "$city, $postalCode";
+    }
+    if (city.isNotEmpty) return city;
+    if (postalCode.isNotEmpty) return postalCode;
+    return "";
+  }
+
+  String _sanitizePostalCode(String value) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) return "";
+    if (RegExp(r'^0+$').hasMatch(normalized)) {
+      return "";
+    }
+    return normalized;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    if (keyboardVisible) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
       decoration: const BoxDecoration(color: Colors.white),
@@ -147,7 +173,7 @@ class ConversationHeader extends StatelessWidget {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            "$cityLabel, $postalCodeLabel",
+                            _locationLabel,
                             style: AppTextStyles.label.copyWith(
                               color: Colors.black,
                             ),

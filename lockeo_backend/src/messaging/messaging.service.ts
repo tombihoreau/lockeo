@@ -82,6 +82,12 @@ export interface SendMessageResult {
   notification: MessageNotificationPayload;
 }
 
+function sanitizePostalCode(value: string | null | undefined): string {
+  const normalized = (value ?? '').trim();
+  if (!normalized) return '';
+  return /^0+$/.test(normalized) ? '' : normalized;
+}
+
 @Injectable()
 export class MessagingService {
   private static readonly messageNotificationTemplateCode = 'MESSAGE_RECEIVED';
@@ -451,7 +457,7 @@ export class MessagingService {
         product_id: product.product_id,
         name: product.name,
         city: product.city,
-        postal_code: product.postal_code,
+        postal_code: sanitizePostalCode(product.postal_code),
         price_per_day: Number(product.price ?? 0),
         image_uri: firstImage?.uri ?? null,
       },
