@@ -11,6 +11,7 @@ class CreateOfferEndScreen extends StatelessWidget {
   final String offerDescription;
   final String offerImagePath;
   final int offerCount;
+  final int offerId;
 
   const CreateOfferEndScreen({
     super.key,
@@ -18,6 +19,7 @@ class CreateOfferEndScreen extends StatelessWidget {
     required this.offerDescription,
     required this.offerImagePath,
     required this.offerCount,
+    required this.offerId,
   });
 
   Widget _buildOfferImage() {
@@ -114,7 +116,11 @@ class CreateOfferEndScreen extends StatelessWidget {
 
                               GestureDetector(
                                 onTap: () {
-                                  // Naviguer vers l'annonce
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/productDetails',
+                                    arguments: offerId,
+                                  );
                                 },
                                 child: Text(
                                   "Voir mon annonce",

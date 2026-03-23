@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/offer.dart';
 import '../models/product_detail.dart';
 import '../services/auth_session.dart';
 import '../services/conversations_service.dart';
@@ -17,9 +16,9 @@ import '../widgets/security_card.dart';
 import '../widgets/suggestions_grid.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  final Offer offer;
+  final int offerId;
 
-  const ProductDetailScreen({super.key, required this.offer});
+  const ProductDetailScreen({super.key, required this.offerId});
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -34,7 +33,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _detailFuture = _productsService.getOfferDetail(widget.offer.offerId);
+    _detailFuture = _productsService.getOfferDetail(widget.offerId);
   }
 
   @override
@@ -58,9 +57,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-            body: const Center(
-              child: Text("Erreur ou données introuvables"),
-            ),
+            body: const Center(child: Text("Erreur ou données introuvables")),
           );
         }
 
@@ -70,8 +67,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         final ownerName = owner.firstName.trim().isNotEmpty
             ? owner.firstName.trim()
             : owner.login.trim().isNotEmpty
-                ? owner.login.trim()
-                : 'Utilisateur';
+            ? owner.login.trim()
+            : 'Utilisateur';
 
         bool isUnavailableDay(DateTime day) {
           final normalizedDay = DateTime(day.year, day.month, day.day);
@@ -402,14 +399,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       if (detail.otherOffers.isNotEmpty) ...[
                         const SizedBox(height: 18),
-                        Text(
-                          "Annonces de $ownerName",
-                          style: AppTextStyles.h2,
-                        ),
+                        Text("Annonces de $ownerName", style: AppTextStyles.h2),
                         const SizedBox(height: 20),
-                        ProductSuggestionsGrid(
-                          suggestions: detail.otherOffers,
-                        ),
+                        ProductSuggestionsGrid(suggestions: detail.otherOffers),
                       ],
                       const SizedBox(height: 24),
                       const Text(

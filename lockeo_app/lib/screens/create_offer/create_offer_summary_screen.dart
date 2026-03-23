@@ -59,7 +59,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
 
     setState(() => _publishing = true);
     try {
-      await _createOfferService.createOffer(widget.draft);
+      final createdOffer = await _createOfferService.createOffer(widget.draft);
       if (!mounted) return;
 
       Navigator.push(
@@ -72,6 +72,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                 ? widget.draft.photos[0]
                 : '',
             offerCount: 1,
+            offerId: createdOffer.offerId,
           ),
         ),
       );
