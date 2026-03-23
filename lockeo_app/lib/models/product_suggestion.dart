@@ -1,5 +1,6 @@
 import 'product.dart';
 import 'offer.dart';
+import '../services/backend_config.dart';
 
 class ProductSuggestion {
   final Product product;
@@ -17,10 +18,16 @@ class ProductSuggestion {
     if (uri.startsWith('assets/') ||
         uri.startsWith('http://') ||
         uri.startsWith('https://') ||
-        uri.startsWith('file://') ||
-        uri.startsWith('/')) {
+        uri.startsWith('file://')) {
       return uri;
     }
+    if (uri.startsWith('uploads/') ||
+        uri.startsWith('/uploads/') ||
+        uri.startsWith('api/uploads/') ||
+        uri.startsWith('/api/uploads/')) {
+      return BackendConfig.resolveApiUrl(uri);
+    }
+    if (uri.startsWith('/')) return uri;
 
     return 'assets/images/$uri';
   }

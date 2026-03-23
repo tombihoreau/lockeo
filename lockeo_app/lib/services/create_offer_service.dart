@@ -1,3 +1,8 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+
 import '../models/offerDraft.dart';
 import 'api_client.dart';
 import 'auth_session.dart';
@@ -37,6 +42,7 @@ class CreateOfferService {
     final location = (draft.location ?? '').trim();
     final parsed = _parseLocation(location);
     final latLng = await _locationService.getStoredLatLng();
+    final uploadedPhotoUris = await _uploadPhotos(draft.photos, token);
 
     _api.setBearerToken(token);
     final json = await _api.postJson(
@@ -53,12 +59,15 @@ class CreateOfferService {
         'latitude': latLng?.lat,
         'longitude': latLng?.lng,
         'categoryIds': draft.categories,
-        'photoUris': draft.photos,
+        'photoUris': uploadedPhotoUris,
         'unavailableDates': (draft.unavailableDates ?? [])
             .map(
               (d) => {
-                'isoDate': DateTime.utc(d.year, d.month, d.day)
-                    .toIso8601String(),
+                'isoDate': DateTime.utc(
+                  d.year,
+                  d.month,
+                  d.day,
+                ).toIso8601String(),
               },
             )
             .toList(),
@@ -73,6 +82,58 @@ class CreateOfferService {
     }
 
     return CreatedOfferResult(productId: productId, offerId: offerId);
+  }
+
+  Future<List<String>> _uploadPhotos(List<XFile> photos, String token) async {
+    final normalizedPhotos = photos
+        .where((photo) => photo.path.trim().isNotEmpty)
+        .take(5)
+        .toList();
+
+    if (normalizedPhotos.isEmpty) {
+      return const [];
+    }
+
+    final request = http.MultipartRequest(
+      'POST',
+      _api.buildUri('/products/uploads'),
+    );
+
+    request.headers['Authorization'] = 'Bearer $token';
+
+    for (final photo in normalizedPhotos) {
+      final bytes = await photo.readAsBytes();
+      request.files.add(
+        http.MultipartFile.fromBytes('files', bytes, filename: photo.name),
+      );
+    }
+
+    final response = await request.send();
+    final body = await response.stream.bytesToString();
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw HttpException(
+        'POST /products/uploads status=${response.statusCode} body=$body',
+      );
+    }
+
+    final decoded = json.decode(body);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException(
+        'Réponse inattendue lors de l’upload des images',
+      );
+    }
+
+    final urls = (decoded['urls'] as List? ?? const [])
+        .map((value) => value?.toString().trim() ?? '')
+        .where((value) => value.isNotEmpty)
+        .toList();
+
+    if (urls.isEmpty) {
+      throw const FormatException('Aucune URL image renvoyée par le backend');
+    }
+
+    return urls;
   }
 
   int? _toInt(dynamic value) {

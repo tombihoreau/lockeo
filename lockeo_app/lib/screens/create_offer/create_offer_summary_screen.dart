@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -70,7 +71,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
             offerTitle: widget.draft.title ?? '',
             offerDescription: widget.draft.description ?? '',
             offerImagePath: widget.draft.photos.isNotEmpty
-                ? widget.draft.photos[0]
+                ? widget.draft.photos[0].path
                 : '',
             offerCount: 1,
             offerId: createdOffer.offerId,
@@ -150,9 +151,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
       outsideTextStyle: AppTextStyles.label.copyWith(
         color: Colors.grey.shade400,
       ),
-      disabledTextStyle: AppTextStyles.label.copyWith(
-        color: Colors.black54
-      ),
+      disabledTextStyle: AppTextStyles.label.copyWith(color: Colors.black54),
       todayTextStyle: AppTextStyles.label.copyWith(
         color: AppColors.textPrimary,
         fontWeight: FontWeight.w700,
@@ -172,8 +171,8 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
     );
   }
 
-  Widget _photoTile(String? path) {
-    if (path == null || path.isEmpty) {
+  Widget _photoTile(XFile? photo) {
+    if (photo == null || photo.path.isEmpty) {
       return Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -185,13 +184,13 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: SelectedPhotoImage(path: path, fit: BoxFit.cover),
+      child: SelectedPhotoImage(path: photo.path, fit: BoxFit.cover),
     );
   }
 
-  Widget _buildPhotoLayout(List<String> photos) {
+  Widget _buildPhotoLayout(List<XFile> photos) {
     final main = photos.isNotEmpty ? photos[0] : null;
-    final small = <String?>[
+    final small = <XFile?>[
       photos.length > 1 ? photos[1] : null,
       photos.length > 2 ? photos[2] : null,
       photos.length > 3 ? photos[3] : null,
@@ -332,12 +331,11 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    "${d.location ?? ''}",
-                    style:
-                        AppTextStyles.caption.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                          ),
+                    d.location ?? '',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -356,11 +354,10 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                 const SizedBox(width: 6),
                 Text(
                   "${(d.pricePerDay ?? 0).toStringAsFixed(0)}€/jour",
-                  style:
-                      AppTextStyles.caption.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w500,
-                          ),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 if (d.price3Days != null && d.price3Days! > 0) ...[
@@ -389,11 +386,10 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                 Expanded(
                   child: Text(
                     d.state ?? "Bon état",
-                    style:
-                        AppTextStyles.caption.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                          ),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],

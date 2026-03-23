@@ -28,9 +28,11 @@ COPY package*.json ./
 # Copy entrypoint
 COPY entrypoint.sh ./
 RUN chmod +x ./entrypoint.sh
+RUN mkdir -p /app/uploads/products
 
 # Sécurité basique : user non-root
 RUN addgroup -S app && adduser -S app -G app
+RUN chown -R app:app /app/uploads
 USER app
 
 EXPOSE 3000

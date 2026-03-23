@@ -1,3 +1,5 @@
+import '../services/backend_config.dart';
+
 class ImageModel {
   final int imageId;
   final int productId;
@@ -20,10 +22,16 @@ class ImageModel {
       if (value.startsWith('assets/') ||
           value.startsWith('http://') ||
           value.startsWith('https://') ||
-          value.startsWith('file://') ||
-          value.startsWith('/')) {
+          value.startsWith('file://')) {
         return value;
       }
+      if (value.startsWith('uploads/') ||
+          value.startsWith('/uploads/') ||
+          value.startsWith('api/uploads/') ||
+          value.startsWith('/api/uploads/')) {
+        return BackendConfig.resolveApiUrl(value);
+      }
+      if (value.startsWith('/')) return value;
       return 'assets/images/$value';
     }
 

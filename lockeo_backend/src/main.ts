@@ -1,15 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { mkdirSync } from 'fs';
+import { join } from 'path';
 import 'reflect-metadata';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const uploadsDir = join(process.cwd(), 'uploads');
+  mkdirSync(join(uploadsDir, 'products'), { recursive: true });
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Sécurité/CORS
   app.enableCors();
   app.setGlobalPrefix('api');
+  app.useStaticAssets(uploadsDir, { prefix: '/api/uploads/' });
 
   // Validation globale des DTOs
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
