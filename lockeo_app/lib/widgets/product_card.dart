@@ -4,6 +4,7 @@ import '../models/image.dart';
 import '../theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import '../services/approx_loc_service.dart';
+import 'selected_photo_image.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -33,40 +34,23 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image en haut
-            Stack(
-              children: [
-                Image.asset(
-                  image.url,
+            SelectedPhotoImage(
+              path: image.url,
+              height: 150,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
                   height: 150,
                   width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Material(
-                    color: Colors.white,
-                    shape: const CircleBorder(),
-                    elevation: 0,
-                    child: InkWell(
-                      onTap: onToggleFavorite,
-                      customBorder: const CircleBorder(),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          product.isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          size: 20,
-                          color: product.isFavorite
-                              ? AppColors.primaryRed
-                              : const Color(0xFFE57373),
-                        ),
-                      ),
-                    ),
+                  color: const Color(0xFFE8EDF2),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: AppColors.textGrey,
                   ),
-                ),
-              ],
+                );
+              },
             ),
 
             const SizedBox(height: 12),

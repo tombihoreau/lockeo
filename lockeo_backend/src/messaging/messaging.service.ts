@@ -10,6 +10,7 @@ import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
 import { NotificationTemplate } from '../entities/notification-template.entity';
 import { UserNotification } from '../entities/user-notification.entity';
+import { Reservation } from '../entities/reservation.entity';
 import { User } from '../entities/user.entity';
 
 export interface MessagePayload {
@@ -38,6 +39,26 @@ export interface ConversationListItemPayload {
     created_at: string;
   } | null;
   unread_count: number;
+  reservation: ConversationReservationPayload | null;
+}
+
+export interface ConversationReservationPayload {
+  reservation_id: number;
+  status: string;
+  start_date: string;
+  end_date: string;
+  final_price: number;
+  total_days: number;
+  offer_id: number;
+  owner_user_id: number;
+  product: {
+    product_id: number;
+    name: string;
+    city: string;
+    postal_code: string;
+    price_per_day: number;
+    image_uri: string | null;
+  };
 }
 
 export interface EnsureConversationPayload {
@@ -126,7 +147,15 @@ export class MessagingService {
   ): Promise<ConversationListItemPayload[]> {
     const conversations = await this.conversationRepo.find({
       where: [{ renter: { user_id: userId } }, { owner: { user_id: userId } }],
-      relations: ['renter', 'owner'],
+      relations: [
+        'renter',
+        'owner',
+        'reservation',
+        'reservation.offer',
+        'reservation.offer.owner',
+        'reservation.offer.product',
+        'reservation.offer.product.images',
+      ],
       order: { created_at: 'DESC' },
     });
 
@@ -179,6 +208,7 @@ export class MessagingService {
               }
             : null,
           unread_count: unreadCount,
+          reservation: this.toReservationPayload(conversation.reservation),
         } satisfies ConversationListItemPayload;
       }),
     );
@@ -233,10 +263,16 @@ export class MessagingService {
 
     const existing = await this.conversationRepo.findOne({
       where: [
-        { renter: { user_id: currentUserId }, owner: { user_id: otherUserId } },
-        { renter: { user_id: otherUserId }, owner: { user_id: currentUserId } },
+        {
+          renter: { user_id: currentUserId },
+          owner: { user_id: otherUserId },
+        },
+        {
+          renter: { user_id: otherUserId },
+          owner: { user_id: currentUserId },
+        },
       ],
-      relations: ['renter', 'owner'],
+      relations: ['renter', 'owner', 'reservation'],
       order: { conversation_id: 'DESC' },
     });
 
@@ -300,8 +336,12 @@ export class MessagingService {
       throw new NotFoundException('Message introuvable après création');
     }
 
-    const destinationUser = this.resolveOtherParticipant(conversation, senderUserId);
-    const notificationTemplate = await this.getOrCreateMessageNotificationTemplate();
+    const destinationUser = this.resolveOtherParticipant(
+      conversation,
+      senderUserId,
+    );
+    const notificationTemplate =
+      await this.getOrCreateMessageNotificationTemplate();
     const notification = await this.userNotificationRepo.save(
       this.userNotificationRepo.create({
         template: notificationTemplate,
@@ -378,6 +418,43 @@ export class MessagingService {
       status: 'sent',
       created_at: message.created_at.toISOString(),
       read_at: null,
+    };
+  }
+
+  private toReservationPayload(
+    reservation: Reservation | null | undefined,
+  ): ConversationReservationPayload | null {
+    if (!reservation?.offer?.product || !reservation.offer.owner) {
+      return null;
+    }
+
+    const product = reservation.offer.product;
+    const firstImage = (product.images ?? [])
+      .slice()
+      .sort((a, b) => (a.position_image ?? 0) - (b.position_image ?? 0))[0];
+    const totalDays =
+      Math.floor(
+        (reservation.end_date.getTime() - reservation.start_date.getTime()) /
+          86400000,
+      ) + 1;
+
+    return {
+      reservation_id: reservation.reservation_id,
+      status: reservation.status,
+      start_date: reservation.start_date.toISOString(),
+      end_date: reservation.end_date.toISOString(),
+      final_price: Number(reservation.final_price),
+      total_days: totalDays,
+      offer_id: reservation.offer.offer_id,
+      owner_user_id: reservation.offer.owner.user_id,
+      product: {
+        product_id: product.product_id,
+        name: product.name,
+        city: product.city,
+        postal_code: product.postal_code,
+        price_per_day: Number(product.price ?? 0),
+        image_uri: firstImage?.uri ?? null,
+      },
     };
   }
 }

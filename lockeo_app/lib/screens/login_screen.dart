@@ -192,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: GestureDetector(
                                 onTap: () {
                                   // TODO: route inscription
-                                  Navigator.pushNamed(context, "/register");
+                                  Navigator.pushNamed(context, "/register_1");
                                 },
                                 child: const Text(
                                   "Je n’ai pas de compte",

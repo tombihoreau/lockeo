@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product_suggestion.dart';
-import '../models/image.dart';
 import '../services/products_service.dart';
-import 'product_card.dart';
+import 'product_suggestions_grid.dart';
 
 class FavoritesSection extends StatelessWidget {
   final int maxItems;
@@ -55,39 +54,8 @@ class FavoritesSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            GridView.builder(
-              padding: EdgeInsets.zero,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 6,
-                mainAxisSpacing: 6,
-                childAspectRatio: 0.6,
-              ),
-              itemCount: favorites.length,
-              itemBuilder: (context, index) {
-                final s = favorites[index];
-                final product = s.product;
-                final imageUrl = (s.imageUri != null && s.imageUri!.isNotEmpty)
-                    ? 'assets/images/${s.imageUri}'
-                    : 'assets/images/default.jpg';
-                final firstImage = ImageModel(
-                  imageId: 0,
-                  productId: product.productId,
-                  url: imageUrl,
-                  positionImage: 0,
-                  createdAt: '',
-                );
-
-                return ProductCard(
-                  product: product,
-                  image: firstImage,
-                  onTap: () {
-                    Navigator.pushNamed(context, '/productDetails', arguments: product);
-                  },
-                );
-              },
+            ProductSuggestionsGrid(
+              suggestions: favorites,
             ),
             const SizedBox(height: 40),
           ],

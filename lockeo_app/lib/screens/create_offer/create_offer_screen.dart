@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:lockeo_app/utils/app_navigator.dart';
 import '../../widgets/button.dart';
-import '../../widgets/categories_selector.dart';
 import '../../models/category.dart';
-import '../../services/local_data_service.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import '../../models/offerDraft.dart';
-import 'create_offer_step2_screen.dart';
+import '../../services/category_service.dart';
+import '../../services/local_data_service.dart';
 import '../../services/location_service.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../../widgets/offer_categories_selector.dart';
+import '../../widgets/selected_photo_image.dart';
+import 'create_offer_step2_screen.dart';
 import '../../widgets/main_scaffold.dart';
 import '../home_screen.dart';
 
@@ -33,6 +35,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final _loc = LocationService();
 
   final dataService = LocalDataService();
+  final _categoryService = CategoryService();
 
   List<Category> _categories = [];
   List<int> _selectedCategories = [];
@@ -57,8 +60,18 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   }
 
   Future<void> _loadCategories() async {
-    final categories = await dataService.loadCategories();
-    setState(() => _categories = categories);
+    try {
+      final categories = await _categoryService.fetchCategories();
+      if (categories.isNotEmpty) {
+        setState(() => _categories = categories);
+        return;
+      }
+    } catch (_) {
+      // Fallback local en environnement sans backend.
+    }
+
+    final localCategories = await dataService.loadCategories();
+    setState(() => _categories = localCategories);
   }
 
   Future<void> pickPhoto() async {
@@ -81,24 +94,20 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     });
   }
 
-  Set<int> _withParents(Set<int> selectedIds) {
-    if (_categories.isEmpty) return selectedIds;
+  Future<void> _onManualLocationChanged(String value) async {
+    final normalized = value.trim();
+    setState(() {
+      location = normalized.isEmpty ? null : normalized;
+    });
 
-    // Map id -> Category pour lookup rapide
-    final byId = {for (final c in _categories) c.categoryId: c};
+    await _loc.clearStoredLatLng();
+  }
 
-    final result = <int>{...selectedIds};
-
-    // Ajoute parents (et parents de parents) tant qu'il y en a
-    for (final id in selectedIds) {
-      Category? current = byId[id];
-      while (current != null && current.parentId != 0) {
-        result.add(current.parentId ?? 0);
-        current = byId[current.parentId];
-      }
-    }
-
-    return result;
+  bool _hasSelectedParent() {
+    final selected = _selectedCategories.toSet();
+    return _categories.any(
+      (category) => category.isParent && selected.contains(category.categoryId),
+    );
   }
 
   void _goToStep2() {
@@ -122,16 +131,22 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       return;
     }
 
-    final enrichedCategoryIds = _withParents(
-      _selectedCategories.toSet(),
-    ).toList();
+    if (!_hasSelectedParent()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Veuillez choisir une catégorie parente."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     final draft = OfferDraft(
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       state: selectedState,
       location: location,
-      categories: enrichedCategoryIds,
+      categories: List<int>.from(_selectedCategories),
       photos: photos,
     );
 
@@ -185,9 +200,10 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
             if (hasPhoto)
               ClipRRect(
                 borderRadius: BorderRadius.circular(radius),
-                child: photos[index].startsWith('assets/')
-                    ? Image.asset(photos[index], fit: BoxFit.cover)
-                    : Image.file(File(photos[index]), fit: BoxFit.cover),
+                child: SelectedPhotoImage(
+                  path: photos[index],
+                  fit: BoxFit.cover,
+                ),
               )
             else
               Center(
@@ -214,7 +230,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.55),
+                      color: Colors.black.withValues(alpha: 0.55),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -433,20 +449,27 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(color: Colors.white),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: _locationCtrl,
-                      readOnly: true,
+                      keyboardType: TextInputType.text,
+                      autofillHints: const [AutofillHints.addressCity],
+                      onChanged: (value) {
+                        _onManualLocationChanged(value);
+                      },
                       style: AppTextStyles.label.copyWith(
                         color: AppColors.textPrimary,
                       ),
+                      textInputAction: TextInputAction.done,
                       decoration: InputDecoration(
                         border: InputBorder.none,
-
-                        hintText: "Ajouter une localisation",
+                        hintText: "Saisissez votre ville",
                         hintStyle: AppTextStyles.label.copyWith(
                           color: AppColors.textPrimary,
                         ),
@@ -465,7 +488,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
             const Text("Catégories", style: AppTextStyles.label),
             const SizedBox(height: 8),
-            CategoriesSelector(
+            OfferCategoriesSelector(
               categories: _categories,
               selectedCategories: _selectedCategories,
               onChanged: (updatedList) {

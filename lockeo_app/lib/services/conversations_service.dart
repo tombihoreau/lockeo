@@ -47,10 +47,44 @@ class ConversationParticipant {
 class ConversationSnapshot {
   final ConversationParticipant? otherUser;
   final List<Message> messages;
+  final ConversationReservationContext? reservationContext;
 
   const ConversationSnapshot({
     required this.otherUser,
     required this.messages,
+    required this.reservationContext,
+  });
+}
+
+class ConversationReservationContext {
+  final int reservationId;
+  final String status;
+  final DateTime startDate;
+  final DateTime endDate;
+  final double totalPrice;
+  final int totalDays;
+  final int offerId;
+  final int ownerUserId;
+  final String productTitle;
+  final String cityLabel;
+  final String postalCodeLabel;
+  final double pricePerDay;
+  final String? imagePath;
+
+  const ConversationReservationContext({
+    required this.reservationId,
+    required this.status,
+    required this.startDate,
+    required this.endDate,
+    required this.totalPrice,
+    required this.totalDays,
+    required this.offerId,
+    required this.ownerUserId,
+    required this.productTitle,
+    required this.cityLabel,
+    required this.postalCodeLabel,
+    required this.pricePerDay,
+    required this.imagePath,
   });
 }
 
@@ -103,12 +137,16 @@ class ConversationsService {
 
     _api.setBearerToken(token);
     final rows = await _api.getJsonList('/conversations');
-    final row = rows.whereType<Map>().map((r) => r.cast<String, dynamic>()).firstWhere(
-      (r) => _toInt(r['conversation_id']) == conversationId,
-      orElse: () => <String, dynamic>{},
-    );
+    final row = rows
+        .whereType<Map>()
+        .map((r) => r.cast<String, dynamic>())
+        .firstWhere(
+          (r) => _toInt(r['conversation_id']) == conversationId,
+          orElse: () => <String, dynamic>{},
+        );
 
     ConversationParticipant? otherUser;
+    ConversationReservationContext? reservationContext;
     final otherRaw = row['other_user'];
     if (otherRaw is Map) {
       final other = otherRaw.map((k, v) => MapEntry(k.toString(), v));
@@ -123,14 +161,62 @@ class ConversationsService {
       }
     }
 
-    final messageRows = await _api.getJsonList('/conversations/$conversationId/messages');
-    final messages = messageRows
-        .whereType<Map>()
-        .map((raw) => _messageFromJson(raw.cast<String, dynamic>()))
-        .toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    final reservationRaw = row['reservation'];
+    if (reservationRaw is Map) {
+      final reservationMap = reservationRaw.map(
+        (key, value) => MapEntry(key.toString(), value),
+      );
+      final productRaw = reservationMap['product'];
+      final productMap = productRaw is Map
+          ? productRaw.map((key, value) => MapEntry(key.toString(), value))
+          : const <String, dynamic>{};
 
-    return ConversationSnapshot(otherUser: otherUser, messages: messages);
+      final reservationId = _toInt(reservationMap['reservation_id']);
+      final offerId = _toInt(reservationMap['offer_id']);
+      final ownerUserId = _toInt(reservationMap['owner_user_id']);
+      final totalDays = _toInt(reservationMap['total_days']);
+      final startDateRaw = reservationMap['start_date'];
+      final endDateRaw = reservationMap['end_date'];
+
+      if (reservationId != null &&
+          offerId != null &&
+          ownerUserId != null &&
+          totalDays != null &&
+          startDateRaw is String &&
+          endDateRaw is String) {
+        reservationContext = ConversationReservationContext(
+          reservationId: reservationId,
+          status: (reservationMap['status'] as String?)?.trim() ?? 'pending',
+          startDate: DateTime.parse(startDateRaw),
+          endDate: DateTime.parse(endDateRaw),
+          totalPrice: _toDouble(reservationMap['final_price']),
+          totalDays: totalDays,
+          offerId: offerId,
+          ownerUserId: ownerUserId,
+          productTitle: (productMap['name'] as String?)?.trim() ?? '',
+          cityLabel: (productMap['city'] as String?)?.trim() ?? '',
+          postalCodeLabel: (productMap['postal_code'] as String?)?.trim() ?? '',
+          pricePerDay: _toDouble(productMap['price_per_day']),
+          imagePath: (productMap['image_uri'] as String?)?.trim(),
+        );
+      }
+    }
+
+    final messageRows = await _api.getJsonList(
+      '/conversations/$conversationId/messages',
+    );
+    final messages =
+        messageRows
+            .whereType<Map>()
+            .map((raw) => _messageFromJson(raw.cast<String, dynamic>()))
+            .toList()
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+    return ConversationSnapshot(
+      otherUser: otherUser,
+      messages: messages,
+      reservationContext: reservationContext,
+    );
   }
 
   Future<void> markConversationAsRead({required int conversationId}) async {
@@ -159,10 +245,10 @@ class ConversationsService {
       if (login != null && login.isNotEmpty) {
         title = login;
       } else {
-        final parts = [firstName, lastName]
-            .where((p) => p != null && p.isNotEmpty)
-            .cast<String>()
-            .toList();
+        final parts = [
+          firstName,
+          lastName,
+        ].where((p) => p != null && p.isNotEmpty).cast<String>().toList();
         if (parts.isNotEmpty) {
           title = parts.join(' ');
         }
@@ -184,7 +270,9 @@ class ConversationsService {
         lastMessageAt = DateTime.tryParse(createdAtRaw);
       }
     } else if (lastMessage is Map) {
-      final map = lastMessage.map((key, value) => MapEntry(key.toString(), value));
+      final map = lastMessage.map(
+        (key, value) => MapEntry(key.toString(), value),
+      );
       final text = (map['text'] as String?)?.trim();
       if (text != null && text.isNotEmpty) {
         lastText = text;
@@ -208,8 +296,15 @@ class ConversationsService {
 
   int? _toInt(dynamic value) {
     if (value is int) return value;
+    if (value is num) return value.toInt();
     if (value is String) return int.tryParse(value);
     return null;
+  }
+
+  double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value.trim()) ?? 0;
+    return 0;
   }
 
   Message _messageFromJson(Map<String, dynamic> json) {
@@ -220,9 +315,12 @@ class ConversationsService {
       text: (json['text'] as String?) ?? '',
       status: (json['status'] as String?) ?? 'sent',
       createdAt: DateTime.parse(
-        (json['created_at'] as String?) ?? DateTime.now().toUtc().toIso8601String(),
+        (json['created_at'] as String?) ??
+            DateTime.now().toUtc().toIso8601String(),
       ),
-      readAt: json['read_at'] is String ? DateTime.parse(json['read_at'] as String) : null,
+      readAt: json['read_at'] is String
+          ? DateTime.parse(json['read_at'] as String)
+          : null,
     );
   }
 }

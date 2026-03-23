@@ -1,34 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:lockeo_app/utils/app_navigator.dart';
 
-import '../models/product.dart';
-import '../models/image.dart';
-import '../models/offer.dart';
-import '../models/user.dart';
-import '../models/category.dart';
-import '../models/reservation.dart';
-import '../models/product_unavailability.dart';
-import '../models/review.dart';
-
-import '../services/local_data_service.dart';
-import '../services/conversations_service.dart';
+import '../models/product_detail.dart';
 import '../services/auth_session.dart';
-
-import '../widgets/images_slider.dart';
-import '../widgets/category_card.dart';
-import '../widgets/button.dart';
-import '../widgets/product_grid.dart';
-import '../widgets/reservation_sheet.dart';
-import '../widgets/security_card.dart';
-import '../widgets/availability_calendar_card.dart';
-
+import '../services/conversations_service.dart';
+import '../services/products_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/app_navigator.dart';
+import '../widgets/availability_calendar_card.dart';
+import '../widgets/button.dart';
+import '../widgets/category_card.dart';
+import '../widgets/images_slider.dart';
+import '../widgets/product_suggestions_grid.dart';
+import '../widgets/reservation_sheet.dart';
+import '../widgets/security_card.dart';
+import '../widgets/suggestions_grid.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  final Offer offer;
+  final int offerId;
 
-  const ProductDetailScreen({super.key, required this.offer});
+  const ProductDetailScreen({super.key, required this.offerId});
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -36,30 +27,20 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final _conversationsService = ConversationsService();
-  final LocalDataService _dataService = LocalDataService();
+  final _productsService = ProductsService();
 
-  Future<void> _toggleFavorite() async {
-    await _dataService.toggleFavoriteProduct(widget.offer.productId);
-    if (!mounted) return;
-    setState(() {});
+  late Future<ProductDetail> _detailFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _detailFuture = _productsService.getOfferDetail(widget.offerId);
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<dynamic>>(
-      future: Future.wait([
-        _dataService.loadProducts(),
-        _dataService.loadImages(),
-        _dataService.loadUsers(),
-        _dataService.loadOffers(),
-        _dataService.loadCategories(),
-        _dataService.loadReservations(),
-        _dataService.loadProductUnavailabilities(),
-        _dataService.loadReviews(),
-        _dataService.loadConversations(),
-        _dataService.loadMessages(),
-        _dataService.getCurrentUser(),
-      ]),
+    return FutureBuilder<ProductDetail>(
+      future: _detailFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -67,90 +48,55 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           );
         }
 
-        if (!snapshot.hasData || snapshot.data == null) {
-          return const Scaffold(
-            body: Center(child: Text("Erreur ou données introuvables")),
+        if (snapshot.hasError || !snapshot.hasData) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            body: const Center(child: Text("Erreur ou données introuvables")),
           );
         }
 
-        // Données locales
-        final products = snapshot.data![0] as List<Product>;
-        final images = snapshot.data![1] as List<ImageModel>;
-        final users = snapshot.data![2] as List<User>;
-        final offers = snapshot.data![3] as List<Offer>;
-        final categories = snapshot.data![4] as List<Category>;
-        final reservations = snapshot.data![5] as List<Reservation>;
-        final unavailabilities =
-            snapshot.data![6] as List<ProductUnavailability>;
-        final reviews = snapshot.data![7] as List<Review>;
-
-        // Produit + relations
-        final product = products.firstWhere(
-          (p) => p.productId == widget.offer.productId,
-        );
-        final owner = users.firstWhere((u) => u.userId == widget.offer.userId);
-
-        final ownerReviews = reviews
-            .where((r) => r.ownerId == owner.userId)
-            .toList();
-
-        final int ownerReviewsCount = ownerReviews.length;
-
-        final double ownerRatingAverage = ownerReviews.isNotEmpty
-            ? ownerReviews.map((r) => r.rating).reduce((a, b) => a + b) /
-                  ownerReviews.length
-            : 0;
-
-        final productImages = images
-            .where((img) => img.productId == product.productId)
-            .toList();
-
-        final ownerOffersCount = offers
-            .where((o) => o.userId == owner.userId)
-            .length;
-
-        final otherOffers = offers
-            .where(
-              (o) =>
-                  o.userId == owner.userId && o.offerId != widget.offer.offerId,
-            )
-            .toList();
-
-        final productCategories = categories
-            .where((cat) => product.categoryIds.contains(cat.categoryId))
-            .toList();
-
-        final rentalCount = reservations
-            .where((r) => r.productId == product.productId)
-            .length;
-
-        final productUnavailabilities = unavailabilities
-            .where((u) => u.productId == product.productId)
-            .toList();
-
-        const String ownerRating = "5";
+        final detail = snapshot.data!;
+        final product = detail.product;
+        final owner = detail.owner;
+        final ownerName = owner.firstName.trim().isNotEmpty
+            ? owner.firstName.trim()
+            : owner.login.trim().isNotEmpty
+            ? owner.login.trim()
+            : 'Utilisateur';
 
         bool isUnavailableDay(DateTime day) {
-          final d = DateTime(day.year, day.month, day.day);
+          final normalizedDay = DateTime(day.year, day.month, day.day);
 
-          for (final u in productUnavailabilities) {
+          for (final item in detail.unavailabilities) {
             final start = DateTime(
-              u.startDateTime.year,
-              u.startDateTime.month,
-              u.startDateTime.day,
+              item.startDateTime.year,
+              item.startDateTime.month,
+              item.startDateTime.day,
             );
             final end = DateTime(
-              u.endDateTime.year,
-              u.endDateTime.month,
-              u.endDateTime.day,
+              item.endDateTime.year,
+              item.endDateTime.month,
+              item.endDateTime.day,
             );
 
             final isInRange =
-                (d.isAtSameMomentAs(start) || d.isAfter(start)) &&
-                (d.isAtSameMomentAs(end) || d.isBefore(end));
+                (normalizedDay.isAtSameMomentAs(start) ||
+                    normalizedDay.isAfter(start)) &&
+                (normalizedDay.isAtSameMomentAs(end) ||
+                    normalizedDay.isBefore(end));
 
-            if (isInRange) return true;
+            if (isInRange) {
+              return true;
+            }
           }
+
           return false;
         }
 
@@ -164,23 +110,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               onPressed: () => AppNavigator.back(context),
             ),
           ),
-
           body: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- SLIDER D’IMAGES ---
                 SizedBox(
                   width: double.infinity,
                   height: 320,
-                  child: ImageSlider(
-                    images: productImages,
-                    height: 320,
-                    isFavorite: product.isFavorite,
-                    onToggleFavorite: _toggleFavorite,
-                  ),
+                  child: ImageSlider(images: detail.images, height: 320),
                 ),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -189,14 +127,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Titre
                       Text(
                         product.name,
                         style: AppTextStyles.h1.copyWith(color: Colors.black),
                       ),
                       const SizedBox(height: 13),
-
-                      // Localisation
                       Row(
                         children: [
                           const Icon(
@@ -217,7 +152,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -227,25 +161,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             size: 18,
                           ),
                           const SizedBox(width: 6),
-
                           Text(
-                            "${product.price?.toStringAsFixed(0)}€/jour",
-                            style: AppTextStyles.caption.copyWith(
+                            "${product.price?.toStringAsFixed(0) ?? '0'}€/jour",
+                            style: AppTextStyles.label.copyWith(
                               color: Colors.black,
                               fontWeight: FontWeight.w300,
                             ),
                           ),
-
                           const SizedBox(width: 10),
-
                           if (product.price3Days != null)
                             _PriceChip(
                               text:
                                   "${product.price3Days!.toStringAsFixed(0)}€ pour 3 jours",
                             ),
-
                           const SizedBox(width: 8),
-
                           if (product.price7Days != null)
                             _PriceChip(
                               text:
@@ -253,9 +182,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                         ],
                       ),
-
                       const SizedBox(height: 8),
-                      if (rentalCount > 0)
+                      if (detail.rentalCount > 0)
                         Row(
                           children: [
                             const Icon(
@@ -266,8 +194,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                "Cet objet a été loué $rentalCount fois.",
-                                style: AppTextStyles.caption.copyWith(
+                                "Cet objet a été loué ${detail.rentalCount} fois.",
+                                style: AppTextStyles.label.copyWith(
                                   color: Colors.black,
                                   fontWeight: FontWeight.w300,
                                 ),
@@ -275,7 +203,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                           ],
                         ),
-
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -296,44 +223,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Catégories
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: productCategories.map((category) {
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: CategoryCard(name: category.label),
-                            );
-                          }).toList(),
+                      if (detail.categories.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: detail.categories.map((category) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: CategoryCard(name: category.label),
+                              );
+                            }).toList(),
+                          ),
                         ),
-                      ),
-
+                      ],
                       const SizedBox(height: 16),
-
-                      // Description
                       Text(
                         product.description,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.textPrimary,
                         ),
                       ),
-
                       const SizedBox(height: 18),
-
-                      SecurityCard(
-                        onTap: () {
-                          // navigation ou ouverture modal
-                        },
-                      ),
-
+                      SecurityCard(onTap: () {}),
                       const SizedBox(height: 18),
-
-                      // Propriétaire
-                      // --- PROPRIÉTAIRE (card + actions) ---
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -341,7 +254,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
@@ -358,21 +271,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        owner
-                                            .firstName, // ou "${owner.firstName} ${owner.lastName}"
+                                        ownerName,
                                         style: AppTextStyles.h2.copyWith(
                                           color: Colors.black,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-
                                       Row(
                                         children: [
                                           const Icon(
@@ -382,29 +292,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            ownerRatingAverage.toStringAsFixed(0), // si tu as rating
+                                            detail.ownerRatingAverage
+                                                .toStringAsFixed(1),
                                             style: AppTextStyles.label.copyWith(
                                               color: Colors.black,
                                             ),
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
-                                            "($ownerReviewsCount avis)", // ✅ vrai chiffre
+                                            "(${detail.ownerReviewsCount} avis)",
                                             style: AppTextStyles.label.copyWith(
-                                              color: Colors.black.withOpacity(
-                                                0.6,
+                                              color: Colors.black.withValues(
+                                                alpha: 0.6,
                                               ),
                                             ),
                                           ),
                                         ],
                                       ),
-
                                       const SizedBox(height: 4),
-
                                       Text(
-                                        "$ownerOffersCount transactions", 
+                                        "${detail.ownerOffersCount} transactions",
                                         style: AppTextStyles.label.copyWith(
-                                          color: Colors.black.withOpacity(0.6),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.6,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -412,12 +323,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 14),
-
                             Row(
                               children: [
-                                // ✅ Contacter
                                 Expanded(
                                   child: CustomButton(
                                     text: "Contacter",
@@ -466,10 +374,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     },
                                   ),
                                 ),
-
                                 const SizedBox(width: 12),
-
-                                // ✅ Voir le profil
                                 Expanded(
                                   child: CustomButton(
                                     onPressed: () {
@@ -479,7 +384,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         arguments: owner.userId,
                                       );
                                     },
-
                                     text: "Voir le profil",
                                     outlined: true,
                                   ),
@@ -489,50 +393,34 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 18),
-
-                      // Calendrier informatif
                       Text(
                         "Disponibilité de l'article",
                         style: AppTextStyles.h2.copyWith(color: Colors.black),
                       ),
                       const SizedBox(height: 18),
-
                       AvailabilityCalendarCard(
                         isUnavailableDay: isUnavailableDay,
                       ),
-
-                      const SizedBox(height: 18),
-
-                      Text(
-                        "Annonces de ${owner.firstName}",
-                        style: AppTextStyles.h2,
-                      ),
-                      const SizedBox(height: 20),
-
-                      ProductGrid(
-                        maxItems: 4,
-                        offers: otherOffers,
-                        shrinkWrap: true,
-                      ),
-
+                      if (detail.otherOffers.isNotEmpty) ...[
+                        const SizedBox(height: 18),
+                        Text("Annonces de $ownerName", style: AppTextStyles.h2),
+                        const SizedBox(height: 20),
+                        ProductSuggestionsGrid(suggestions: detail.otherOffers),
+                      ],
                       const SizedBox(height: 24),
-
                       const Text(
                         "Suggestion d'annonces",
                         style: AppTextStyles.h2,
                       ),
                       const SizedBox(height: 18),
-
-                      ProductGrid(maxItems: 2, shrinkWrap: true),
+                      const SuggestionsGrid(maxItems: 2, shrinkWrap: true),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-
           bottomNavigationBar: Container(
             color: Colors.white,
             alignment: Alignment.center,
@@ -547,7 +435,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
                     builder: (_) =>
-                        ReservationSheet(offerId: widget.offer.offerId),
+                        ReservationSheet(offerId: detail.offer.offerId),
                   );
                 },
               ),

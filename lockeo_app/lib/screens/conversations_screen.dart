@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import '../services/local_data_service.dart';
 import '../services/conversations_service.dart';
 import 'conversation_screen.dart';
 import 'home_screen.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import '../utils/app_navigator.dart';
 import '../widgets/main_scaffold.dart';
 
 class ConversationsScreen extends StatefulWidget {
@@ -16,7 +14,6 @@ class ConversationsScreen extends StatefulWidget {
 }
 
 class _ConversationsScreenState extends State<ConversationsScreen> {
-  final _dataService = LocalDataService();
   final _conversationsService = ConversationsService();
   late Future<_ConversationsVm> _future;
 
@@ -27,90 +24,22 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   }
 
   Future<_ConversationsVm> _load() async {
-    try {
-      final dbRows = await _conversationsService.fetchMyConversations();
-      if (dbRows.isNotEmpty) {
-        return _ConversationsVm(
-          rows: dbRows
-              .map(
-                (r) => _ConversationRow(
-                  conversationId: r.conversationId,
-                  title: r.title,
-                  lastText: r.lastText,
-                  timeLabel: r.lastMessageAt != null ? _formatHour(r.lastMessageAt!) : "",
-                  unreadCount: r.unreadCount,
-                ),
-              )
-              .toList(),
-        );
-      }
-    } catch (_) {
-      // fallback local en cas d'erreur réseau/API
-    }
-
-    return _loadFromLocalJson();
-  }
-
-  Future<_ConversationsVm> _loadFromLocalJson() async {
-    final current = await _dataService.getCurrentUser();
-    if (current == null) {
-      return const _ConversationsVm(rows: []);
-    }
-
-    final currentUserId = int.parse(current.userId.toString());
-
-    final conversations = await _dataService.getConversationsForCurrentUser();
-    final users = await _dataService.loadUsers();
-    final allMessages = await _dataService.loadMessages();
-
-    final rows = <_ConversationRow>[];
-
-    for (final c in conversations) {
-      final conversationId = int.parse(c.conversationId.toString());
-
-      // autre user (pour le nom affiché)
-      final otherUserId = c.userIds.firstWhere(
-        (id) => int.parse(id.toString()) != currentUserId,
-        orElse: () => currentUserId,
-      );
-
-      final otherUser = users.firstWhere(
-        (u) =>
-            int.parse(u.userId.toString()) == int.parse(otherUserId.toString()),
-        orElse: () => current,
-      );
-
-      // messages de la conversation (triés du + récent au + ancien)
-      final messages = allMessages
-          .where(
-            (m) => int.parse(m.conversationId.toString()) == conversationId,
+    final dbRows = await _conversationsService.fetchMyConversations();
+    return _ConversationsVm(
+      rows: dbRows
+          .map(
+            (r) => _ConversationRow(
+              conversationId: r.conversationId,
+              title: r.title,
+              lastText: r.lastText,
+              timeLabel: r.lastMessageAt != null
+                  ? _formatHour(r.lastMessageAt!)
+                  : "",
+              unreadCount: r.unreadCount,
+            ),
           )
-          .toList();
-
-      messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      final lastMessage = messages.isNotEmpty ? messages.first : null;
-
-      // VERSION PROPRE : non lus = entrants + readAt null
-      final unreadCount = messages.where((m) {
-        final senderId = int.parse(m.senderUserId.toString());
-        if (senderId == currentUserId) return false; // jamais tes messages
-        return m.readAt == null; // non lu
-      }).length;
-
-      rows.add(
-        _ConversationRow(
-          conversationId: conversationId,
-          title: otherUser.login ?? "Pseudo",
-          lastText: lastMessage?.text ?? "Aucun message",
-          timeLabel: lastMessage != null
-              ? _formatHour(lastMessage.createdAt)
-              : "",
-          unreadCount: unreadCount,
-        ),
-      );
-    }
-
-    return _ConversationsVm(rows: rows);
+          .toList(),
+    );
   }
 
   Future<void> _openConversation(int conversationId) async {
@@ -129,73 +58,84 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     }
   }
 
-  Future<void> _onBackPressed() async {
-    await AppNavigator.back(
-      context,
-      fallbackBuilder: (_) =>
-          const MainScaffold(currentIndex: 0, child: HomeScreen()),
+  void _goToHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainScaffold(
+          currentIndex: 0,
+          child: HomeScreen(),
+        ),
+      ),
+      (route) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        elevation: 0,
-        centerTitle: false,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: _onBackPressed,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _goToHome();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          elevation: 0,
+          centerTitle: false,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: _goToHome,
+          ),
+          title: Text(
+            "Messagerie",
+            style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
+          ),
         ),
-        title: Text(
-          "Messagerie",
-          style: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
-        ),
-      ),
-      body: SafeArea(
-        child: FutureBuilder<_ConversationsVm>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text("Erreur: ${snapshot.error}"),
-              );
-            }
-
-            final rows = snapshot.data?.rows ?? [];
-            if (rows.isEmpty) {
-              return const Center(child: Text("Aucune conversation"));
-            }
-
-            return ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 21),
-              itemCount: rows.length,
-              separatorBuilder: (_, __) => const Padding(
-                padding: EdgeInsets.only(left: 0), // aligné après l’avatar
-                child: Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Color(0xFFE5E5E5),
-                ),
-              ),
-              itemBuilder: (context, i) {
-                final row = rows[i];
-                return _ConversationTile(
-                  title: row.title,
-                  lastMessage: row.lastText,
-                  timeLabel: row.timeLabel,
-                  unreadCount: row.unreadCount,
-                  onTap: () => _openConversation(row.conversationId),
+        body: SafeArea(
+          child: FutureBuilder<_ConversationsVm>(
+            future: _future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text("Erreur: ${snapshot.error}"),
                 );
-              },
-            );
-          },
+              }
+
+              final rows = snapshot.data?.rows ?? [];
+              if (rows.isEmpty) {
+                return const Center(child: Text("Aucune conversation"));
+              }
+
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 21),
+                itemCount: rows.length,
+                separatorBuilder: (_, __) => const Padding(
+                  padding: EdgeInsets.only(left: 0),
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Color(0xFFE5E5E5),
+                  ),
+                ),
+                itemBuilder: (context, i) {
+                  final row = rows[i];
+                  return _ConversationTile(
+                    title: row.title,
+                    lastMessage: row.lastText,
+                    timeLabel: row.timeLabel,
+                    unreadCount: row.unreadCount,
+                    onTap: () => _openConversation(row.conversationId),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );

@@ -31,10 +31,15 @@ class ApiClient {
     );
   }
 
-  Future<Map<String, dynamic>> getJson(String path, {Map<String, dynamic>? query}) async {
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    Map<String, dynamic>? query,
+  }) async {
     final res = await _client.get(
       _uri(path, query),
-      headers: _bearerToken != null ? {'Authorization': 'Bearer $_bearerToken'} : null,
+      headers: _bearerToken != null
+          ? {'Authorization': 'Bearer $_bearerToken'}
+          : null,
     );
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final body = res.body.trim();
@@ -45,10 +50,15 @@ class ApiClient {
     throw HttpException('GET $path status=${res.statusCode} body=${res.body}');
   }
 
-  Future<List<dynamic>> getJsonList(String path, {Map<String, dynamic>? query}) async {
+  Future<List<dynamic>> getJsonList(
+    String path, {
+    Map<String, dynamic>? query,
+  }) async {
     final res = await _client.get(
       _uri(path, query),
-      headers: _bearerToken != null ? {'Authorization': 'Bearer $_bearerToken'} : null,
+      headers: _bearerToken != null
+          ? {'Authorization': 'Bearer $_bearerToken'}
+          : null,
     );
     if (res.statusCode >= 200 && res.statusCode < 300) {
       final body = res.body.trim();
@@ -59,7 +69,11 @@ class ApiClient {
     throw HttpException('GET $path status=${res.statusCode} body=${res.body}');
   }
 
-  Future<Map<String, dynamic>> postJson(String path, {Object? body, Map<String, dynamic>? query}) async {
+  Future<Map<String, dynamic>> postJson(
+    String path, {
+    Object? body,
+    Map<String, dynamic>? query,
+  }) async {
     final res = await _client.post(
       _uri(path, query),
       headers: {
@@ -76,6 +90,31 @@ class ApiClient {
     }
 
     throw HttpException('POST $path status=${res.statusCode} body=${res.body}');
+  }
+
+  Future<Map<String, dynamic>> patchJson(
+    String path, {
+    Object? body,
+    Map<String, dynamic>? query,
+  }) async {
+    final res = await _client.patch(
+      _uri(path, query),
+      headers: {
+        'Content-Type': 'application/json',
+        if (_bearerToken != null) 'Authorization': 'Bearer $_bearerToken',
+      },
+      body: body == null ? null : json.encode(body),
+    );
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      final decoded = json.decode(res.body);
+      if (decoded is Map<String, dynamic>) return decoded;
+      throw FormatException('Réponse inattendue (objet JSON attendu)');
+    }
+
+    throw HttpException(
+      'PATCH $path status=${res.statusCode} body=${res.body}',
+    );
   }
 
   void dispose() => _client.close();

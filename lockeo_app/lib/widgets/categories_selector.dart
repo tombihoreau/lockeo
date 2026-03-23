@@ -23,27 +23,96 @@ class CategoriesSelector extends StatefulWidget {
 
 class _CategoriesSelectorState extends State<CategoriesSelector> {
   int? _expandedParentId;
-
-  // Instance "helper" pour réutiliser tes méthodes (onlyParents / childrenOf)
-  // (comme elles ne sont pas static)
-  final Category _catHelper = Category(categoryId: -1, label: "_helper");
-
-  List<Category> get _parents => _catHelper.onlyParents(widget.categories);
+  List<Category> get _parents =>
+      widget.categories.where((c) => c.isParent).toList()
+        ..sort((a, b) => a.label.compareTo(b.label));
 
   List<Category> _childrenOf(int parentId) =>
-      _catHelper.childrenOf(widget.categories, parentId);
+      widget.categories.where((c) => c.parentId == parentId).toList()
+        ..sort((a, b) => a.label.compareTo(b.label));
 
-  void _toggleSelect(int categoryId) {
-    if (!widget.selectable) return;
+  int? _firstSelectedParentId() {
+    final byId = {
+      for (final category in widget.categories) category.categoryId: category,
+    };
 
-    final updated = List<int>.from(widget.selectedCategories);
-
-    if (updated.contains(categoryId)) {
-      updated.remove(categoryId);
-    } else {
-      updated.add(categoryId);
+    for (final categoryId in widget.selectedCategories) {
+      final category = byId[categoryId];
+      if (category?.isParent == true) {
+        return category!.categoryId;
+      }
     }
 
+    for (final categoryId in widget.selectedCategories) {
+      final category = byId[categoryId];
+      if (category?.isChild == true) {
+        return category!.parentId;
+      }
+    }
+
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _expandedParentId = _firstSelectedParentId();
+  }
+
+  @override
+  void didUpdateWidget(covariant CategoriesSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final selectedParentId = _firstSelectedParentId();
+    if (selectedParentId != _expandedParentId) {
+      _expandedParentId = selectedParentId;
+    }
+  }
+
+  void _toggleParent(Category parent) {
+    if (!widget.selectable) return;
+
+    final childIds = _childrenOf(
+      parent.categoryId,
+    ).map((child) => child.categoryId).toSet();
+    final updated = List<int>.from(widget.selectedCategories);
+    final isParentActive =
+        updated.contains(parent.categoryId) || updated.any(childIds.contains);
+
+    updated.removeWhere(
+      (id) => id == parent.categoryId || childIds.contains(id),
+    );
+
+    if (!isParentActive) {
+      updated.add(parent.categoryId);
+      updated.sort();
+      setState(() => _expandedParentId = parent.categoryId);
+    } else if (_expandedParentId == parent.categoryId) {
+      setState(() => _expandedParentId = null);
+    }
+
+    widget.onChanged(updated);
+  }
+
+  void _toggleChild(Category child) {
+    if (!widget.selectable) return;
+
+    final parentId = child.parentId;
+    if (parentId == null) return;
+
+    final updated = List<int>.from(widget.selectedCategories);
+    if (!updated.contains(parentId)) {
+      updated.add(parentId);
+    }
+
+    if (updated.contains(child.categoryId)) {
+      updated.remove(child.categoryId);
+    } else {
+      updated.add(child.categoryId);
+    }
+
+    updated.sort();
+    setState(() => _expandedParentId = parentId);
     widget.onChanged(updated);
   }
 
@@ -101,16 +170,17 @@ class _CategoriesSelectorState extends State<CategoriesSelector> {
           spacing: 10,
           runSpacing: 10,
           children: parents.map((parent) {
-            final isOpen = _expandedParentId == parent.categoryId;
+            final childIds = _childrenOf(
+              parent.categoryId,
+            ).map((child) => child.categoryId).toSet();
+            final isSelected =
+                widget.selectedCategories.contains(parent.categoryId) ||
+                widget.selectedCategories.any(childIds.contains);
 
             return _chip(
               label: parent.label,
-              isSelected: isOpen, // 👈 VISUEL BLEU + CHECK
-              onTap: () {
-                setState(() {
-                  _expandedParentId = isOpen ? null : parent.categoryId;
-                });
-              },
+              isSelected: isSelected,
+              onTap: () => _toggleParent(parent),
             );
           }).toList(),
         ),
@@ -134,7 +204,7 @@ class _CategoriesSelectorState extends State<CategoriesSelector> {
               return _chip(
                 label: child.label,
                 isSelected: isSelected,
-                onTap: () => _toggleSelect(child.categoryId),
+                onTap: () => _toggleChild(child),
               );
             }).toList(),
           ),

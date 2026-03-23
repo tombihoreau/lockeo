@@ -3,11 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   OneToOne,
 } from 'typeorm';
 import { Offer } from './offer.entity';
 import { User } from './user.entity';
 import { Review } from './review.entity';
+import { Conversation } from './conversation.entity';
 
 @Entity('reservations')
 export class Reservation {
@@ -36,4 +38,7 @@ export class Reservation {
   // 1–1 Review (facultatif)
   @OneToOne(() => Review, (rv) => rv.reservation)
   review: Review;
+
+  @OneToMany(() => Conversation, (conversation) => conversation.reservation)
+  conversations: Conversation[];
 }

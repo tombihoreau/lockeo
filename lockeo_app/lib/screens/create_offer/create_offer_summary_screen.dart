@@ -1,14 +1,15 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../models/offerDraft.dart';
-import '../../services/local_data_service.dart';
+import '../../services/category_service.dart';
+import '../../services/create_offer_service.dart';
 import '../../models/category.dart';
+import '../../services/local_data_service.dart';
 import '../../widgets/button.dart';
 import '../../widgets/category_card.dart';
+import '../../widgets/selected_photo_image.dart';
 import 'create_offer_end_screen.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
@@ -25,8 +26,11 @@ class CreateOfferSummaryScreen extends StatefulWidget {
 
 class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
   List<Category> _allCategories = [];
+  final _createOfferService = CreateOfferService();
+  final _categoryService = CategoryService();
 
   bool _acceptedCgu = false;
+  bool _publishing = false;
 
   DateTime _focusedDay = DateTime.now();
 
@@ -37,25 +41,50 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
   }
 
   Future<void> _loadCats() async {
-    _allCategories = await LocalDataService().loadCategories();
+    try {
+      final remoteCategories = await _categoryService.fetchCategories();
+      if (remoteCategories.isNotEmpty) {
+        _allCategories = remoteCategories;
+      } else {
+        _allCategories = await LocalDataService().loadCategories();
+      }
+    } catch (_) {
+      _allCategories = await LocalDataService().loadCategories();
+    }
+
     if (mounted) setState(() {});
   }
 
-  void _saveAndContinue() {
-    if (!_acceptedCgu) return;
+  Future<void> _saveAndContinue() async {
+    if (!_acceptedCgu || _publishing) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CreateOfferEndScreen(
-          offerTitle: widget.draft.title ?? '',
-          offerDescription: widget.draft.description ?? '',
-          offerImagePath:
-              widget.draft.photos.isNotEmpty ? widget.draft.photos[0] : '',
-          offerCount: 1,
+    setState(() => _publishing = true);
+    try {
+      final createdOffer = await _createOfferService.createOffer(widget.draft);
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CreateOfferEndScreen(
+            offerTitle: widget.draft.title ?? '',
+            offerDescription: widget.draft.description ?? '',
+            offerImagePath: widget.draft.photos.isNotEmpty
+                ? widget.draft.photos[0]
+                : '',
+            offerCount: 1,
+            offerId: createdOffer.offerId,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur lors de la publication: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _publishing = false);
+    }
   }
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -99,7 +128,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
       cellMargin: EdgeInsets.zero,
       cellPadding: EdgeInsets.zero,
 
-      rangeHighlightColor: AppColors.primaryBlue.withOpacity(0.15),
+      rangeHighlightColor: AppColors.primaryBlue.withValues(alpha: 0.15),
       rangeHighlightScale: 1.0,
 
       withinRangeDecoration: const BoxDecoration(
@@ -112,14 +141,18 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
         shape: BoxShape.circle,
       ),
 
-      defaultTextStyle:
-          AppTextStyles.label.copyWith(color: AppColors.textPrimary),
-      weekendTextStyle:
-          AppTextStyles.label.copyWith(color: AppColors.textPrimary),
-      outsideTextStyle:
-          AppTextStyles.label.copyWith(color: Colors.grey.shade400),
-      disabledTextStyle:
-          AppTextStyles.label.copyWith(color: Colors.black54),
+      defaultTextStyle: AppTextStyles.label.copyWith(
+        color: AppColors.textPrimary,
+      ),
+      weekendTextStyle: AppTextStyles.label.copyWith(
+        color: AppColors.textPrimary,
+      ),
+      outsideTextStyle: AppTextStyles.label.copyWith(
+        color: Colors.grey.shade400,
+      ),
+      disabledTextStyle: AppTextStyles.label.copyWith(
+        color: Colors.black54
+      ),
       todayTextStyle: AppTextStyles.label.copyWith(
         color: AppColors.textPrimary,
         fontWeight: FontWeight.w700,
@@ -127,9 +160,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
     );
   }
 
-  Widget _section({
-    required Widget child,
-  }) {
+  Widget _section({required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -154,10 +185,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: Image.file(
-        File(path),
-        fit: BoxFit.cover,
-      ),
+      child: SelectedPhotoImage(path: path, fit: BoxFit.cover),
     );
   }
 
@@ -176,10 +204,7 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
         // Main photo
         Expanded(
           flex: 1,
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: _photoTile(main),
-          ),
+          child: AspectRatio(aspectRatio: 1, child: _photoTile(main)),
         ),
         const SizedBox(width: 10),
         // 2x2 small grid
@@ -299,8 +324,11 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
             // Localisation
             Row(
               children: [
-                const Icon(Icons.location_on_outlined,
-                    color: Colors.black, size: 18),
+                const Icon(
+                  Icons.location_on_outlined,
+                  color: Colors.black,
+                  size: 18,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -320,8 +348,11 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
             // Prix
             Row(
               children: [
-                const Icon(Icons.savings_outlined,
-                    color: Colors.black, size: 18),
+                const Icon(
+                  Icons.savings_outlined,
+                  color: Colors.black,
+                  size: 18,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   "${(d.pricePerDay ?? 0).toStringAsFixed(0)}€/jour",
@@ -349,8 +380,11 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
             // Etat
             Row(
               children: [
-                const Icon(Icons.bookmark_border,
-                    color: Colors.black, size: 18),
+                const Icon(
+                  Icons.bookmark_border,
+                  color: Colors.black,
+                  size: 18,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -405,10 +439,12 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
                 headerStyle: _headerStyle,
                 calendarStyle: _calendarStyle,
                 daysOfWeekStyle: DaysOfWeekStyle(
-                  weekdayStyle: AppTextStyles.caption
-                      .copyWith(color: AppColors.textGrey800),
-                  weekendStyle: AppTextStyles.caption
-                      .copyWith(color: AppColors.textGrey800),
+                  weekdayStyle: AppTextStyles.caption.copyWith(
+                    color: AppColors.textGrey800,
+                  ),
+                  weekendStyle: AppTextStyles.caption.copyWith(
+                    color: AppColors.textGrey800,
+                  ),
                 ),
                 enabledDayPredicate: (day) => _isEnabledDay(day),
                 onPageChanged: (focusedDay) {
@@ -503,8 +539,12 @@ class _CreateOfferSummaryScreenState extends State<CreateOfferSummaryScreen> {
           child: SizedBox(
             height: 54,
             child: CustomButton(
-              text: "Publier mon annonce",
-              onPressed: _acceptedCgu ? _saveAndContinue : null,
+              text: _publishing ? "Publication..." : "Publier mon annonce",
+              onPressed: (_acceptedCgu && !_publishing)
+                  ? () {
+                      _saveAndContinue();
+                    }
+                  : null,
             ),
           ),
         ),

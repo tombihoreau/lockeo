@@ -84,18 +84,19 @@ class _MyAppState extends State<MyApp> {
             const MainScaffold(currentIndex: 0, child: HomeScreen()),
         '/categories': (context) =>
             const MainScaffold(currentIndex: 0, child: CategoriesScreen()),
-        '/create': (context) =>
-            const MainScaffold(currentIndex: 0, showBottomBar: false, child: CreateOfferScreen()),
+        '/create': (context) => const MainScaffold(
+          currentIndex: 0,
+          showBottomBar: false,
+          child: CreateOfferScreen(),
+        ),
         '/userProfile': (context) =>
             const MainScaffold(currentIndex: 4, child: UserProfileScreen()),
         '/discover': (context) =>
             const MainScaffold(currentIndex: 1, child: SearchPage()),
         '/messaging': (context) =>
             const MainScaffold(currentIndex: 3, child: ConversationsScreen()),
-        '/login': (context) => const MainScaffold(
-          showBottomBar: false,
-          child: LoginScreen(),
-        ),
+        '/login': (context) =>
+            const MainScaffold(showBottomBar: false, child: LoginScreen()),
         '/welcome': (context) => const MainScaffold(
           showBottomBar: false,
           child: RegisterWelcomeScreen(),
@@ -104,26 +105,16 @@ class _MyAppState extends State<MyApp> {
           showBottomBar: false,
           child: RegisterWelcomePagesScreen(),
         ),
-        '/register_1': (context) => const MainScaffold(
-          showBottomBar: false,
-          child: Register1Screen(),
-        ),
-        '/register_2': (context) => const MainScaffold(
-          showBottomBar: false,
-          child: Register2Screen(),
-        ),
-        '/register_3': (context) => const MainScaffold(
-          showBottomBar: false,
-          child: Register3Screen(),
-        ),
-        '/register_4': (context) => const MainScaffold(
-          showBottomBar: false,
-          child: Register4Screen(),
-        ),
-        '/register_5': (context) => const MainScaffold(
-          showBottomBar: false,
-          child: Register5Screen(),
-        ),
+        '/register_1': (context) =>
+            const MainScaffold(showBottomBar: false, child: Register1Screen()),
+        '/register_2': (context) =>
+            const MainScaffold(showBottomBar: false, child: Register2Screen()),
+        '/register_3': (context) =>
+            const MainScaffold(showBottomBar: false, child: Register3Screen()),
+        '/register_4': (context) =>
+            const MainScaffold(showBottomBar: false, child: Register4Screen()),
+        '/register_5': (context) =>
+            const MainScaffold(showBottomBar: false, child: Register5Screen()),
         '/notifications': (context) => const MainScaffold(
           showBottomBar: true,
           currentIndex: 0,
@@ -135,8 +126,14 @@ class _MyAppState extends State<MyApp> {
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/productDetails':
-            final offer = settings.arguments as Offer?;
-            if (offer == null) {
+            final args = settings.arguments;
+            final offerId = switch (args) {
+              final Offer offer => offer.offerId,
+              final int id => id,
+              _ => null,
+            };
+
+            if (offerId == null) {
               return MaterialPageRoute(
                 builder: (context) => const Scaffold(
                   body: Center(child: Text('Offre introuvable')),
@@ -146,7 +143,7 @@ class _MyAppState extends State<MyApp> {
             return MaterialPageRoute(
               builder: (context) => MainScaffold(
                 showBottomBar: false,
-                child: ProductDetailScreen(offer: offer),
+                child: ProductDetailScreen(offerId: offerId),
               ),
             );
 
@@ -176,7 +173,12 @@ class _MyAppState extends State<MyApp> {
             );
 
           case '/conversation':
-            final conversationId = settings.arguments as int?;
+            final args = settings.arguments;
+            final conversationId = switch (args) {
+              final ConversationRouteArgs routeArgs => routeArgs.conversationId,
+              final int id => id,
+              _ => null,
+            };
 
             if (conversationId == null) {
               return MaterialPageRoute(
@@ -190,7 +192,10 @@ class _MyAppState extends State<MyApp> {
               builder: (context) => MainScaffold(
                 showBottomBar: false,
                 currentIndex: 1,
-                child: ConversationScreen(conversationId: conversationId),
+                child: ConversationScreen(
+                  conversationId: conversationId,
+                  initialArgs: args is ConversationRouteArgs ? args : null,
+                ),
               ),
             );
 
