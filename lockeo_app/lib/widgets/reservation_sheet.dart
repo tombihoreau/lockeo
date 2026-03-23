@@ -4,6 +4,10 @@ import 'package:lockeo_app/screens/reservation_payment_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import '../widgets/button.dart';
+import '../models/product.dart';
+import '../models/product_detail.dart';
+import '../services/products_service.dart';
+import '../utils/rental_pricing.dart';
 
 class ReservationSheet extends StatefulWidget {
   final int offerId;
@@ -14,16 +18,98 @@ class ReservationSheet extends StatefulWidget {
 }
 
 class _ReservationSheetState extends State<ReservationSheet> {
+  final _productsService = ProductsService();
   DateTime? startDate;
   DateTime? endDate;
   DateTime focusedDay = DateTime.now();
+  Product? _product;
+  ProductDetail? _detail;
 
   int get offerId => widget.offerId;
   bool get hasRange => startDate != null && endDate != null;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final detail = await _productsService.getOfferDetail(widget.offerId);
+    final product = detail.product;
+
+    if (!mounted) return;
+    setState(() {
+      _detail = detail;
+      _product = product;
+    });
+  }
+
+  DateTime _dateOnly(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
+
   bool isPastDate(DateTime day) {
     final now = DateTime.now();
     return day.isBefore(DateTime(now.year, now.month, now.day));
+  }
+
+  bool isUnavailableDate(DateTime day) {
+    final normalizedDay = _dateOnly(day);
+
+    for (final item in _detail?.unavailabilities ?? const []) {
+      final start = _dateOnly(
+        DateTime(
+          item.startDateTime.year,
+          item.startDateTime.month,
+          item.startDateTime.day,
+        ),
+      );
+      final end = _dateOnly(
+        DateTime(
+          item.endDateTime.year,
+          item.endDateTime.month,
+          item.endDateTime.day,
+        ),
+      );
+
+      final isInRange =
+          (normalizedDay.isAtSameMomentAs(start) ||
+              normalizedDay.isAfter(start)) &&
+          (normalizedDay.isAtSameMomentAs(end) || normalizedDay.isBefore(end));
+
+      if (isInRange) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool _rangeHasUnavailableDate(DateTime start, DateTime end) {
+    var current = _dateOnly(start);
+    final last = _dateOnly(end);
+
+    while (!current.isAfter(last)) {
+      if (isUnavailableDate(current)) {
+        return true;
+      }
+      current = current.add(const Duration(days: 1));
+    }
+
+    return false;
+  }
+
+  int get _selectedDays {
+    if (!hasRange) return 0;
+    return endDate!.difference(startDate!).inDays + 1;
+  }
+
+  double? get _estimatedRentalPrice {
+    if (_product == null || !hasRange) return null;
+    return RentalPricing.breakdownForProduct(
+      _product!,
+      _selectedDays,
+    ).rentalPrice;
   }
 
   // ✅ ne sélectionner que start/end (sinon cercles partout)
@@ -34,17 +120,35 @@ class _ReservationSheetState extends State<ReservationSheet> {
   }
 
   void _onDaySelected(DateTime day, DateTime _) {
+    final normalizedDay = _dateOnly(day);
+    if (isPastDate(normalizedDay) || isUnavailableDate(normalizedDay)) {
+      return;
+    }
+
     setState(() {
-      if (startDate == null || (startDate != null && endDate != null)) {
-        startDate = day;
-        endDate = null;
-      } else if (day.isAfter(startDate!)) {
-        endDate = day;
+      if (startDate == null || endDate == null) {
+        startDate = normalizedDay;
+        endDate = normalizedDay;
+      } else if (isSameDay(startDate, endDate) &&
+          normalizedDay.isAfter(startDate!)) {
+        if (_rangeHasUnavailableDate(startDate!, normalizedDay)) {
+          startDate = normalizedDay;
+          endDate = normalizedDay;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                "La plage sélectionnée contient des jours indisponibles.",
+              ),
+            ),
+          );
+        } else {
+          endDate = normalizedDay;
+        }
       } else {
-        startDate = day;
-        endDate = null;
+        startDate = normalizedDay;
+        endDate = normalizedDay;
       }
-      focusedDay = day;
+      focusedDay = normalizedDay;
     });
   }
 
@@ -55,7 +159,7 @@ class _ReservationSheetState extends State<ReservationSheet> {
       cellPadding: EdgeInsets.zero,
 
       // ✅ barre continue (le fond du range)
-      rangeHighlightColor: AppColors.primaryBlue.withOpacity(0.15),
+      rangeHighlightColor: AppColors.primaryBlue.withValues(alpha: 0.15),
       rangeHighlightScale: 1.0,
 
       // ✅ on évite les rectangles “par case”
@@ -144,7 +248,7 @@ class _ReservationSheetState extends State<ReservationSheet> {
                           ),
                           child: TableCalendar(
                             locale: 'fr_FR',
-                            firstDay: DateTime.now(),
+                            firstDay: _dateOnly(DateTime.now()),
                             lastDay: DateTime(2035),
                             focusedDay: focusedDay,
                             headerStyle: const HeaderStyle(
@@ -156,13 +260,35 @@ class _ReservationSheetState extends State<ReservationSheet> {
                               weekendStyle: AppTextStyles.label,
                               weekdayStyle: AppTextStyles.label,
                             ),
-                            enabledDayPredicate: (day) => !isPastDate(day),
+                            enabledDayPredicate: (day) =>
+                                !isPastDate(day) && !isUnavailableDate(day),
                             rangeSelectionMode: RangeSelectionMode.toggledOn,
                             rangeStartDay: startDate,
                             rangeEndDay: endDate,
                             selectedDayPredicate: isSelected,
                             onDaySelected: _onDaySelected,
                             calendarStyle: _calendarStyle,
+                            calendarBuilders: CalendarBuilders(
+                              disabledBuilder: (context, day, focusedDay) {
+                                return Center(
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade200,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${day.day}',
+                                      style: AppTextStyles.label.copyWith(
+                                        color: Colors.grey.shade500,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ],
@@ -191,6 +317,13 @@ class _ReservationSheetState extends State<ReservationSheet> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        Text(
+                          hasRange && _estimatedRentalPrice != null
+                              ? "Votre coût initial sera de ${_estimatedRentalPrice!.toStringAsFixed(2)}€"
+                              : "Sélectionnez un ou plusieurs jours",
+                          style: const TextStyle(color: Colors.black54),
+                        ),
+                        const SizedBox(height: 12),
                         CustomButton(
                           text: "Suivant",
                           onPressed: hasRange

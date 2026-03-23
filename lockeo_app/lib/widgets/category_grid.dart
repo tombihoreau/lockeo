@@ -11,7 +11,8 @@ class CategoryGrid extends StatelessWidget {
   const CategoryGrid({super.key, this.maxItems});
 
   List<Category> _topLevel(List<Category> all) =>
-      all.where((c) => c.parentId == null).toList();
+      all.where((c) => c.isParent).toList()
+        ..sort((a, b) => a.label.compareTo(b.label));
 
   List<int> _idsForParentAndChildren(List<Category> all, int parentId) {
     final childrenIds = all
@@ -22,16 +23,17 @@ class CategoryGrid extends StatelessWidget {
     return <int>[parentId, ...childrenIds];
   }
 
-  void _openSearchForParent(BuildContext context, Category parent, List<Category> all) {
+  void _openSearchForParent(
+    BuildContext context,
+    Category parent,
+    List<Category> all,
+  ) {
     final ids = _idsForParentAndChildren(all, parent.categoryId);
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => SearchPage(
-          initialQuery: "",
-          initialCategoryIds: ids,
-        ),
+        builder: (_) => SearchPage(initialQuery: "", initialCategoryIds: ids),
       ),
     );
   }
@@ -78,9 +80,7 @@ class CategoryGrid extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
                 onTap: () => _openSearchForParent(context, parent, all),
-                child: CategoryCard(
-                  name: parent.label,
-                ),
+                child: CategoryCard(name: parent.label),
               ),
             );
           }).toList(),

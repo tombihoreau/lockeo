@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 import '../widgets/button.dart';
+import '../widgets/selected_photo_image.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
@@ -32,6 +33,8 @@ class ConversationHeader extends StatelessWidget {
   final String dateLabel;
   final String otherUserName;
   final String imagePath;
+  final double? totalPrice;
+  final int? totalDays;
 
   final VoidCallback? onAccept;
   final VoidCallback? onDecline;
@@ -56,6 +59,8 @@ class ConversationHeader extends StatelessWidget {
     required this.dateLabel,
     required this.otherUserName,
     required this.imagePath,
+    this.totalPrice,
+    this.totalDays,
     required this.cityLabel,
     required this.postalCodeLabel,
     required this.pricePerDay,
@@ -107,75 +112,71 @@ class ConversationHeader extends StatelessWidget {
           const SizedBox(height: 14),
 
           // 🔹 CARD PRODUIT
-          InkWell(
-            onTap: onOpenOfferDetails,
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.asset(
-                    imagePath,
-                    width: 137,
-                    height: 113,
-                    fit: BoxFit.cover,
-                  ),
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: SelectedPhotoImage(
+                  path: imagePath,
+                  width: 137,
+                  height: 113,
+                  fit: BoxFit.cover,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        productTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.h2.copyWith(
-                          color: AppColors.textPrimary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      productTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.h2.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          color: Colors.black,
+                          size: 18,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            color: Colors.black,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              "$cityLabel, $postalCodeLabel",
-                              style: AppTextStyles.label.copyWith(
-                                color: Colors.black,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.savings_outlined,
-                            color: AppColors.textPrimary,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "${pricePerDay.round()}€ / jour",
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            "$cityLabel, $postalCodeLabel",
                             style: AppTextStyles.label.copyWith(
-                              color: AppColors.textPrimary,
+                              color: Colors.black,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.savings_outlined,
+                          color: AppColors.textPrimary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          "${pricePerDay.round()}€ / jour",
+                          style: AppTextStyles.label.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 14),
@@ -206,7 +207,7 @@ class ConversationHeader extends StatelessWidget {
         color: AppColors.blue50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.primaryBlue.withOpacity(0.22),
+          color: AppColors.primaryBlue.withValues(alpha: 0.22),
           width: 1,
         ),
       ),
@@ -256,14 +257,12 @@ class ConversationHeader extends StatelessWidget {
   }
 
   Widget _buildAcceptedBanner(role) {
-    String title = "";
+    const title = "Votre demande a été validée";
     String body = "";
     if (role == 'loc') {
-      title = "Votre demande a été validée";
       body =
           "Le jour de l’échange, vous pourrez consulter et valider l’état des lieux.";
     } else {
-      title = "Vous avez validé la demande";
       body =
           "Au moment de l’échange, vous pourrez réaliser l’état des lieux du matériel.";
     }
@@ -275,6 +274,85 @@ class ConversationHeader extends StatelessWidget {
       ),
       title: title,
       body: body,
+    );
+  }
+
+  String get _requestSummaryTitle {
+    final safeDays = totalDays ?? 0;
+    if (safeDays <= 0) return "Demande de location";
+    return "Demande de location • $safeDays ${safeDays > 1 ? 'jours' : 'jour'}";
+  }
+
+  Widget _buildRequestCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.blue50,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.primaryBlue.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  _requestSummaryTitle,
+                  style: AppTextStyles.h2.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              if (totalPrice != null)
+                Text(
+                  "${totalPrice!.toStringAsFixed(2)}€",
+                  style: AppTextStyles.h1.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+            ],
+          ),
+          if (dateLabel.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(
+                  Icons.calendar_month,
+                  color: AppColors.textPrimary,
+                  size: 20,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    dateLabel,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 14),
+          CustomButton(text: "Valider la demande", onPressed: onAccept),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: onDecline,
+            child: Text(
+              "Refuser la demande de location",
+              style: AppTextStyles.link.copyWith(
+                color: AppColors.primaryRed,
+                decoration: TextDecoration.none,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -307,6 +385,7 @@ class ConversationHeader extends StatelessWidget {
         case ReservationStatus.requestPending:
           return _buildBanner(
             title: "En attente de la validation du propriétaire",
+            body: dateLabel,
           );
 
         case ReservationStatus.accepted:
@@ -345,23 +424,7 @@ class ConversationHeader extends StatelessWidget {
     // ✅ Propriétaire
     switch (status) {
       case ReservationStatus.requestPending:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CustomButton(text: "Valider la demande", onPressed: onAccept),
-            const SizedBox(height: 10),
-            GestureDetector(
-              onTap: onDecline,
-              child: Text(
-                "Refuser la demande de location",
-                style: AppTextStyles.link.copyWith(
-                  color: AppColors.primaryRed,
-                  decoration: TextDecoration.none,
-                ),
-              ),
-            ),
-          ],
-        );
+        return _buildRequestCard();
 
       case ReservationStatus.accepted:
         return _buildAcceptedBanner('proprietaire');

@@ -52,9 +52,45 @@ async function runSeed() {
 
   // Seed Categories
   if ((await categoryRepo.count()) === 0) {
-    const categories = ['Vélo', 'Sports d\'hiver', 'Natation', 'Randonnée', 'Camping', 'Escalade']
-      .map(label => categoryRepo.create({ label }));
-    await categoryRepo.save(categories);
+    const parentCategories = [
+      categoryRepo.create({ label: 'Bricolage', parent_id: 0 }),
+      categoryRepo.create({ label: 'Maison', parent_id: 0 }),
+      categoryRepo.create({ label: 'Sport', parent_id: 0 }),
+      categoryRepo.create({ label: 'Vélo', parent_id: 0 }),
+      categoryRepo.create({ label: 'Informatique', parent_id: 0 }),
+      categoryRepo.create({ label: 'Jardin', parent_id: 0 }),
+    ];
+    await categoryRepo.save(parentCategories);
+
+    const savedParents = await categoryRepo.findBy({ parent_id: 0 });
+    const parentByLabel = new Map(savedParents.map((category) => [category.label, category]));
+
+    const childDefinitions: Array<{ label: string; parentLabel: string }> = [
+      { label: 'Perceuse', parentLabel: 'Bricolage' },
+      { label: 'Nettoyage', parentLabel: 'Maison' },
+      { label: 'Camping', parentLabel: 'Sport' },
+      { label: 'Randonnée', parentLabel: 'Sport' },
+      { label: 'VTT', parentLabel: 'Vélo' },
+      { label: 'Route', parentLabel: 'Vélo' },
+      { label: 'Electrique', parentLabel: 'Vélo' },
+      { label: 'Ordinateur', parentLabel: 'Informatique' },
+      { label: 'Tondeuse', parentLabel: 'Jardin' },
+      { label: 'Taille-haie', parentLabel: 'Jardin' },
+    ];
+
+    const childCategories = childDefinitions.map(({ label, parentLabel }) => {
+      const parent = parentByLabel.get(parentLabel);
+      if (!parent) {
+        throw new Error(`Catégorie parente introuvable pour ${label}`);
+      }
+
+      return categoryRepo.create({
+        label,
+        parent_id: parent.category_id,
+      });
+    });
+
+    await categoryRepo.save(childCategories);
     console.log('Categories insérées');
   }
 
@@ -64,9 +100,9 @@ async function runSeed() {
   // Seed Products
   if ((await productRepo.count()) === 0) {
     const products = [
-      productRepo.create({ name: 'VTT Pro', description: 'VTT tout-suspendu en excellent état', price: 25.00, price_estimate: 900.00, state: 'very_good', city: 'Paris', postal_code: '75001', owner: users[0], is_available: true }),
-      productRepo.create({ name: 'Tente 2 places', description: 'Légère et compacte', price: 10.00, price_estimate: 120.00, state: 'good', city: 'Lyon', postal_code: '69001', owner: users[1], is_available: true }),
-      productRepo.create({ name: 'Chaussures de randonnée', description: 'Imperméables, taille 42', price: 8.00, price_estimate: 80.00, state: 'used', city: 'Marseille', postal_code: '13001', owner: users[2], is_available: true }),
+      productRepo.create({ name: 'VTT Pro', description: 'VTT tout-suspendu en excellent état', price: 25.00, price_3_days: 69.00, price_7_days: 154.00, price_estimate: 900.00, state: 'very_good', city: 'Paris', postal_code: '75001', owner: users[0], is_available: true }),
+      productRepo.create({ name: 'Tente 2 places', description: 'Légère et compacte', price: 10.00, price_3_days: 27.00, price_7_days: 56.00, price_estimate: 120.00, state: 'good', city: 'Lyon', postal_code: '69001', owner: users[1], is_available: true }),
+      productRepo.create({ name: 'Chaussures de randonnée', description: 'Imperméables, taille 42', price: 8.00, price_3_days: 22.00, price_7_days: 42.00, price_estimate: 80.00, state: 'used', city: 'Marseille', postal_code: '13001', owner: users[2], is_available: true }),
     ];
     await productRepo.save(products);
     console.log('Products insérés');
@@ -84,9 +120,9 @@ async function runSeed() {
 
     // Lier catégories (simple mapping arbitraire)
     const map: [Product, string[]][] = [
-      [products[0], ['Vélo', 'Randonnée']],
-      [products[1], ['Camping']],
-      [products[2], ['Randonnée', 'Escalade']],
+      [products[0], ['Vélo', 'VTT']],
+      [products[1], ['Sport', 'Camping']],
+      [products[2], ['Sport', 'Randonnée']],
     ];
     for (const [prod, catLabels] of map) {
       for (const label of catLabels) {

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:lockeo_app/utils/app_navigator.dart';
-import '../models/offer.dart';
-import '../services/local_data_service.dart';
+import '../models/product_detail.dart';
 import '../models/product.dart';
 import '../models/image.dart';
+import '../services/products_service.dart';
 import '../widgets/button.dart';
+import '../widgets/selected_photo_image.dart';
 import 'confirmation_reservation_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import '../theme/app_colors.dart';
 import 'package:intl/intl.dart';
+import '../utils/rental_pricing.dart';
 import '../widgets/security_card.dart';
 
 class ReservationPaymentScreen extends StatefulWidget {
@@ -29,14 +31,15 @@ class ReservationPaymentScreen extends StatefulWidget {
 }
 
 class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
-  final dataService = LocalDataService();
+  final _productsService = ProductsService();
 
   bool _isLoading = true;
   String? _loadError;
 
-  Offer? _offer;
+  ProductDetail? _detail;
   Product? _product;
   ImageModel? _img;
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -45,68 +48,88 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
   }
 
   Future<void> _loadData() async {
+    final detail = await _productsService.getOfferDetail(widget.offerId);
+    final product = detail.product;
+    final productImage = detail.images.isNotEmpty
+        ? detail.images.first
+        : ImageModel(
+            imageId: 0,
+            productId: product.productId,
+            url: 'assets/images/default.jpg',
+            positionImage: 0,
+            createdAt: '',
+          );
+
+    if (!mounted) return;
     setState(() {
-      _isLoading = true;
-      _loadError = null;
+      _detail = detail;
+      _product = product;
+      _img = productImage;
     });
-
-    try {
-      final offer = await dataService.getOfferById(widget.offerId);
-      if (offer == null) {
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-          _loadError = 'Offer introuvable (offerId=${widget.offerId}).';
-        });
-        return;
-      }
-
-      final products = await dataService.loadProducts();
-      final images = await dataService.loadImages();
-
-      final product = products.cast<Product?>().firstWhere(
-        (p) => p?.productId == offer.productId,
-        orElse: () => null,
-      );
-
-      if (product == null) {
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-          _loadError =
-              'Produit introuvable pour offerId=${offer.offerId} (productId=${offer.productId}).';
-        });
-        return;
-      }
-
-      final productImage = images.cast<ImageModel?>().firstWhere(
-        (img) => img?.productId == product.productId,
-        orElse: () => null,
-      );
-
-      if (!mounted) return;
-      setState(() {
-        _offer = offer;
-        _product = product;
-        _img = productImage;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _loadError = 'Erreur de chargement: $e';
-      });
-    }
   }
 
   int get _days => widget.endDate.difference(widget.startDate).inDays + 1;
 
-  double get _rentalPrice => (_product?.price ?? 0) * _days;
+  RentalPriceBreakdown get _pricing =>
+      RentalPricing.breakdownForProduct(_product!, _days);
+
+  double get _rentalPrice => _pricing.rentalPrice;
 
   double get _insurancePrice => _rentalPrice * 0.15;
 
   double get _total => _rentalPrice + _insurancePrice;
+
+  Future<void> _submitReservation() async {
+    if (_detail == null || _submitting) return;
+
+    setState(() => _submitting = true);
+    try {
+      final createdReservation = await _productsService.createReservation(
+        offerId: widget.offerId,
+        startDate: widget.startDate,
+        endDate: widget.endDate,
+      );
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ReservationConfirmationScreen(
+            offerId: widget.offerId,
+            startDate: widget.startDate,
+            endDate: widget.endDate,
+            initialDetail: _detail,
+            conversationId: createdReservation.conversationId,
+            reservationId: createdReservation.reservationId,
+            reservationTotalPrice: _rentalPrice,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_formatReservationError(e))));
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  String _formatReservationError(Object error) {
+    final raw = error.toString();
+    const bodyMarker = 'body=';
+    final bodyIndex = raw.indexOf(bodyMarker);
+    if (bodyIndex >= 0) {
+      final body = raw.substring(bodyIndex + bodyMarker.length).trim();
+      final messageMatch = RegExp(r'"message":"([^"]+)"').firstMatch(body);
+      if (messageMatch != null) {
+        return messageMatch.group(1)!;
+      }
+    }
+    return "Impossible d'envoyer la demande de location.";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,8 +204,8 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        _img?.url ?? 'assets/images/default.jpg',
+                      child: SelectedPhotoImage(
+                        path: _img?.url ?? 'assets/images/default.jpg',
                         width: 110,
                         height: 110,
                         fit: BoxFit.cover,
@@ -229,7 +252,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                "${(_product?.price ?? 0).round()}€ / jour",
+                                "${_pricing.dailyRate.toStringAsFixed(2)}€ / jour",
                                 style: AppTextStyles.label.copyWith(
                                   color: AppColors.textPrimary,
                                 ),
@@ -292,7 +315,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "Location ($_days jours)",
+                      "Location ($_days jours a ${_pricing.dailyRate.toStringAsFixed(2)}€/jour)",
                       style: AppTextStyles.body.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.normal,
@@ -377,19 +400,8 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
         child: SizedBox(
           width: 300,
           child: CustomButton(
-            text: "Demande de location",
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ReservationConfirmationScreen(
-                    offerId: widget.offerId,
-                    startDate: widget.startDate,
-                    endDate: widget.endDate,
-                  ),
-                ),
-              );
-            },
+            text: _submitting ? "Envoi..." : "Demande de location",
+            onPressed: _submitting ? null : _submitReservation,
           ),
         ),
       ),

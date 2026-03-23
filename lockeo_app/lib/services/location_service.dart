@@ -98,4 +98,10 @@ class LocationService {
     if (lat == null || lng == null) return null;
     return (lat: lat, lng: lng);
   }
+
+  Future<void> clearStoredLatLng() async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.remove(_kLat);
+    await sp.remove(_kLng);
+  }
 }

@@ -9,6 +9,9 @@ export class Category {
   @Column({ length: 50, unique: true })
   label: string;
 
+  @Column({ type: 'int', default: 0 })
+  parent_id: number;
+
   @OneToMany(() => ProductHasCategory, (phc) => phc.category)
   productCategories: ProductHasCategory[];
 }

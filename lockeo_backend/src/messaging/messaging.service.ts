@@ -1,8 +1,14 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
+import { Reservation } from '../entities/reservation.entity';
 import { User } from '../entities/user.entity';
 
 export interface MessagePayload {
@@ -31,6 +37,26 @@ export interface ConversationListItemPayload {
     created_at: string;
   } | null;
   unread_count: number;
+  reservation: ConversationReservationPayload | null;
+}
+
+export interface ConversationReservationPayload {
+  reservation_id: number;
+  status: string;
+  start_date: string;
+  end_date: string;
+  final_price: number;
+  total_days: number;
+  offer_id: number;
+  owner_user_id: number;
+  product: {
+    product_id: number;
+    name: string;
+    city: string;
+    postal_code: string;
+    price_per_day: number;
+    image_uri: string | null;
+  };
 }
 
 export interface EnsureConversationPayload {
@@ -49,7 +75,9 @@ export class MessagingService {
     private readonly userRepo: Repository<User>,
   ) {}
 
-  private async getConversationOrThrow(conversationId: number): Promise<Conversation> {
+  private async getConversationOrThrow(
+    conversationId: number,
+  ): Promise<Conversation> {
     const conversation = await this.conversationRepo.findOne({
       where: { conversation_id: conversationId },
       relations: ['renter', 'owner'],
@@ -62,7 +90,10 @@ export class MessagingService {
     return conversation;
   }
 
-  async assertConversationMembership(conversationId: number, userId: number): Promise<void> {
+  async assertConversationMembership(
+    conversationId: number,
+    userId: number,
+  ): Promise<void> {
     const conversation = await this.getConversationOrThrow(conversationId);
     const isRenter = conversation.renter?.user_id === userId;
     const isOwner = conversation.owner?.user_id === userId;
@@ -72,7 +103,10 @@ export class MessagingService {
     }
   }
 
-  async listMessages(conversationId: number, userId: number): Promise<MessagePayload[]> {
+  async listMessages(
+    conversationId: number,
+    userId: number,
+  ): Promise<MessagePayload[]> {
     await this.assertConversationMembership(conversationId, userId);
 
     const messages = await this.messageRepo.find({
@@ -84,20 +118,34 @@ export class MessagingService {
     return messages.map((m) => this.toPayload(m));
   }
 
-  async listConversationsForUser(userId: number): Promise<ConversationListItemPayload[]> {
+  async listConversationsForUser(
+    userId: number,
+  ): Promise<ConversationListItemPayload[]> {
     const conversations = await this.conversationRepo.find({
       where: [{ renter: { user_id: userId } }, { owner: { user_id: userId } }],
-      relations: ['renter', 'owner'],
+      relations: [
+        'renter',
+        'owner',
+        'reservation',
+        'reservation.offer',
+        'reservation.offer.owner',
+        'reservation.offer.product',
+        'reservation.offer.product.images',
+      ],
       order: { created_at: 'DESC' },
     });
 
     const rows = await Promise.all(
       conversations.map(async (conversation) => {
         const otherUser =
-          conversation.renter?.user_id === userId ? conversation.owner : conversation.renter;
+          conversation.renter?.user_id === userId
+            ? conversation.owner
+            : conversation.renter;
 
         const lastMessage = await this.messageRepo.findOne({
-          where: { conversation: { conversation_id: conversation.conversation_id } },
+          where: {
+            conversation: { conversation_id: conversation.conversation_id },
+          },
           relations: ['sender'],
           order: { created_at: 'DESC', message_id: 'DESC' },
         });
@@ -122,6 +170,7 @@ export class MessagingService {
               }
             : null,
           unread_count: 0,
+          reservation: this.toReservationPayload(conversation.reservation),
         } satisfies ConversationListItemPayload;
       }),
     );
@@ -135,9 +184,14 @@ export class MessagingService {
     return rows;
   }
 
-  async ensureConversationBetweenUsers(currentUserId: number, otherUserId: number): Promise<EnsureConversationPayload> {
+  async ensureConversationBetweenUsers(
+    currentUserId: number,
+    otherUserId: number,
+  ): Promise<EnsureConversationPayload> {
     if (currentUserId === otherUserId) {
-      throw new BadRequestException('Impossible de créer une conversation avec soi-même');
+      throw new BadRequestException(
+        'Impossible de créer une conversation avec soi-même',
+      );
     }
 
     const [currentUser, otherUser] = await Promise.all([
@@ -155,10 +209,16 @@ export class MessagingService {
 
     const existing = await this.conversationRepo.findOne({
       where: [
-        { renter: { user_id: currentUserId }, owner: { user_id: otherUserId } },
-        { renter: { user_id: otherUserId }, owner: { user_id: currentUserId } },
+        {
+          renter: { user_id: currentUserId },
+          owner: { user_id: otherUserId },
+        },
+        {
+          renter: { user_id: otherUserId },
+          owner: { user_id: currentUserId },
+        },
       ],
-      relations: ['renter', 'owner'],
+      relations: ['renter', 'owner', 'reservation'],
       order: { conversation_id: 'DESC' },
     });
 
@@ -182,11 +242,17 @@ export class MessagingService {
     };
   }
 
-  async sendMessage(conversationId: number, senderUserId: number, text: string): Promise<MessagePayload> {
+  async sendMessage(
+    conversationId: number,
+    senderUserId: number,
+    text: string,
+  ): Promise<MessagePayload> {
     await this.assertConversationMembership(conversationId, senderUserId);
 
     const [conversation, sender] = await Promise.all([
-      this.conversationRepo.findOne({ where: { conversation_id: conversationId } }),
+      this.conversationRepo.findOne({
+        where: { conversation_id: conversationId },
+      }),
       this.userRepo.findOne({ where: { user_id: senderUserId } }),
     ]);
 
@@ -227,6 +293,43 @@ export class MessagingService {
       status: 'sent',
       created_at: message.created_at.toISOString(),
       read_at: null,
+    };
+  }
+
+  private toReservationPayload(
+    reservation: Reservation | null | undefined,
+  ): ConversationReservationPayload | null {
+    if (!reservation?.offer?.product || !reservation.offer.owner) {
+      return null;
+    }
+
+    const product = reservation.offer.product;
+    const firstImage = (product.images ?? [])
+      .slice()
+      .sort((a, b) => (a.position_image ?? 0) - (b.position_image ?? 0))[0];
+    const totalDays =
+      Math.floor(
+        (reservation.end_date.getTime() - reservation.start_date.getTime()) /
+          86400000,
+      ) + 1;
+
+    return {
+      reservation_id: reservation.reservation_id,
+      status: reservation.status,
+      start_date: reservation.start_date.toISOString(),
+      end_date: reservation.end_date.toISOString(),
+      final_price: Number(reservation.final_price),
+      total_days: totalDays,
+      offer_id: reservation.offer.offer_id,
+      owner_user_id: reservation.offer.owner.user_id,
+      product: {
+        product_id: product.product_id,
+        name: product.name,
+        city: product.city,
+        postal_code: product.postal_code,
+        price_per_day: Number(product.price ?? 0),
+        image_uri: firstImage?.uri ?? null,
+      },
     };
   }
 }

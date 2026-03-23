@@ -14,10 +14,23 @@ class ImageModel {
   });
 
   factory ImageModel.fromJson(Map<String, dynamic> json) {
+    String normalizePath(dynamic raw) {
+      final value = (raw ?? '').toString().trim();
+      if (value.isEmpty) return 'assets/images/default.jpg';
+      if (value.startsWith('assets/') ||
+          value.startsWith('http://') ||
+          value.startsWith('https://') ||
+          value.startsWith('file://') ||
+          value.startsWith('/')) {
+        return value;
+      }
+      return 'assets/images/$value';
+    }
+
     return ImageModel(
       imageId: json['image_id'],
       productId: json['product_id'],
-      url: json['url'],
+      url: normalizePath(json['url'] ?? json['uri']),
       positionImage: json['position_image'],
       createdAt: json['created_at'],
     );

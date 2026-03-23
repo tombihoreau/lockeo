@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lockeo_app/utils/app_navigator.dart';
-import '../widgets/product_grid.dart';
 import '../screens/filters_screen.dart';
 import '../widgets/search_header.dart';
+import '../widgets/search_results_grid.dart';
 import '../widgets/main_scaffold.dart';
 import 'home_screen.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
@@ -29,7 +29,8 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   late TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
-  String _query = '';
+  String _draftQuery = '';
+  String _submittedQuery = '';
   int _resultCount = 0;
   List<int> _selectedCategories = [];
   double? _maxDistance;
@@ -48,13 +49,22 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialQuery ?? '');
-    _query = widget.initialQuery ?? '';
+    _draftQuery = widget.initialQuery ?? '';
+    _submittedQuery = widget.initialQuery ?? '';
     _selectedCategories = widget.initialCategoryIds ?? [];
     _sortBy = widget.initialSortBy;
     _favoritesOnly = widget.favoritesOnly;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNode);
+    });
+  }
+
+  void _submitSearch([String? value]) {
+    final nextQuery = (value ?? _controller.text).trim();
+    setState(() {
+      _draftQuery = nextQuery;
+      _submittedQuery = nextQuery;
     });
   }
 
@@ -67,13 +77,12 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           SearchHeader(
             controller: _controller,
-            initialQuery: _query,
-            onChanged: (value) => setState(() => _query = value),
-            onBack: () => AppNavigator.back(
-              context,
-              fallbackBuilder: (_) =>
-                  const MainScaffold(currentIndex: 0, child: HomeScreen()),
-            ),
+            focusNode: _focusNode,
+            initialQuery: _submittedQuery,
+            onChanged: (value) => setState(() => _draftQuery = value),
+            onSubmitted: (value) => _submitSearch(value),
+            onSearch: (value) => _submitSearch(value),
+            onBack: () => Navigator.pop(context),
           ),
 
           // 🧱 Résultats
@@ -116,7 +125,7 @@ class _SearchPageState extends State<SearchPage> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => FiltersPage(
-                                searchQuery: _query,
+                                searchQuery: _draftQuery,
                                 initialFilters: {
                                   'categories': _selectedCategories,
                                   'maxDistance': _maxDistance,
@@ -172,13 +181,12 @@ class _SearchPageState extends State<SearchPage> {
 
                   // 🧩 Grille
                   Expanded(
-                    child: ProductGrid(
+                    child: SearchResultsGrid(
                       key: ValueKey(
-                        "$_query-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy-$_favoritesOnly",
+                        "$_submittedQuery-$_selectedCategories-$_maxDistance-$_priceRange-$_sortBy-$_favoritesOnly",
                       ),
-                      searchQuery: _query,
+                      searchQuery: _submittedQuery,
                       selectedCategories: _selectedCategories,
-                      maxDistance: _maxDistance,
                       priceRange: _priceRange,
                       sortBy: _sortBy,
                       favoritesOnly: _favoritesOnly,

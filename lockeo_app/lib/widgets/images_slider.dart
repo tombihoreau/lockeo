@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../models/image.dart';
+import 'selected_photo_image.dart';
 
 class ImageSlider extends StatefulWidget {
   final List<ImageModel> images;
@@ -57,20 +58,22 @@ class _ImageSliderState extends State<ImageSlider> {
           ),
           itemBuilder: (context, index, realIdx) {
             final img = displayedImages[index];
-            final isNetwork = img.url.startsWith('http');
-            return isNetwork
-                ? Image.network(
-                    img.url,
-                    height: double.infinity,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  )
-                : Image.asset(
-                    img.url,
-                    height: double.infinity,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  );
+            return SelectedPhotoImage(
+              path: img.url,
+              height: double.infinity,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: const Color(0xFFE8EDF2),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Colors.grey,
+                  ),
+                );
+              },
+            );
           },
         ),
 
@@ -87,11 +90,11 @@ class _ImageSliderState extends State<ImageSlider> {
                 color: Colors.white,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
                 ],
               ),
               child: Icon(
@@ -124,7 +127,7 @@ class _ImageSliderState extends State<ImageSlider> {
                     decoration: BoxDecoration(
                       color: active
                           ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                          : Colors.white.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(6),
                     ),
                   );

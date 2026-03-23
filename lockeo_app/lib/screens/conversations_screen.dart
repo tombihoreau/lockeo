@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/local_data_service.dart';
 import '../services/conversations_service.dart';
 import 'conversation_screen.dart';
 import 'home_screen.dart';
@@ -15,7 +14,6 @@ class ConversationsScreen extends StatefulWidget {
 }
 
 class _ConversationsScreenState extends State<ConversationsScreen> {
-  final _dataService = LocalDataService();
   final _conversationsService = ConversationsService();
   late Future<_ConversationsVm> _future;
 
@@ -26,90 +24,22 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
   }
 
   Future<_ConversationsVm> _load() async {
-    try {
-      final dbRows = await _conversationsService.fetchMyConversations();
-      if (dbRows.isNotEmpty) {
-        return _ConversationsVm(
-          rows: dbRows
-              .map(
-                (r) => _ConversationRow(
-                  conversationId: r.conversationId,
-                  title: r.title,
-                  lastText: r.lastText,
-                  timeLabel: r.lastMessageAt != null ? _formatHour(r.lastMessageAt!) : "",
-                  unreadCount: r.unreadCount,
-                ),
-              )
-              .toList(),
-        );
-      }
-    } catch (_) {
-      // fallback local en cas d'erreur réseau/API
-    }
-
-    return _loadFromLocalJson();
-  }
-
-  Future<_ConversationsVm> _loadFromLocalJson() async {
-    final current = await _dataService.getCurrentUser();
-    if (current == null) {
-      return const _ConversationsVm(rows: []);
-    }
-
-    final currentUserId = int.parse(current.userId.toString());
-
-    final conversations = await _dataService.getConversationsForCurrentUser();
-    final users = await _dataService.loadUsers();
-    final allMessages = await _dataService.loadMessages();
-
-    final rows = <_ConversationRow>[];
-
-    for (final c in conversations) {
-      final conversationId = int.parse(c.conversationId.toString());
-
-      // autre user (pour le nom affiché)
-      final otherUserId = c.userIds.firstWhere(
-        (id) => int.parse(id.toString()) != currentUserId,
-        orElse: () => currentUserId,
-      );
-
-      final otherUser = users.firstWhere(
-        (u) =>
-            int.parse(u.userId.toString()) == int.parse(otherUserId.toString()),
-        orElse: () => current,
-      );
-
-      // messages de la conversation (triés du + récent au + ancien)
-      final messages = allMessages
-          .where(
-            (m) => int.parse(m.conversationId.toString()) == conversationId,
+    final dbRows = await _conversationsService.fetchMyConversations();
+    return _ConversationsVm(
+      rows: dbRows
+          .map(
+            (r) => _ConversationRow(
+              conversationId: r.conversationId,
+              title: r.title,
+              lastText: r.lastText,
+              timeLabel: r.lastMessageAt != null
+                  ? _formatHour(r.lastMessageAt!)
+                  : "",
+              unreadCount: r.unreadCount,
+            ),
           )
-          .toList();
-
-      messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      final lastMessage = messages.isNotEmpty ? messages.first : null;
-
-      // VERSION PROPRE : non lus = entrants + readAt null
-      final unreadCount = messages.where((m) {
-        final senderId = int.parse(m.senderUserId.toString());
-        if (senderId == currentUserId) return false; // jamais tes messages
-        return m.readAt == null; // non lu
-      }).length;
-
-      rows.add(
-        _ConversationRow(
-          conversationId: conversationId,
-          title: otherUser.login ?? "Pseudo",
-          lastText: lastMessage?.text ?? "Aucun message",
-          timeLabel: lastMessage != null
-              ? _formatHour(lastMessage.createdAt)
-              : "",
-          unreadCount: unreadCount,
-        ),
-      );
-    }
-
-    return _ConversationsVm(rows: rows);
+          .toList(),
+    );
   }
 
   void _openConversation(int conversationId) {

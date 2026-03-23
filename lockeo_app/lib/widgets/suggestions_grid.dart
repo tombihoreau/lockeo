@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product_suggestion.dart';
-import '../models/image.dart';
 import '../services/products_service.dart';
-import 'product_card.dart';
+import 'product_suggestions_grid.dart';
 
 class SuggestionsGrid extends StatelessWidget {
   final int maxItems;
@@ -27,41 +26,9 @@ class SuggestionsGrid extends StatelessWidget {
           return const Center(child: Text('Aucune suggestion disponible'));
         }
 
-        return GridView.builder(
-          padding: EdgeInsets.zero,
+        return ProductSuggestionsGrid(
+          suggestions: suggestions,
           shrinkWrap: shrinkWrap,
-          physics: shrinkWrap
-              ? const NeverScrollableScrollPhysics()
-              : const ScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 6,
-            mainAxisSpacing: 6,
-            childAspectRatio: 0.6,
-          ),
-          itemCount: suggestions.length,
-          itemBuilder: (context, index) {
-            final s = suggestions[index];
-            final product = s.product;
-            final imageUrl = (s.imageUri != null && s.imageUri!.isNotEmpty)
-                ? 'assets/images/${s.imageUri}'
-                : 'assets/images/default.jpg';
-            final firstImage = ImageModel(
-              imageId: 0,
-              productId: product.productId,
-              url: imageUrl,
-              positionImage: 0,
-              createdAt: '',
-            );
-
-            return ProductCard(
-              product: product,
-              image: firstImage,
-              onTap: () {
-                Navigator.pushNamed(context, '/productDetails', arguments: product);
-              },
-            );
-          },
         );
       },
     );

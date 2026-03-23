@@ -1,27 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../widgets/button.dart';
-import 'package:lockeo_app/theme/app_text_styles.dart';
-import '../theme/app_colors.dart';
-import '../services/local_data_service.dart';
-import '../models/offer.dart';
-import '../models/product.dart';
-import '../models/image.dart';
-import '../models/user.dart';
-import '../models/conversation.dart';
-import '../models/message.dart';
 import 'package:intl/intl.dart';
+
+import '../models/image.dart';
+import '../models/product_detail.dart';
+import '../services/conversations_service.dart';
+import '../services/products_service.dart';
+import '../theme/app_colors.dart';
+import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../widgets/button.dart';
+import '../widgets/selected_photo_image.dart';
+import 'conversation_screen.dart';
 
 class ReservationConfirmationScreen extends StatefulWidget {
   final int offerId;
   final DateTime startDate;
   final DateTime endDate;
+  final ProductDetail? initialDetail;
+  final int? conversationId;
+  final int? reservationId;
+  final double? reservationTotalPrice;
 
   const ReservationConfirmationScreen({
     super.key,
     required this.offerId,
     required this.startDate,
     required this.endDate,
+    this.initialDetail,
+    this.conversationId,
+    this.reservationId,
+    this.reservationTotalPrice,
   });
 
   @override
@@ -31,79 +39,126 @@ class ReservationConfirmationScreen extends StatefulWidget {
 
 class _ReservationConfirmationScreenState
     extends State<ReservationConfirmationScreen> {
-  final dataService = LocalDataService();
+  final _productsService = ProductsService();
+  final _conversationsService = ConversationsService();
 
-  Offer? _offer;
-  Product? _product;
+  ProductDetail? _detail;
   ImageModel? _img;
-  User? _owner;
 
   @override
   void initState() {
     super.initState();
+    _detail = widget.initialDetail;
     _loadData();
   }
 
   Future<void> _loadData() async {
-    final offer = await dataService.getOfferById(widget.offerId);
-    if (offer == null) return;
+    final detail =
+        widget.initialDetail ??
+        await _productsService.getOfferDetail(widget.offerId);
 
-    final products = await dataService.loadProducts();
-    final images = await dataService.loadImages();
-    final users = await dataService.loadUsers();
-    final owner = users.firstWhere((u) => u.userId == offer.userId);
+    final productImage = detail.images.isNotEmpty
+        ? detail.images.first
+        : ImageModel(
+            imageId: 0,
+            productId: detail.product.productId,
+            url: 'assets/images/default.jpg',
+            positionImage: 0,
+            createdAt: '',
+          );
 
-    final product = products.firstWhere((p) => p.productId == offer.productId);
-    final productImage = images.firstWhere(
-      (img) => img.productId == product.productId,
-    );
-
+    if (!mounted) return;
     setState(() {
-      _offer = offer;
-      _product = product;
+      _detail = detail;
       _img = productImage;
-      _owner = owner;
     });
   }
 
   Future<void> _onContactOwner() async {
-    if (_owner == null) return;
+    final existingConversationId = widget.conversationId;
+    final detail = _detail;
+    final owner = detail?.owner;
+    final ownerName = owner == null
+        ? 'le propriétaire'
+        : owner.firstName.trim().isNotEmpty
+        ? owner.firstName.trim()
+        : owner.login.trim().isNotEmpty
+        ? owner.login.trim()
+        : 'le propriétaire';
 
-    // 🔹 récupérer les données nécessaires
-    final conversations = await dataService.loadConversations();
-    final messages = await dataService.loadMessages();
-    final currentUser = await dataService.getCurrentUser() as User;
-
-    // 🔹 chercher une conversation existante
-    final existingConversationId = _findConversationIdWithUser(
-      conversations: conversations,
-      currentUserId: currentUser.userId,
-      otherUserId: _owner!.userId,
-      messages: messages,
-    );
-
-    if (existingConversationId != null) {
+    if (existingConversationId != null && existingConversationId > 0) {
       Navigator.pushNamed(
         context,
         '/conversation',
-        arguments: existingConversationId,
+        arguments: ConversationRouteArgs(
+          conversationId: existingConversationId,
+          otherUserName: ownerName,
+          productTitle: detail?.product.name,
+          imagePath: _img?.url ?? 'assets/images/default.jpg',
+          cityLabel: detail?.product.city,
+          postalCodeLabel: detail?.product.postalCode,
+          pricePerDay: detail?.product.price ?? 0,
+          totalPrice: widget.reservationTotalPrice,
+          totalDays: widget.endDate.difference(widget.startDate).inDays + 1,
+          offerId: detail?.offer.offerId,
+          ownerUserId: detail?.owner.userId,
+          reservationId: widget.reservationId,
+          startDate: widget.startDate,
+          endDate: widget.endDate,
+          reservationStatus: 'pending',
+        ),
       );
       return;
     }
 
-    // 🔸 sinon : fallback (JSON statique)
-    Navigator.pushNamed(
-      context,
-      '/conversation',
-      arguments: _owner!.userId, // ou rien, selon ton routing
-    );
+    if (owner == null) return;
+
+    try {
+      final conversationId = await _conversationsService
+          .ensureConversationWithUser(otherUserId: owner.userId);
+      if (!mounted) return;
+      Navigator.pushNamed(
+        context,
+        '/conversation',
+        arguments: ConversationRouteArgs(
+          conversationId: conversationId,
+          otherUserName: ownerName,
+          productTitle: detail?.product.name,
+          imagePath: _img?.url ?? 'assets/images/default.jpg',
+          cityLabel: detail?.product.city,
+          postalCodeLabel: detail?.product.postalCode,
+          pricePerDay: detail?.product.price ?? 0,
+          totalPrice: widget.reservationTotalPrice,
+          totalDays: widget.endDate.difference(widget.startDate).inDays + 1,
+          offerId: detail?.offer.offerId,
+          ownerUserId: detail?.owner.userId,
+          reservationId: widget.reservationId,
+          startDate: widget.startDate,
+          endDate: widget.endDate,
+          reservationStatus: 'pending',
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Impossible d'ouvrir la conversation: $e")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_product == null) {
+    final detail = _detail;
+    if (detail == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+
+    final ownerName = detail.owner.firstName.trim().isNotEmpty
+        ? detail.owner.firstName.trim()
+        : detail.owner.login.trim().isNotEmpty
+        ? detail.owner.login.trim()
+        : 'le propriétaire';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
@@ -113,16 +168,12 @@ class _ReservationConfirmationScreenState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ✅ Icône check
                 SvgPicture.asset(
                   'assets/icons/icon_check.svg',
                   width: 64,
                   height: 64,
                 ),
-
                 const SizedBox(height: 8),
-
-                // Titre
                 Text(
                   "Votre demande a été\nenvoyée !",
                   textAlign: TextAlign.center,
@@ -130,10 +181,7 @@ class _ReservationConfirmationScreenState
                     color: AppColors.textPrimary,
                   ),
                 ),
-
                 const SizedBox(height: 18),
-
-                // 📝 Texte explicatif
                 Text(
                   "Vous recevrez un e-mail de confirmation dès que le propriétaire aura validé votre demande",
                   textAlign: TextAlign.center,
@@ -141,17 +189,14 @@ class _ReservationConfirmationScreenState
                     color: AppColors.textPrimary,
                   ),
                 ),
-
                 Text(
-                  "Jusqu'au 20/10/2025",
+                  "Jusqu'au ${DateFormat('dd/MM/yyyy', 'fr_FR').format(widget.endDate)}",
                   textAlign: TextAlign.center,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textGrey,
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -162,8 +207,8 @@ class _ReservationConfirmationScreenState
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          _img?.url ?? 'assets/images/default.jpg',
+                        child: SelectedPhotoImage(
+                          path: _img?.url ?? 'assets/images/default.jpg',
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
@@ -175,7 +220,7 @@ class _ReservationConfirmationScreenState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _product!.name,
+                              detail.product.name,
                               style: AppTextStyles.h2.copyWith(
                                 color: Colors.black,
                               ),
@@ -194,7 +239,7 @@ class _ReservationConfirmationScreenState
                                 GestureDetector(
                                   onTap: _onContactOwner,
                                   child: Text(
-                                    "Contacter ${_owner?.firstName}",
+                                    "Contacter $ownerName",
                                     style: AppTextStyles.link.copyWith(
                                       color: AppColors.primaryBlue,
                                       decoration: TextDecoration.none,
@@ -243,22 +288,4 @@ class _ReservationConfirmationScreenState
     final formatted = DateFormat('d MMMM y', 'fr_FR').format(d);
     return formatted[0].toUpperCase() + formatted.substring(1);
   }
-}
-
-int? _findConversationIdWithUser({
-  required List<Conversation> conversations,
-  required int currentUserId,
-  required int otherUserId,
-  required List<Message> messages, // pas utilisé ici mais on le laisse
-}) {
-  for (final c in conversations) {
-    final participants = c.userIds;
-
-    final hasBoth =
-        participants.contains(currentUserId) &&
-        participants.contains(otherUserId);
-
-    if (hasBoth) return c.conversationId;
-  }
-  return null;
 }

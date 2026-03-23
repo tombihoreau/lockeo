@@ -121,7 +121,8 @@ CREATE TABLE Images (
 -- =========================================================
 CREATE TABLE Categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
-    label VARCHAR(100) NOT NULL
+    label VARCHAR(100) NOT NULL,
+    parent_id INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB;
 
 -- =========================================================
@@ -254,3 +255,4 @@ CREATE INDEX idx_product_unavailabilities_product_id ON ProductUnavailabilities(
 
 -- CATEGORIES
 CREATE INDEX idx_categories_label ON Categories(label);
+CREATE INDEX idx_categories_parent_id ON Categories(parent_id);

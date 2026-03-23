@@ -19,8 +19,8 @@ class CreateOfferStep2Screen extends StatefulWidget {
 
 class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
   // ---------- Variables de test (tu changes ici) ----------
-  final double discount3Days = 0.20; // -10%
-  final double discount7Days = 0.25; // -20%
+  final double discount3Days = 0.05; // -5%
+  final double discount7Days = 0.10; // -10%
   final int stepEuro = 1; // incrément +/- en €
 
   final pricePerDayController = TextEditingController();
@@ -115,7 +115,7 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
     widget.draft.pricePerDay = _dayPrice;
     widget.draft.pricePerWeek = _price7Days
         .toDouble(); // total 7 jours (comme ton ancien champ "semaine")
-     widget.draft.price3Days = _price3Days.toDouble();
+    widget.draft.price3Days = _price3Days.toDouble();
 
     Navigator.push(
       context,
@@ -134,7 +134,7 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
         border: Border.all(color: AppColors.primaryBlue, width: 1),
       ),
       child: Text(
-        "Prix conseillé : ${value}€",
+        "Prix conseillé : $value€",
         style: AppTextStyles.caption.copyWith(color: AppColors.primaryBlue),
       ),
     );
