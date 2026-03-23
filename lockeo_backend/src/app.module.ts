@@ -26,6 +26,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import { MessagingModule } from './messaging/messaging.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { MessagingModule } from './messaging/messaging.module';
     }),
     AuthModule,
     MessagingModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

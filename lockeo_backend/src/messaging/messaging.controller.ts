@@ -56,4 +56,17 @@ export class MessagingController {
   ) {
     return this.messagingService.listMessages(conversationId, req.user.userId);
   }
+
+  @Post(':conversationId/read')
+  @ApiOperation({ summary: "Marquer les messages d'une conversation comme lus" })
+  async markConversationRead(
+    @Req() req: RequestWithUser,
+    @Param('conversationId', ParseIntPipe) conversationId: number,
+  ) {
+    await this.messagingService.markConversationAsRead(
+      conversationId,
+      req.user.userId,
+    );
+    return { success: true };
+  }
 }

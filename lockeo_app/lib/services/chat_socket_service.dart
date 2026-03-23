@@ -3,22 +3,18 @@ import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../models/message.dart';
+import 'backend_config.dart';
 
 class ChatSocketService {
   ChatSocketService({String? baseUrl})
-      : _baseUrl = _normalizeBaseUrl(
-          baseUrl ??
-              const String.fromEnvironment(
-                'WS_BASE_URL',
-                defaultValue: 'http://jules.demai.rennes.mds-project.fr',
-              ),
-        );
+      : _baseUrl = baseUrl ?? BackendConfig.wsBaseUrl;
 
   final String _baseUrl;
   io.Socket? _socket;
 
   final _historyController = StreamController<ConversationHistoryEvent>.broadcast();
   final _newMessageController = StreamController<ConversationMessageEvent>.broadcast();
+  final _notificationController = StreamController<ChatNotificationEvent>.broadcast();
   final _typingController = StreamController<ConversationTypingEvent>.broadcast();
   final _errorController = StreamController<String>.broadcast();
 
@@ -26,22 +22,9 @@ class ChatSocketService {
 
   Stream<ConversationHistoryEvent> get historyStream => _historyController.stream;
   Stream<ConversationMessageEvent> get newMessageStream => _newMessageController.stream;
+  Stream<ChatNotificationEvent> get notificationStream => _notificationController.stream;
   Stream<ConversationTypingEvent> get typingStream => _typingController.stream;
   Stream<String> get errorStream => _errorController.stream;
-
-  static String _normalizeBaseUrl(String raw) {
-    final uri = Uri.parse(raw);
-    final host = uri.host;
-    const useAndroidEmulatorHost = bool.fromEnvironment(
-      'ANDROID_EMULATOR',
-      defaultValue: false,
-    );
-
-    if (useAndroidEmulatorHost && (host == 'localhost' || host == '127.0.0.1')) {
-      return uri.replace(host: '10.0.2.2').toString();
-    }
-    return raw;
-  }
 
   Future<void> connect({required String token}) async {
     if (token.trim().isEmpty) {
@@ -107,6 +90,48 @@ class ChatSocketService {
       }
     });
 
+    socket.on('notification:new', (payload) {
+      try {
+        final map = _toMap(payload);
+        final notificationId = _readInt(map, 'user_notification_id');
+        final conversationId = _readInt(map, 'conversation_id');
+        final destinationUserId = _readInt(map, 'destination_user_id');
+        final senderUserId = _readInt(map, 'sender_user_id');
+        final title = (map['title'] as String?)?.trim();
+        final body = (map['body'] as String?)?.trim();
+        final senderName = (map['sender_name'] as String?)?.trim();
+        final createdAtRaw = (map['created_at'] as String?)?.trim();
+
+        if (notificationId == null ||
+            conversationId == null ||
+            destinationUserId == null ||
+            senderUserId == null ||
+            title == null ||
+            title.isEmpty ||
+            body == null ||
+            body.isEmpty) {
+          throw const FormatException('Payload notification:new invalide');
+        }
+
+        _notificationController.add(
+          ChatNotificationEvent(
+            notificationId: notificationId,
+            conversationId: conversationId,
+            destinationUserId: destinationUserId,
+            senderUserId: senderUserId,
+            title: title,
+            body: body,
+            senderName: senderName ?? '',
+            createdAt: createdAtRaw != null && createdAtRaw.isNotEmpty
+                ? DateTime.tryParse(createdAtRaw) ?? DateTime.now().toUtc()
+                : DateTime.now().toUtc(),
+          ),
+        );
+      } catch (e) {
+        _errorController.add(e.toString());
+      }
+    });
+
     socket.on('chat:error', (payload) {
       if (payload is Map && payload['message'] is String) {
         _errorController.add(payload['message'] as String);
@@ -138,6 +163,7 @@ class ChatSocketService {
 
     socket.onConnectError((error) => _errorController.add(error.toString()));
     socket.onError((error) => _errorController.add(error.toString()));
+    socket.onDisconnect((reason) => _errorController.add('disconnect:$reason'));
 
     socket.connect();
     _socket = socket;
@@ -176,6 +202,7 @@ class ChatSocketService {
     disconnect();
     _historyController.close();
     _newMessageController.close();
+    _notificationController.close();
     _typingController.close();
     _errorController.close();
   }
@@ -244,6 +271,28 @@ class ChatSocketService {
       readAt: json['read_at'] is String ? DateTime.parse(json['read_at'] as String) : null,
     );
   }
+}
+
+class ChatNotificationEvent {
+  final int notificationId;
+  final int conversationId;
+  final int destinationUserId;
+  final int senderUserId;
+  final String title;
+  final String body;
+  final String senderName;
+  final DateTime createdAt;
+
+  const ChatNotificationEvent({
+    required this.notificationId,
+    required this.conversationId,
+    required this.destinationUserId,
+    required this.senderUserId,
+    required this.title,
+    required this.body,
+    required this.senderName,
+    required this.createdAt,
+  });
 }
 
 class ConversationHistoryEvent {

@@ -18,10 +18,17 @@ class UserNotification {
   bool get isUnread => status.toLowerCase() != "read";
 
   factory UserNotification.fromJson(Map<String, dynamic> json) {
+    final destinationUserIdRaw = json['destination_user_id'];
+    final templateIdRaw = json['template_id'];
+
     return UserNotification(
       userNotificationId: json['user_notification_id'] as int,
-      destinationUserId: json['destination_user_id'] as int,
-      templateId: json['template_id'] as int,
+      destinationUserId: destinationUserIdRaw is int
+          ? destinationUserIdRaw
+          : int.tryParse('$destinationUserIdRaw') ?? 0,
+      templateId: templateIdRaw is int
+          ? templateIdRaw
+          : int.tryParse('$templateIdRaw') ?? 0,
       status: (json['status'] ?? 'unread') as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       payload: (json['payload'] as Map?)?.cast<String, dynamic>() ?? {},

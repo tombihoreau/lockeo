@@ -113,13 +113,20 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     return _ConversationsVm(rows: rows);
   }
 
-  void _openConversation(int conversationId) {
-    Navigator.push(
+  Future<void> _openConversation(int conversationId) async {
+    final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => ConversationScreen(conversationId: conversationId),
       ),
     );
+
+    if (!mounted) return;
+    if (result == true) {
+      setState(() {
+        _future = _load();
+      });
+    }
   }
 
   Future<void> _onBackPressed() async {

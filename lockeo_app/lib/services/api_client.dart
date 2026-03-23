@@ -1,16 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'backend_config.dart';
+
 class ApiClient {
   ApiClient({http.Client? client, String? baseUrl})
       : _client = client ?? http.Client(),
-        _baseUrl = _normalizeBaseUrl(
-          baseUrl ??
-              const String.fromEnvironment(
-                'API_BASE_URL',
-                defaultValue: 'http://jules.demai.rennes.mds-project.fr/lockeo/api',
-              ),
-        );
+        _baseUrl = baseUrl ?? BackendConfig.apiBaseUrl;
 
   final http.Client _client;
   final String _baseUrl;
@@ -19,20 +15,6 @@ class ApiClient {
 
   void setBearerToken(String? token) {
     _bearerToken = token;
-  }
-
-  // Adapte localhost pour les émulateurs
-  static String _normalizeBaseUrl(String raw) {
-    final uri = Uri.parse(raw);
-    final host = uri.host;
-    // Si Android emulator et host est localhost, utiliser 10.0.2.2
-    // On ne peut pas tester Platform ici sans import dart:io dans web, on gère simple:
-    // si host est 'localhost' ou '127.0.0.1', remplace par 10.0.2.2 pour Android via un dart-define optionnel
-    const useAndroidEmulatorHost = bool.fromEnvironment('ANDROID_EMULATOR', defaultValue: false);
-    if (useAndroidEmulatorHost && (host == 'localhost' || host == '127.0.0.1')) {
-      return uri.replace(host: '10.0.2.2').toString();
-    }
-    return raw;
   }
 
   Uri _uri(String path, [Map<String, dynamic>? query]) {

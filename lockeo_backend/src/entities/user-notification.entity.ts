@@ -19,6 +19,9 @@ export class UserNotification {
   @Column({ length: 50 })
   status: string;
 
+  @Column({ type: 'int', nullable: true })
+  conversation_id: number | null;
+
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 }

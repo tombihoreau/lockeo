@@ -62,8 +62,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
   bool _checkoutCongratsShown = false;
   StreamSubscription<ConversationHistoryEvent>? _historySub;
   StreamSubscription<ConversationMessageEvent>? _newMessageSub;
+  StreamSubscription<ChatNotificationEvent>? _notificationSub;
   StreamSubscription<ConversationTypingEvent>? _typingSub;
   StreamSubscription<String>? _socketErrorSub;
+  OverlayEntry? _notificationOverlay;
+  Timer? _notificationOverlayTimer;
   Timer? _typingStopTimer;
 
   @override
@@ -76,8 +79,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
   void dispose() {
     _historySub?.cancel();
     _newMessageSub?.cancel();
+    _notificationSub?.cancel();
     _typingSub?.cancel();
     _socketErrorSub?.cancel();
+    _notificationOverlayTimer?.cancel();
+    _removeNotificationOverlay();
     _typingStopTimer?.cancel();
     if (_socketConnected) {
       _chatSocketService.emitTyping(
@@ -348,6 +354,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
     if (changed) {
       setState(() => _messages = updated);
       _hasReadChanges = true;
+      _conversationsService
+          .markConversationAsRead(conversationId: widget.conversationId)
+          .catchError((_) {});
     }
   }
 
@@ -362,42 +371,38 @@ class _ConversationScreenState extends State<ConversationScreen> {
     });
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    if (_socketConnected) {
-      if (_isTypingSent) {
-        _chatSocketService.emitTyping(
-          conversationId: widget.conversationId,
-          isTyping: false,
-        );
-        _isTypingSent = false;
-      }
-      _chatSocketService.sendMessage(
-        conversationId: widget.conversationId,
-        text: text,
+    if (!_socketConnected) {
+      await _initRealtime();
+    }
+
+    if (!_socketConnected) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Impossible d’envoyer le message: connexion temps reel indisponible.',
+          ),
+        ),
       );
-      _controller.clear();
       return;
     }
 
-    final nextId = _messages.isEmpty ? 1 : (_messages.last.messageId + 1);
-    final newMessage = Message(
-      messageId: nextId,
+    if (_isTypingSent) {
+      _chatSocketService.emitTyping(
+        conversationId: widget.conversationId,
+        isTyping: false,
+      );
+      _isTypingSent = false;
+    }
+    _chatSocketService.sendMessage(
       conversationId: widget.conversationId,
-      senderUserId: _currentUserId,
       text: text,
-      status: "sent",
-      createdAt: DateTime.now().toUtc(),
-      readAt: null,
     );
-
-    setState(() {
-      _messages = [..._messages, newMessage];
-      _controller.clear();
-    });
-    _scrollToBottom();
+    _controller.clear();
   }
 
   void _onComposerChanged(String value) {
@@ -437,6 +442,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
     _historySub?.cancel();
     _newMessageSub?.cancel();
+    _notificationSub?.cancel();
     _typingSub?.cancel();
     _socketErrorSub?.cancel();
 
@@ -472,6 +478,15 @@ class _ConversationScreenState extends State<ConversationScreen> {
       setState(() => _isOtherUserTyping = event.isTyping);
     });
 
+    _notificationSub = _chatSocketService.notificationStream.listen((event) {
+      if (!mounted) return;
+      if (event.destinationUserId != _currentUserId) return;
+      _showTopNotification(
+        title: event.title,
+        body: event.body,
+      );
+    });
+
     _socketErrorSub = _chatSocketService.errorStream.listen((_) {
       if (!mounted) return;
       setState(() {
@@ -500,6 +515,48 @@ class _ConversationScreenState extends State<ConversationScreen> {
     } finally {
       _isConnectingSocket = false;
     }
+  }
+
+  void _showTopNotification({
+    required String title,
+    required String body,
+  }) {
+    _notificationOverlayTimer?.cancel();
+    _removeNotificationOverlay();
+
+    final overlay = Overlay.of(context);
+
+    _notificationOverlay = OverlayEntry(
+      builder: (context) {
+        final topPadding = MediaQuery.of(context).padding.top;
+        return Positioned(
+          top: topPadding + 12,
+          left: 16,
+          right: 16,
+          child: Material(
+            color: Colors.transparent,
+            child: SafeArea(
+              bottom: false,
+              child: _ConversationNotificationBanner(
+                title: title,
+                body: body,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(_notificationOverlay!);
+    _notificationOverlayTimer = Timer(
+      const Duration(seconds: 3),
+      _removeNotificationOverlay,
+    );
+  }
+
+  void _removeNotificationOverlay() {
+    _notificationOverlay?.remove();
+    _notificationOverlay = null;
   }
 
   // -------------------------
@@ -694,7 +751,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
                       ),
                     _ComposerBar(
                       controller: _controller,
-                      onSend: _sendMessage,
+                      onSend: () {
+                        _sendMessage();
+                      },
                       onChanged: _onComposerChanged,
                     ),
                   ],
@@ -719,6 +778,76 @@ class _ConversationScreenState extends State<ConversationScreen> {
     final last = user.lastName.trim();
     if (last.isNotEmpty) return last;
     return "";
+  }
+}
+
+class _ConversationNotificationBanner extends StatelessWidget {
+  final String title;
+  final String body;
+
+  const _ConversationNotificationBanner({
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x22000000),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE8F1FF),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.notifications_none,
+              color: AppColors.primaryBlue,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

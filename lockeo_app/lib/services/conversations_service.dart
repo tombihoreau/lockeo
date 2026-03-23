@@ -133,6 +133,16 @@ class ConversationsService {
     return ConversationSnapshot(otherUser: otherUser, messages: messages);
   }
 
+  Future<void> markConversationAsRead({required int conversationId}) async {
+    final token = AuthSession.instance.accessToken;
+    if (token == null || token.trim().isEmpty) {
+      throw StateError('Utilisateur non connecté');
+    }
+
+    _api.setBearerToken(token);
+    await _api.postJson('/conversations/$conversationId/read');
+  }
+
   ConversationListItem _fromJson(Map<String, dynamic> json) {
     final conversationId = _toInt(json['conversation_id']) ?? 0;
 

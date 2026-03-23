@@ -8,6 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
+import { NotificationTemplate } from '../entities/notification-template.entity';
+import { UserNotification } from '../entities/user-notification.entity';
 import { User } from '../entities/user.entity';
 
 export interface MessagePayload {
@@ -43,13 +45,35 @@ export interface EnsureConversationPayload {
   is_created: boolean;
 }
 
+export interface MessageNotificationPayload {
+  user_notification_id: number;
+  conversation_id: number;
+  destination_user_id: number;
+  sender_user_id: number;
+  sender_name: string;
+  title: string;
+  body: string;
+  created_at: string;
+}
+
+export interface SendMessageResult {
+  message: MessagePayload;
+  notification: MessageNotificationPayload;
+}
+
 @Injectable()
 export class MessagingService {
+  private static readonly messageNotificationTemplateCode = 'MESSAGE_RECEIVED';
+
   constructor(
     @InjectRepository(Conversation)
     private readonly conversationRepo: Repository<Conversation>,
     @InjectRepository(Message)
     private readonly messageRepo: Repository<Message>,
+    @InjectRepository(NotificationTemplate)
+    private readonly notificationTemplateRepo: Repository<NotificationTemplate>,
+    @InjectRepository(UserNotification)
+    private readonly userNotificationRepo: Repository<UserNotification>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
@@ -121,6 +145,20 @@ export class MessagingService {
           order: { created_at: 'DESC', message_id: 'DESC' },
         });
 
+        const unreadCount = await this.userNotificationRepo
+          .createQueryBuilder('notification')
+          .leftJoin('notification.template', 'template')
+          .leftJoin('notification.destinationUser', 'destinationUser')
+          .where('destinationUser.user_id = :userId', { userId })
+          .andWhere('notification.conversation_id = :conversationId', {
+            conversationId: conversation.conversation_id,
+          })
+          .andWhere('notification.status = :status', { status: 'unread' })
+          .andWhere('template.code = :code', {
+            code: MessagingService.messageNotificationTemplateCode,
+          })
+          .getCount();
+
         return {
           conversation_id: conversation.conversation_id,
           created_at: conversation.created_at.toISOString(),
@@ -140,7 +178,7 @@ export class MessagingService {
                 created_at: lastMessage.created_at.toISOString(),
               }
             : null,
-          unread_count: 0,
+          unread_count: unreadCount,
         } satisfies ConversationListItemPayload;
       }),
     );
@@ -152,6 +190,22 @@ export class MessagingService {
     });
 
     return rows;
+  }
+
+  async markConversationAsRead(
+    conversationId: number,
+    userId: number,
+  ): Promise<void> {
+    await this.assertConversationMembership(conversationId, userId);
+
+    await this.userNotificationRepo
+      .createQueryBuilder()
+      .update(UserNotification)
+      .set({ status: 'read' })
+      .where('conversation_id = :conversationId', { conversationId })
+      .andWhere('destinationUserUserId = :userId', { userId })
+      .andWhere('status != :status', { status: 'read' })
+      .execute();
   }
 
   async ensureConversationBetweenUsers(
@@ -210,12 +264,13 @@ export class MessagingService {
     conversationId: number,
     senderUserId: number,
     text: string,
-  ): Promise<MessagePayload> {
+  ): Promise<SendMessageResult> {
     await this.assertConversationMembership(conversationId, senderUserId);
 
     const [conversation, sender] = await Promise.all([
       this.conversationRepo.findOne({
         where: { conversation_id: conversationId },
+        relations: ['renter', 'owner'],
       }),
       this.userRepo.findOne({ where: { user_id: senderUserId } }),
     ]);
@@ -245,7 +300,73 @@ export class MessagingService {
       throw new NotFoundException('Message introuvable après création');
     }
 
-    return this.toPayload(hydrated);
+    const destinationUser = this.resolveOtherParticipant(conversation, senderUserId);
+    const notificationTemplate = await this.getOrCreateMessageNotificationTemplate();
+    const notification = await this.userNotificationRepo.save(
+      this.userNotificationRepo.create({
+        template: notificationTemplate,
+        destinationUser,
+        status: 'unread',
+        conversation_id: conversationId,
+      }),
+    );
+
+    const senderName = this.resolveDisplayName(sender);
+    return {
+      message: this.toPayload(hydrated),
+      notification: {
+        user_notification_id: notification.user_notification_id,
+        conversation_id: conversationId,
+        destination_user_id: destinationUser.user_id,
+        sender_user_id: senderUserId,
+        sender_name: senderName,
+        title: 'Nouveau message',
+        body: `${senderName} vous a envoye un message`,
+        created_at: notification.created_at.toISOString(),
+      },
+    };
+  }
+
+  private resolveOtherParticipant(
+    conversation: Conversation,
+    senderUserId: number,
+  ): User {
+    if (conversation.renter?.user_id === senderUserId && conversation.owner) {
+      return conversation.owner;
+    }
+    if (conversation.owner?.user_id === senderUserId && conversation.renter) {
+      return conversation.renter;
+    }
+    throw new ForbiddenException('Destinataire de la conversation introuvable');
+  }
+
+  private resolveDisplayName(user: User): string {
+    const firstName = user.first_name?.trim();
+    const lastName = user.last_name?.trim();
+    const login = user.login?.trim();
+
+    if (firstName) return firstName;
+    if (lastName) return lastName;
+    if (login) return login;
+    return 'Quelqu’un';
+  }
+
+  private async getOrCreateMessageNotificationTemplate(): Promise<NotificationTemplate> {
+    const existing = await this.notificationTemplateRepo.findOne({
+      where: { code: MessagingService.messageNotificationTemplateCode },
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    return this.notificationTemplateRepo.save(
+      this.notificationTemplateRepo.create({
+        code: MessagingService.messageNotificationTemplateCode,
+        title: 'Nouveau message',
+        content: 'Vous avez recu un nouveau message.',
+      }),
+    );
   }
 
   private toPayload(message: Message): MessagePayload {

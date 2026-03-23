@@ -1,4 +1,5 @@
 import 'api_client.dart';
+import 'app_notifications_realtime_service.dart';
 import 'auth_session.dart';
 
 class AuthService {
@@ -30,6 +31,7 @@ class AuthService {
 
     // Récupère le profil minimal pour l’UI (prénom/nom)
     await _fetchAndStoreMe();
+    await AppNotificationsRealtimeService.instance.ensureConnected();
   }
 
   Future<void> login({
@@ -50,6 +52,7 @@ class AuthService {
 
     // Récupère le profil minimal pour l’UI (prénom/nom)
     await _fetchAndStoreMe();
+    await AppNotificationsRealtimeService.instance.ensureConnected();
   }
 
   Future<void> _fetchAndStoreMe() async {

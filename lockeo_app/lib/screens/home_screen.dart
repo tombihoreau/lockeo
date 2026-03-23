@@ -9,6 +9,7 @@ import '../widgets/main_scaffold.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import 'package:lockeo_app/services/location_service.dart';
 import '../services/auth_session.dart';
+import '../services/backend_config.dart';
 import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,6 +22,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _loc = LocationService();
   String _locationLabel = "Rennes, France";
+
+  bool get _isLocalEnvironment => BackendConfig.isLocalEnvironment;
+
+  String get _environmentLabel => _isLocalEnvironment ? 'Local' : 'Serveur';
+
+  String get _environmentDetails {
+    final apiHost = Uri.parse(BackendConfig.apiBaseUrl).host;
+    final wsHost = Uri.parse(BackendConfig.wsBaseUrl).host;
+    return 'API: $apiHost • WS: $wsHost';
+  }
 
   @override
   void initState() {
@@ -55,6 +66,45 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _isLocalEnvironment
+                          ? const Color(0xFFE7F8EE)
+                          : const Color(0xFFE8F1FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _isLocalEnvironment
+                            ? const Color(0xFF61B982)
+                            : const Color(0xFF7AA7F8),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Connexion: $_environmentLabel',
+                          style: AppTextStyles.link.copyWith(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _environmentDetails,
+                          style: AppTextStyles.caption.copyWith(
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

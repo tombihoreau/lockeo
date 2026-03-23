@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:intl/intl.dart';
 
+import '../services/auth_session.dart';
 import '../services/local_data_service.dart';
-import '../models/notification_template.dart';
-import '../models/user_notification.dart';
+import '../services/notifications_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
@@ -17,6 +17,7 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final _dataService = LocalDataService();
+  final _notificationsService = NotificationsService();
   bool _loading = true;
 
   int _currentUserId = 1; // ou via getCurrentUser()
@@ -32,28 +33,37 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() => _loading = true);
 
     final currentUser = await _dataService.getCurrentUser();
-    _currentUserId = currentUser?.userId ?? 1;
+    _currentUserId = AuthSession.instance.userId ?? currentUser?.userId ?? 1;
 
-    final templates = await _dataService.loadNotificationTemplates();
-    final userNotifs = await _dataService.loadUserNotifications();
+    final payload = await _notificationsService.fetchMine();
+    final templates = payload.templates;
+    final userNotifs = payload.notifications;
 
     final templateById = {for (final t in templates) t.templateId: t};
 
-    // filtre sur le destinataire + tri date desc
-    final mine =
-        userNotifs.where((n) => n.destinationUserId == _currentUserId).toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final hasAuthenticatedUser = AuthSession.instance.accessToken != null &&
+        AuthSession.instance.accessToken!.trim().isNotEmpty;
 
-    print("mine=${mine}");
+    // L'API /notifications renvoie deja les notifications du user connecte.
+    final mine = hasAuthenticatedUser
+        ? [...userNotifs]
+        : userNotifs.where((n) => n.destinationUserId == _currentUserId).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     final items = mine.map((n) {
       final tpl = templateById[n.templateId];
+      final conversationIdRaw = n.payload['conversation_id'];
+      final conversationId = conversationIdRaw is int
+          ? conversationIdRaw
+          : int.tryParse('$conversationIdRaw');
 
       final title = _renderTemplate(tpl?.title ?? "Notification", n.payload);
       final body = _renderTemplate(tpl?.content ?? "", n.payload);
 
       return _NotificationItem(
         id: n.userNotificationId,
+        code: tpl?.code ?? '',
+        conversationId: conversationId,
         title: title,
         body: body,
         unread: n.isUnread,
@@ -128,8 +138,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     timeLabel: _formatTime(n.createdAt),
                     unread: n.unread,
                     onTap: () {
-                      // TODO: navigation selon template/code/payload
-                      // et marquer en "read" si tu veux
+                      if (n.code == 'MESSAGE_RECEIVED' &&
+                          n.conversationId != null &&
+                          n.conversationId! > 0) {
+                        Navigator.pushNamed(
+                          context,
+                          '/conversation',
+                          arguments: n.conversationId,
+                        );
+                      }
                     },
                   );
                 },
@@ -141,6 +158,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
 class _NotificationItem {
   final int id;
+  final String code;
+  final int? conversationId;
   final String title;
   final String body;
   final bool unread;
@@ -148,6 +167,8 @@ class _NotificationItem {
 
   const _NotificationItem({
     required this.id,
+    required this.code,
+    required this.conversationId,
     required this.title,
     required this.body,
     required this.unread,

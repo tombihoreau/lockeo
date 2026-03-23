@@ -49,9 +49,10 @@ export class MessagingGateway
     private readonly configService: ConfigService,
   ) {}
 
-  handleConnection(client: Socket): void {
+  async handleConnection(client: Socket): Promise<void> {
     try {
-      this.getUserIdFromClient(client);
+      const userId = this.getUserIdFromClient(client);
+      await client.join(this.userRoomFor(userId));
       this.logger.log(`Socket connecté: ${client.id}`);
     } catch {
       client.emit('chat:error', { message: 'Unauthorized' });
@@ -110,7 +111,7 @@ export class MessagingGateway
       return;
     }
 
-    const message = await this.messagingService.sendMessage(
+    const result = await this.messagingService.sendMessage(
       body.conversationId,
       userId,
       text,
@@ -119,8 +120,16 @@ export class MessagingGateway
 
     this.server.to(room).emit('conversation:new_message', {
       conversationId: body.conversationId,
-      message,
+      message: result.message,
     });
+
+    this.server
+      .to(this.userRoomFor(result.notification.destination_user_id))
+      .emit('notification:new', result.notification);
+  }
+
+  private userRoomFor(userId: number): string {
+    return `user:${userId}`;
   }
 
   @SubscribeMessage('conversation:typing')
