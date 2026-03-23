@@ -55,7 +55,12 @@ class CreateOfferService {
         'categoryIds': draft.categories,
         'photoUris': draft.photos,
         'unavailableDates': (draft.unavailableDates ?? [])
-            .map((d) => {'isoDate': d.toUtc().toIso8601String()})
+            .map(
+              (d) => {
+                'isoDate': DateTime.utc(d.year, d.month, d.day)
+                    .toIso8601String(),
+              },
+            )
             .toList(),
       },
     );
