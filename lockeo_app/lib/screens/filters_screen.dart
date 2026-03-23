@@ -29,6 +29,7 @@ class _FiltersPageState extends State<FiltersPage> {
   List<int> _selectedCategories = [];
 
   double _maxDistance = 100;
+  String _sortBy = "Prix";
 
   // ✅ nouvelle logique prix
   double _minPossiblePrice = 0;
@@ -128,6 +129,7 @@ class _FiltersPageState extends State<FiltersPage> {
       _selectedCategories = initialCats;
 
       _maxDistance = initialMaxDistance;
+      _sortBy = initialSortBy;
       _selectedDateRange = initialDateRange;
       _favoritesOnly = initialFavoritesOnly;
 
@@ -450,7 +452,7 @@ class _FiltersPageState extends State<FiltersPage> {
                         ),
                         Switch.adaptive(
                           value: _favoritesOnly,
-                          activeColor: AppColors.primaryRed,
+                          activeTrackColor: AppColors.primaryRed,
                           onChanged: (value) {
                             setState(() => _favoritesOnly = value);
                           },

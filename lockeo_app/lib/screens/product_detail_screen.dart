@@ -6,6 +6,7 @@ import '../services/conversations_service.dart';
 import '../services/products_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/app_navigator.dart';
 import '../widgets/availability_calendar_card.dart';
 import '../widgets/button.dart';
 import '../widgets/category_card.dart';
