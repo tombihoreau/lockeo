@@ -31,7 +31,22 @@ import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import { extname, join } from 'path';
 import { mkdirSync } from 'fs';
 
-const { diskStorage } = require('multer');
+type UploadedImageFile = {
+  filename: string;
+  originalname?: string;
+};
+
+type DiskStorageFactory = (options: {
+  destination: string;
+  filename: (
+    req: Request,
+    file: { originalname?: string },
+    cb: (error: Error | null, filename: string) => void,
+  ) => void;
+}) => unknown;
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
+const { diskStorage }: { diskStorage: DiskStorageFactory } = require('multer');
 
 const productUploadsDir = join(process.cwd(), 'uploads', 'products');
 const allowedImageExtensions = new Set([
@@ -173,9 +188,9 @@ export class ProductsController {
   @ApiOperation({
     summary: 'Uploader des images produit avant la creation d une annonce',
   })
-  async uploadProductImages(
-    @UploadedFiles() files: Array<{ filename: string }> = [],
-  ): Promise<{ urls: string[] }> {
+  uploadProductImages(@UploadedFiles() files: UploadedImageFile[] = []): {
+    urls: string[];
+  } {
     if (files.length === 0) {
       throw new BadRequestException('Aucune image recue');
     }

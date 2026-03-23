@@ -38,10 +38,12 @@ export class NotificationsService {
       template_id: row.template?.template_id ?? null,
       status: row.status,
       created_at: row.created_at.toISOString(),
-      payload: row.conversation_id == null
+      payload:
+        row.conversation_id == null
           ? {}
           : { conversation_id: row.conversation_id },
-      template: row.template == null
+      template:
+        row.template == null
           ? null
           : {
               template_id: row.template.template_id,
