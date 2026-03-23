@@ -10,12 +10,16 @@ import '../theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
 import '../widgets/button.dart';
 import '../widgets/selected_photo_image.dart';
+import 'conversation_screen.dart';
 
 class ReservationConfirmationScreen extends StatefulWidget {
   final int offerId;
   final DateTime startDate;
   final DateTime endDate;
   final ProductDetail? initialDetail;
+  final int? conversationId;
+  final int? reservationId;
+  final double? reservationTotalPrice;
 
   const ReservationConfirmationScreen({
     super.key,
@@ -23,6 +27,9 @@ class ReservationConfirmationScreen extends StatefulWidget {
     required this.startDate,
     required this.endDate,
     this.initialDetail,
+    this.conversationId,
+    this.reservationId,
+    this.reservationTotalPrice,
   });
 
   @override
@@ -47,7 +54,8 @@ class _ReservationConfirmationScreenState
 
   Future<void> _loadData() async {
     final detail =
-        widget.initialDetail ?? await _productsService.getOfferDetail(widget.offerId);
+        widget.initialDetail ??
+        await _productsService.getOfferDetail(widget.offerId);
 
     final productImage = detail.images.isNotEmpty
         ? detail.images.first
@@ -67,25 +75,73 @@ class _ReservationConfirmationScreenState
   }
 
   Future<void> _onContactOwner() async {
-    final owner = _detail?.owner;
+    final existingConversationId = widget.conversationId;
+    final detail = _detail;
+    final owner = detail?.owner;
+    final ownerName = owner == null
+        ? 'le propriétaire'
+        : owner.firstName.trim().isNotEmpty
+        ? owner.firstName.trim()
+        : owner.login.trim().isNotEmpty
+        ? owner.login.trim()
+        : 'le propriétaire';
+
+    if (existingConversationId != null && existingConversationId > 0) {
+      Navigator.pushNamed(
+        context,
+        '/conversation',
+        arguments: ConversationRouteArgs(
+          conversationId: existingConversationId,
+          otherUserName: ownerName,
+          productTitle: detail?.product.name,
+          imagePath: _img?.url ?? 'assets/images/default.jpg',
+          cityLabel: detail?.product.city,
+          postalCodeLabel: detail?.product.postalCode,
+          pricePerDay: detail?.product.price ?? 0,
+          totalPrice: widget.reservationTotalPrice,
+          totalDays: widget.endDate.difference(widget.startDate).inDays + 1,
+          offerId: detail?.offer.offerId,
+          ownerUserId: detail?.owner.userId,
+          reservationId: widget.reservationId,
+          startDate: widget.startDate,
+          endDate: widget.endDate,
+          reservationStatus: 'pending',
+        ),
+      );
+      return;
+    }
+
     if (owner == null) return;
 
     try {
-      final conversationId = await _conversationsService.ensureConversationWithUser(
-        otherUserId: owner.userId,
-      );
+      final conversationId = await _conversationsService
+          .ensureConversationWithUser(otherUserId: owner.userId);
       if (!mounted) return;
       Navigator.pushNamed(
         context,
         '/conversation',
-        arguments: conversationId,
+        arguments: ConversationRouteArgs(
+          conversationId: conversationId,
+          otherUserName: ownerName,
+          productTitle: detail?.product.name,
+          imagePath: _img?.url ?? 'assets/images/default.jpg',
+          cityLabel: detail?.product.city,
+          postalCodeLabel: detail?.product.postalCode,
+          pricePerDay: detail?.product.price ?? 0,
+          totalPrice: widget.reservationTotalPrice,
+          totalDays: widget.endDate.difference(widget.startDate).inDays + 1,
+          offerId: detail?.offer.offerId,
+          ownerUserId: detail?.owner.userId,
+          reservationId: widget.reservationId,
+          startDate: widget.startDate,
+          endDate: widget.endDate,
+          reservationStatus: 'pending',
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Impossible d'ouvrir la conversation: $e"),
-        ),
+        SnackBar(content: Text("Impossible d'ouvrir la conversation: $e")),
       );
     }
   }
@@ -100,8 +156,8 @@ class _ReservationConfirmationScreenState
     final ownerName = detail.owner.firstName.trim().isNotEmpty
         ? detail.owner.firstName.trim()
         : detail.owner.login.trim().isNotEmpty
-            ? detail.owner.login.trim()
-            : 'le propriétaire';
+        ? detail.owner.login.trim()
+        : 'le propriétaire';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -134,7 +190,7 @@ class _ReservationConfirmationScreenState
                   ),
                 ),
                 Text(
-                  "Jusqu'au 20/10/2025",
+                  "Jusqu'au ${DateFormat('dd/MM/yyyy', 'fr_FR').format(widget.endDate)}",
                   textAlign: TextAlign.center,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.textGrey,

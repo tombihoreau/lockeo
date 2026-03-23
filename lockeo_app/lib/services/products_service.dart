@@ -3,6 +3,16 @@ import 'package:lockeo_app/models/product_suggestion.dart';
 import 'api_client.dart';
 import 'auth_session.dart';
 
+class CreatedReservationResult {
+  final int reservationId;
+  final int conversationId;
+
+  const CreatedReservationResult({
+    required this.reservationId,
+    required this.conversationId,
+  });
+}
+
 class ProductsService {
   final ApiClient _api;
   ProductsService({ApiClient? api}) : _api = api ?? ApiClient();
@@ -56,5 +66,61 @@ class ProductsService {
   Future<ProductDetail> getOfferDetail(int offerId) async {
     final json = await _api.getJson('/products/offers/$offerId');
     return ProductDetail.fromJson(json);
+  }
+
+  Future<CreatedReservationResult> createReservation({
+    required int offerId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final token = AuthSession.instance.accessToken;
+    if (token == null || token.trim().isEmpty) {
+      throw StateError('Utilisateur non connecté');
+    }
+
+    _api.setBearerToken(token);
+    final json = await _api.postJson(
+      '/products/offers/$offerId/reservations',
+      body: {
+        'startDate': startDate.toUtc().toIso8601String(),
+        'endDate': endDate.toUtc().toIso8601String(),
+      },
+    );
+
+    final reservationId = _toInt(json['reservation_id']);
+    final conversationId = _toInt(json['conversation_id']);
+
+    if (reservationId == null || conversationId == null) {
+      throw const FormatException(
+        'Réponse backend invalide (reservation_id/conversation_id manquants)',
+      );
+    }
+
+    return CreatedReservationResult(
+      reservationId: reservationId,
+      conversationId: conversationId,
+    );
+  }
+
+  Future<void> updateReservationStatus({
+    required int reservationId,
+    required String status,
+  }) async {
+    final token = AuthSession.instance.accessToken;
+    if (token == null || token.trim().isEmpty) {
+      throw StateError('Utilisateur non connecté');
+    }
+
+    _api.setBearerToken(token);
+    await _api.patchJson(
+      '/products/reservations/$reservationId/status',
+      body: {'status': status},
+    );
+  }
+
+  int? _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value.trim());
+    return null;
   }
 }

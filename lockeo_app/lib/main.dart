@@ -158,7 +158,12 @@ class _MyAppState extends State<MyApp> {
             );
 
           case '/conversation':
-            final conversationId = settings.arguments as int?;
+            final args = settings.arguments;
+            final conversationId = switch (args) {
+              final ConversationRouteArgs routeArgs => routeArgs.conversationId,
+              final int id => id,
+              _ => null,
+            };
 
             if (conversationId == null) {
               return MaterialPageRoute(
@@ -172,7 +177,10 @@ class _MyAppState extends State<MyApp> {
               builder: (context) => MainScaffold(
                 showBottomBar: false,
                 currentIndex: 1,
-                child: ConversationScreen(conversationId: conversationId),
+                child: ConversationScreen(
+                  conversationId: conversationId,
+                  initialArgs: args is ConversationRouteArgs ? args : null,
+                ),
               ),
             );
 

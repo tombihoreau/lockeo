@@ -34,6 +34,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
   ProductDetail? _detail;
   Product? _product;
   ImageModel? _img;
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -72,6 +73,58 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
   double get _insurancePrice => _rentalPrice * 0.06;
 
   double get _total => _rentalPrice + _insurancePrice;
+
+  Future<void> _submitReservation() async {
+    if (_detail == null || _submitting) return;
+
+    setState(() => _submitting = true);
+    try {
+      final createdReservation = await _productsService.createReservation(
+        offerId: widget.offerId,
+        startDate: widget.startDate,
+        endDate: widget.endDate,
+      );
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ReservationConfirmationScreen(
+            offerId: widget.offerId,
+            startDate: widget.startDate,
+            endDate: widget.endDate,
+            initialDetail: _detail,
+            conversationId: createdReservation.conversationId,
+            reservationId: createdReservation.reservationId,
+            reservationTotalPrice: _rentalPrice,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_formatReservationError(e))));
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  String _formatReservationError(Object error) {
+    final raw = error.toString();
+    const bodyMarker = 'body=';
+    final bodyIndex = raw.indexOf(bodyMarker);
+    if (bodyIndex >= 0) {
+      final body = raw.substring(bodyIndex + bodyMarker.length).trim();
+      final messageMatch = RegExp(r'"message":"([^"]+)"').firstMatch(body);
+      if (messageMatch != null) {
+        return messageMatch.group(1)!;
+      }
+    }
+    return "Impossible d'envoyer la demande de location.";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -303,20 +356,8 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
         child: SizedBox(
           width: 300,
           child: CustomButton(
-            text: "Demande de location",
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ReservationConfirmationScreen(
-                    offerId: widget.offerId,
-                    startDate: widget.startDate,
-                    endDate: widget.endDate,
-                    initialDetail: _detail,
-                  ),
-                ),
-              );
-            },
+            text: _submitting ? "Envoi..." : "Demande de location",
+            onPressed: _submitting ? null : _submitReservation,
           ),
         ),
       ),

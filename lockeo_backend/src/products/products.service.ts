@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, In, Repository } from 'typeorm';
 import { Product } from '../entities/product.entity';
@@ -10,7 +15,9 @@ import { ProductHasCategory } from '../entities/product-has-category.entity';
 import { ProductUnavailability } from '../entities/product-unavailability.entity';
 import { Reservation } from '../entities/reservation.entity';
 import { Review } from '../entities/review.entity';
+import { Conversation } from '../entities/conversation.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
+import { CreateReservationDto } from './dto/create-reservation.dto';
 
 export interface ProductDto {
   product_id: number;
@@ -119,9 +126,21 @@ export interface CreatedOfferDto {
   offer_id: number;
 }
 
+export interface CreatedReservationDto {
+  reservation_id: number;
+  conversation_id: number;
+}
+
+export interface UpdatedReservationStatusDto {
+  reservation_id: number;
+  status: string;
+}
+
 @Injectable()
 export class ProductsService {
-  constructor(@InjectRepository(Product) private readonly repo: Repository<Product>) {}
+  constructor(
+    @InjectRepository(Product) private readonly repo: Repository<Product>,
+  ) {}
 
   async getSuggestions(limit: number): Promise<ProductSuggestionDto[]> {
     const rawIds = await this.repo
@@ -143,7 +162,9 @@ export class ProductsService {
     const products = await this.loadProductsForListing(ids);
 
     const order = new Map<number, number>(ids.map((id, i) => [id, i]));
-    products.sort((a, b) => order.get(a.product_id)! - order.get(b.product_id)!);
+    products.sort(
+      (a, b) => order.get(a.product_id)! - order.get(b.product_id)!,
+    );
 
     return products.map((p) => this.toSuggestionDto(p));
   }
@@ -158,7 +179,9 @@ export class ProductsService {
     const normalizedQuery = query.trim();
     const normalizedCategoryIds = Array.from(
       new Set(
-        categoryIds.filter((categoryId) => Number.isInteger(categoryId) && categoryId > 0),
+        categoryIds.filter(
+          (categoryId) => Number.isInteger(categoryId) && categoryId > 0,
+        ),
       ),
     );
 
@@ -224,7 +247,9 @@ export class ProductsService {
 
     const products = await this.loadProductsForListing(ids);
     const order = new Map<number, number>(ids.map((id, index) => [id, index]));
-    products.sort((a, b) => order.get(a.product_id)! - order.get(b.product_id)!);
+    products.sort(
+      (a, b) => order.get(a.product_id)! - order.get(b.product_id)!,
+    );
 
     return products.map((product) => this.toSuggestionDto(product));
   }
@@ -277,7 +302,23 @@ export class ProductsService {
       .where('offerOwner.user_id = :ownerId', { ownerId: owner.user_id })
       .getCount();
 
-    const otherOffers = await this.getOwnerOtherOffers(owner.user_id, offer.offer_id, 4);
+    const otherOffers = await this.getOwnerOtherOffers(
+      owner.user_id,
+      offer.offer_id,
+      4,
+    );
+
+    const activeReservations = await reservationRepo
+      .createQueryBuilder('reservation')
+      .leftJoin('reservation.offer', 'reservationOffer')
+      .leftJoin('reservationOffer.product', 'reservationProduct')
+      .where('reservationProduct.product_id = :productId', {
+        productId: product.product_id,
+      })
+      .andWhere('reservation.status NOT IN (:...ignoredStatuses)', {
+        ignoredStatuses: ['cancelled', 'canceled', 'rejected', 'refused'],
+      })
+      .getMany();
 
     const categories = Array.from(
       new Map(
@@ -306,15 +347,20 @@ export class ProductsService {
         created_at: image.created_at,
       }));
 
-    const unavailabilities = (product.unavailabilities ?? [])
-      .slice()
-      .sort((a, b) => a.start_date_time.getTime() - b.start_date_time.getTime())
-      .map((entry) => ({
+    const unavailabilities = [
+      ...(product.unavailabilities ?? []).map((entry) => ({
         unavailability_id: entry.unavailability_id,
         product_id: product.product_id,
         start_date_time: entry.start_date_time,
         end_date_time: entry.end_date_time,
-      }));
+      })),
+      ...activeReservations.map((reservation) => ({
+        unavailability_id: -reservation.reservation_id,
+        product_id: product.product_id,
+        start_date_time: reservation.start_date,
+        end_date_time: reservation.end_date,
+      })),
+    ].sort((a, b) => a.start_date_time.getTime() - b.start_date_time.getTime());
 
     return {
       offer: {
@@ -384,7 +430,9 @@ export class ProductsService {
 
     const products = await this.loadProductsForListing(ids);
     const order = new Map<number, number>(ids.map((id, index) => [id, index]));
-    products.sort((a, b) => order.get(a.product_id)! - order.get(b.product_id)!);
+    products.sort(
+      (a, b) => order.get(a.product_id)! - order.get(b.product_id)!,
+    );
 
     return products.map((product) => this.toSuggestionDto(product));
   }
@@ -394,7 +442,10 @@ export class ProductsService {
       new Set(
         (product.productCategories ?? [])
           .map((relation) => relation.category?.category_id)
-          .filter((categoryId): categoryId is number => typeof categoryId === 'number'),
+          .filter(
+            (categoryId): categoryId is number =>
+              typeof categoryId === 'number',
+          ),
       ),
     );
 
@@ -459,7 +510,10 @@ export class ProductsService {
     };
   }
 
-  async createOffer(ownerUserId: number, dto: CreateOfferDto): Promise<CreatedOfferDto> {
+  async createOffer(
+    ownerUserId: number,
+    dto: CreateOfferDto,
+  ): Promise<CreatedOfferDto> {
     return this.repo.manager.transaction(async (manager) => {
       const userRepo = manager.getRepository(User);
       const productRepo = manager.getRepository(Product);
@@ -486,9 +540,12 @@ export class ProductsService {
           price_7_days: dto.price7Days ?? undefined,
           price_estimate: dto.priceEstimate ?? undefined,
           state: dto.state.trim(),
-          city: normalizedCity.length > 0 ? normalizedCity : owner.city || 'Ville',
+          city:
+            normalizedCity.length > 0 ? normalizedCity : owner.city || 'Ville',
           postal_code:
-            normalizedPostal.length > 0 ? normalizedPostal : owner.postal_code || '00000',
+            normalizedPostal.length > 0
+              ? normalizedPostal
+              : owner.postal_code || '00000',
           latitude: dto.latitude ?? undefined,
           longitude: dto.longitude ?? undefined,
           is_available: true,
@@ -513,14 +570,20 @@ export class ProductsService {
 
       const uniqueCategoryIds = Array.from(new Set(dto.categoryIds ?? []));
       if (uniqueCategoryIds.length > 0) {
-        const cats = await categoryRepo.findBy({ category_id: In(uniqueCategoryIds) });
+        const cats = await categoryRepo.findBy({
+          category_id: In(uniqueCategoryIds),
+        });
 
         if (cats.length !== uniqueCategoryIds.length) {
-          throw new BadRequestException('Une ou plusieurs categories sont invalides');
+          throw new BadRequestException(
+            'Une ou plusieurs categories sont invalides',
+          );
         }
 
         const rootParentIds = new Set(
-          cats.map((cat) => (cat.parent_id === 0 ? cat.category_id : cat.parent_id)),
+          cats.map((cat) =>
+            cat.parent_id === 0 ? cat.category_id : cat.parent_id,
+          ),
         );
 
         if (rootParentIds.size > 1) {
@@ -563,8 +626,26 @@ export class ProductsService {
         const parsed = new Date(item.isoDate);
         if (Number.isNaN(parsed.getTime())) continue;
 
-        const start = new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate(), 0, 0, 0));
-        const end = new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate(), 23, 59, 59));
+        const start = new Date(
+          Date.UTC(
+            parsed.getUTCFullYear(),
+            parsed.getUTCMonth(),
+            parsed.getUTCDate(),
+            0,
+            0,
+            0,
+          ),
+        );
+        const end = new Date(
+          Date.UTC(
+            parsed.getUTCFullYear(),
+            parsed.getUTCMonth(),
+            parsed.getUTCDate(),
+            23,
+            59,
+            59,
+          ),
+        );
 
         await unavailabilityRepo.save(
           unavailabilityRepo.create({
@@ -589,5 +670,254 @@ export class ProductsService {
         offer_id: offer.offer_id,
       };
     });
+  }
+
+  async createReservation(
+    renterUserId: number,
+    offerId: number,
+    dto: CreateReservationDto,
+  ): Promise<CreatedReservationDto> {
+    return this.repo.manager.transaction(async (manager) => {
+      const userRepo = manager.getRepository(User);
+      const offerRepo = manager.getRepository(Offer);
+      const reservationRepo = manager.getRepository(Reservation);
+      const unavailabilityRepo = manager.getRepository(ProductUnavailability);
+      const conversationRepo = manager.getRepository(Conversation);
+
+      const [renter, offer] = await Promise.all([
+        userRepo.findOne({ where: { user_id: renterUserId } }),
+        offerRepo.findOne({
+          where: { offer_id: offerId },
+          relations: ['owner', 'product'],
+        }),
+      ]);
+
+      if (!renter) {
+        throw new NotFoundException('Utilisateur introuvable');
+      }
+
+      if (!offer?.owner || !offer.product) {
+        throw new NotFoundException('Annonce introuvable');
+      }
+
+      if (offer.owner.user_id === renterUserId) {
+        throw new BadRequestException(
+          'Vous ne pouvez pas louer votre propre produit',
+        );
+      }
+
+      if (offer.status !== 'open') {
+        throw new BadRequestException("Cette annonce n'est plus disponible");
+      }
+
+      if (!offer.product.is_available) {
+        throw new BadRequestException("Ce produit n'est pas disponible");
+      }
+
+      const startDate = this.normalizeStartOfDay(dto.startDate);
+      const endDate = this.normalizeEndOfDay(dto.endDate);
+
+      if (!startDate || !endDate) {
+        throw new BadRequestException('Dates de réservation invalides');
+      }
+
+      if (endDate.getTime() < startDate.getTime()) {
+        throw new BadRequestException(
+          'La date de fin doit être postérieure ou égale à la date de début',
+        );
+      }
+
+      const today = this.normalizeDateOnly(new Date());
+      if (startDate.getTime() < today.getTime()) {
+        throw new BadRequestException('Impossible de réserver une date passée');
+      }
+
+      const conflictingUnavailability = await unavailabilityRepo
+        .createQueryBuilder('unavailability')
+        .leftJoin('unavailability.product', 'product')
+        .where('product.product_id = :productId', {
+          productId: offer.product.product_id,
+        })
+        .andWhere('unavailability.start_date_time <= :endDate', { endDate })
+        .andWhere('unavailability.end_date_time >= :startDate', { startDate })
+        .getOne();
+
+      if (conflictingUnavailability) {
+        throw new BadRequestException(
+          'Ce produit est indisponible sur une partie de la période sélectionnée',
+        );
+      }
+
+      const conflictingReservation = await reservationRepo
+        .createQueryBuilder('reservation')
+        .leftJoin('reservation.offer', 'reservationOffer')
+        .leftJoin('reservationOffer.product', 'reservationProduct')
+        .where('reservationProduct.product_id = :productId', {
+          productId: offer.product.product_id,
+        })
+        .andWhere('reservation.start_date <= :endDate', { endDate })
+        .andWhere('reservation.end_date >= :startDate', { startDate })
+        .andWhere('reservation.status NOT IN (:...ignoredStatuses)', {
+          ignoredStatuses: ['cancelled', 'canceled', 'rejected', 'refused'],
+        })
+        .getOne();
+
+      if (conflictingReservation) {
+        throw new BadRequestException(
+          'Ce produit est déjà réservé sur une partie de la période sélectionnée',
+        );
+      }
+
+      const days =
+        Math.floor(
+          (this.normalizeDateOnly(endDate).getTime() -
+            this.normalizeDateOnly(startDate).getTime()) /
+            86400000,
+        ) + 1;
+      const finalPrice = this.computeReservationPrice(offer.product, days);
+
+      const reservation = await reservationRepo.save(
+        reservationRepo.create({
+          offer,
+          renter,
+          start_date: startDate,
+          end_date: endDate,
+          status: 'pending',
+          final_price: finalPrice,
+        }),
+      );
+
+      const existingConversation = await conversationRepo.findOne({
+        where: [
+          {
+            renter: { user_id: renterUserId },
+            owner: { user_id: offer.owner.user_id },
+          },
+          {
+            renter: { user_id: offer.owner.user_id },
+            owner: { user_id: renterUserId },
+          },
+        ],
+        relations: ['renter', 'owner', 'reservation'],
+        order: { conversation_id: 'DESC' },
+      });
+
+      const conversation = await conversationRepo.save(
+        existingConversation != null
+          ? {
+              ...existingConversation,
+              renter,
+              owner: offer.owner,
+              reservation,
+            }
+          : conversationRepo.create({
+              renter,
+              owner: offer.owner,
+              reservation,
+            }),
+      );
+
+      return {
+        reservation_id: reservation.reservation_id,
+        conversation_id: conversation.conversation_id,
+      };
+    });
+  }
+
+  async updateReservationStatus(
+    actorUserId: number,
+    reservationId: number,
+    status: 'accepted' | 'refused',
+  ): Promise<UpdatedReservationStatusDto> {
+    const reservationRepo = this.repo.manager.getRepository(Reservation);
+
+    const reservation = await reservationRepo.findOne({
+      where: { reservation_id: reservationId },
+      relations: ['offer', 'offer.owner', 'renter'],
+    });
+
+    if (!reservation?.offer?.owner || !reservation.renter) {
+      throw new NotFoundException('Réservation introuvable');
+    }
+
+    if (reservation.offer.owner.user_id !== actorUserId) {
+      throw new ForbiddenException(
+        'Seul le propriétaire peut répondre à cette demande',
+      );
+    }
+
+    if (reservation.status !== 'pending') {
+      throw new BadRequestException(
+        "Cette demande n'est plus en attente de validation",
+      );
+    }
+
+    reservation.status = status;
+    await reservationRepo.save(reservation);
+
+    return {
+      reservation_id: reservation.reservation_id,
+      status: reservation.status,
+    };
+  }
+
+  private computeReservationPrice(product: Product, days: number): number {
+    const safeDays = Math.max(1, days);
+    const dailyPrice = Number(product.price ?? 0);
+    const price3Days = Number(product.price_3_days ?? 0);
+    const price7Days = Number(product.price_7_days ?? 0);
+
+    let dailyRate = dailyPrice;
+    if (safeDays >= 7 && price7Days > 0) {
+      dailyRate = price7Days / 7;
+    } else if (safeDays >= 3 && price3Days > 0) {
+      dailyRate = price3Days / 3;
+    }
+
+    return Math.round(dailyRate * safeDays * 100) / 100;
+  }
+
+  private normalizeDateOnly(value: Date): Date {
+    return new Date(
+      Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()),
+    );
+  }
+
+  private normalizeStartOfDay(rawIso: string): Date | null {
+    const parsed = new Date(rawIso);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return new Date(
+      Date.UTC(
+        parsed.getUTCFullYear(),
+        parsed.getUTCMonth(),
+        parsed.getUTCDate(),
+        0,
+        0,
+        0,
+        0,
+      ),
+    );
+  }
+
+  private normalizeEndOfDay(rawIso: string): Date | null {
+    const parsed = new Date(rawIso);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return new Date(
+      Date.UTC(
+        parsed.getUTCFullYear(),
+        parsed.getUTCMonth(),
+        parsed.getUTCDate(),
+        23,
+        59,
+        59,
+        999,
+      ),
+    );
   }
 }
