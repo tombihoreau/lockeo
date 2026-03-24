@@ -147,7 +147,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
         return messageMatch.group(1)!;
       }
     }
-    return "Impossible de traiter le paiement de démonstration.";
+    return "Impossible de traiter le paiement.";
   }
 
   @override
@@ -405,43 +405,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF4FF),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFB8D5F5)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Mode démo",
-                      style: AppTextStyles.h2.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Aucune vraie carte n'est débitée. Si `STRIPE_SECRET_KEY` est configurée côté backend, Lockeo utilise Stripe en mode test. Sinon, le paiement est simulé localement pour la démo.",
-                      style: AppTextStyles.body.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ..._demoPaymentScenarios.map(_buildPaymentScenarioCard),
-                    const SizedBox(height: 12),
-                    Text(
-                      _selectedPaymentScenario.helper,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textGrey800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              ..._demoPaymentScenarios.map(_buildPaymentScenarioCard),
 
               const SizedBox(height: 40),
             ],
@@ -535,13 +499,6 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      scenario.description,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textGrey800,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -562,15 +519,11 @@ class _DemoPaymentScenario {
   final String code;
   final String label;
   final String cardNumber;
-  final String description;
-  final String helper;
 
   const _DemoPaymentScenario({
     required this.code,
     required this.label,
     required this.cardNumber,
-    required this.description,
-    required this.helper,
   });
 }
 
@@ -579,24 +532,15 @@ const List<_DemoPaymentScenario> _demoPaymentScenarios = [
     code: 'visa',
     label: 'Visa de test',
     cardNumber: '4242 4242 4242 4242',
-    description: 'Paiement validé pour une démo classique.',
-    helper:
-        'Utilise la carte de test Stripe 4242. Date future et CVC libre si tu veux la montrer pendant une présentation.',
   ),
   _DemoPaymentScenario(
     code: 'insufficient_funds',
     label: 'Carte refusée',
     cardNumber: '4000 0000 0000 9995',
-    description: 'Simule un refus pour fonds insuffisants.',
-    helper:
-        'Pratique pour démontrer la gestion d’erreur et les messages utilisateur.',
   ),
   _DemoPaymentScenario(
     code: 'three_d_secure',
     label: 'Carte 3D Secure',
     cardNumber: '4000 0000 0000 3220',
-    description: 'Simule une authentification forte requise.',
-    helper:
-        'Le backend renverra un message indiquant qu’une étape 3D Secure serait nécessaire dans une vraie intégration.',
   ),
 ];
