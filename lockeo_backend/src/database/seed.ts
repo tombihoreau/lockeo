@@ -17,6 +17,14 @@ import { NotificationPreference } from '../entities/notification-preference.enti
 import { ProductUnavailability } from '../entities/product-unavailability.entity';
 import * as bcrypt from 'bcrypt';
 
+function requireAt<T>(items: T[], index: number, label: string): T {
+  const item = items[index];
+  if (item == null) {
+    throw new Error(`${label} introuvable à l'index ${index}`);
+  }
+  return item;
+}
+
 async function runSeed() {
   await AppDataSource.initialize();
   console.log('DataSource initialisé');
@@ -98,33 +106,39 @@ async function runSeed() {
 
   const users = await userRepo.find();
   const categories = await categoryRepo.find();
+  const user0 = requireAt(users, 0, 'Utilisateur');
+  const user1 = requireAt(users, 1, 'Utilisateur');
+  const user2 = requireAt(users, 2, 'Utilisateur');
 
   // Seed Products
   if ((await productRepo.count()) === 0) {
     const products = [
-      productRepo.create({ name: 'VTT Pro', description: 'VTT tout-suspendu en excellent état', price: 25.00, price_3_days: 69.00, price_7_days: 154.00, price_estimate: 900.00, state: 'very_good', city: 'Paris', postal_code: '75001', owner: users[0], is_available: true }),
-      productRepo.create({ name: 'Tente 2 places', description: 'Légère et compacte', price: 10.00, price_3_days: 27.00, price_7_days: 56.00, price_estimate: 120.00, state: 'good', city: 'Lyon', postal_code: '69001', owner: users[1], is_available: true }),
-      productRepo.create({ name: 'Chaussures de randonnée', description: 'Imperméables, taille 42', price: 8.00, price_3_days: 22.00, price_7_days: 42.00, price_estimate: 80.00, state: 'used', city: 'Marseille', postal_code: '13001', owner: users[2], is_available: true }),
+      productRepo.create({ name: 'VTT Pro', description: 'VTT tout-suspendu en excellent état', price: 25.00, price_3_days: 69.00, price_7_days: 154.00, price_estimate: 900.00, state: 'very_good', city: 'Paris', postal_code: '75001', owner: user0, is_available: true }),
+      productRepo.create({ name: 'Tente 2 places', description: 'Légère et compacte', price: 10.00, price_3_days: 27.00, price_7_days: 56.00, price_estimate: 120.00, state: 'good', city: 'Lyon', postal_code: '69001', owner: user1, is_available: true }),
+      productRepo.create({ name: 'Chaussures de randonnée', description: 'Imperméables, taille 42', price: 8.00, price_3_days: 22.00, price_7_days: 42.00, price_estimate: 80.00, state: 'used', city: 'Marseille', postal_code: '13001', owner: user2, is_available: true }),
     ];
     await productRepo.save(products);
     console.log('Products insérés');
 
     // Images
+    const product0 = requireAt(products, 0, 'Produit');
+    const product1 = requireAt(products, 1, 'Produit');
+    const product2 = requireAt(products, 2, 'Produit');
     const images = [
-      imageRepo.create({ uri: 'default.jpg', position_image: 0, product: products[0] }),
-      imageRepo.create({ uri: 'vtt1.jpg', position_image: 1, product: products[0] }),
-      imageRepo.create({ uri: 'vtt2.jpg', position_image: 2, product: products[0] }),
-      imageRepo.create({ uri: 'default.jpg', position_image: 0, product: products[1] }),
-      imageRepo.create({ uri: 'default.jpg', position_image: 0, product: products[2] }),
+      imageRepo.create({ uri: 'default.jpg', position_image: 0, product: product0 }),
+      imageRepo.create({ uri: 'vtt1.jpg', position_image: 1, product: product0 }),
+      imageRepo.create({ uri: 'vtt2.jpg', position_image: 2, product: product0 }),
+      imageRepo.create({ uri: 'default.jpg', position_image: 0, product: product1 }),
+      imageRepo.create({ uri: 'default.jpg', position_image: 0, product: product2 }),
     ];
     await imageRepo.save(images);
     console.log('Images insérées');
 
     // Lier catégories (simple mapping arbitraire)
     const map: [Product, string[]][] = [
-      [products[0], ['Vélo', 'VTT']],
-      [products[1], ['Randonnée', 'Tentes']],
-      [products[2], ['Randonnée', 'Chaussures de randonnée']],
+      [product0, ['Vélo', 'VTT']],
+      [product1, ['Randonnée', 'Tentes']],
+      [product2, ['Randonnée', 'Chaussures de randonnée']],
     ];
     for (const [prod, catLabels] of map) {
       for (const label of catLabels) {
@@ -135,25 +149,31 @@ async function runSeed() {
     console.log('Associations produit-catégorie insérées');
   }
 
+  const products = await productRepo.find();
+  const product0 = requireAt(products, 0, 'Produit');
+  const product1 = requireAt(products, 1, 'Produit');
+
   // Offers
   if ((await offerRepo.count()) === 0) {
     const offers = [
-      offerRepo.create({ status: 'open', amount: 25.00, owner: users[0], product: products[0] }),
-      offerRepo.create({ status: 'open', amount: 10.00, owner: users[1], product: products[1] }),
+      offerRepo.create({ status: 'open', amount: 25.00, owner: user0, product: product0 }),
+      offerRepo.create({ status: 'open', amount: 10.00, owner: user1, product: product1 }),
     ];
     await offerRepo.save(offers);
     console.log('Offers insérées');
 
     // Reservations
+    const offer0 = requireAt(offers, 0, 'Offre');
     const reservations = [
-      reservationRepo.create({ start_date: new Date(), end_date: new Date(Date.now() + 2*86400000), status: 'pending', final_price: 50.00, offer: offers[0], renter: users[1] }),
+      reservationRepo.create({ start_date: new Date(), end_date: new Date(Date.now() + 2*86400000), status: 'pending', final_price: 50.00, offer: offer0, renter: user1 }),
     ];
     await reservationRepo.save(reservations);
     console.log('Reservations insérées');
 
     // Reviews
+    const reservation0 = requireAt(reservations, 0, 'Réservation');
     const reviews = [
-      reviewRepo.create({ rating: 5, comment: 'Super matériel, rien à redire.', user: users[1], reservation: reservations[0] }),
+      reviewRepo.create({ rating: 5, comment: 'Super matériel, rien à redire.', user: user1, reservation: reservation0 }),
     ];
     await reviewRepo.save(reviews);
     console.log('Reviews insérées');
@@ -162,8 +182,8 @@ async function runSeed() {
   // Favorites
   if ((await favoriteRepo.count()) === 0) {
     const favs = [
-      favoriteRepo.create({ user: users[1], product: products[0] }),
-      favoriteRepo.create({ user: users[2], product: products[0] }),
+      favoriteRepo.create({ user: user1, product: product0 }),
+      favoriteRepo.create({ user: user2, product: product0 }),
     ];
     await favoriteRepo.save(favs);
     console.log('Favorites insérées');
@@ -180,9 +200,11 @@ async function runSeed() {
 
     // User notifications
     const tmplAll = await notifTplRepo.find();
+    const template0 = requireAt(tmplAll, 0, 'Template de notification');
+    const template1 = requireAt(tmplAll, 1, 'Template de notification');
     const userNotifications = [
-      userNotifRepo.create({ template: tmplAll[0], destinationUser: users[0], status: 'sent' }),
-      userNotifRepo.create({ template: tmplAll[1], destinationUser: users[1], status: 'read' }),
+      userNotifRepo.create({ template: template0, destinationUser: user0, status: 'sent' }),
+      userNotifRepo.create({ template: template1, destinationUser: user1, status: 'read' }),
     ];
     await userNotifRepo.save(userNotifications);
     console.log('UserNotifications insérées');
@@ -191,9 +213,9 @@ async function runSeed() {
   // Notification preferences
   if ((await notifPrefRepo.count()) === 0) {
     const prefs = [
-      notifPrefRepo.create({ user: users[0], code: 'EMAIL', allowed: true }),
-      notifPrefRepo.create({ user: users[0], code: 'PUSH', allowed: true }),
-      notifPrefRepo.create({ user: users[1], code: 'EMAIL', allowed: false }),
+      notifPrefRepo.create({ user: user0, code: 'EMAIL', allowed: true }),
+      notifPrefRepo.create({ user: user0, code: 'PUSH', allowed: true }),
+      notifPrefRepo.create({ user: user1, code: 'EMAIL', allowed: false }),
     ];
     await notifPrefRepo.save(prefs);
     console.log('NotificationPreferences insérées');
@@ -201,19 +223,19 @@ async function runSeed() {
 
   // Conversations & messages
   if ((await convRepo.count()) === 0) {
-    const conv = convRepo.create({ renter: users[1], owner: users[0], created_at: new Date() });
+    const conv = convRepo.create({ renter: user1, owner: user0, created_at: new Date() });
     await convRepo.save(conv);
     const msgs = [
-      messageRepo.create({ conversation: conv, sender: users[1], content: 'Bonjour, le VTT est-il disponible ?', created_at: new Date() }),
-      messageRepo.create({ conversation: conv, sender: users[0], content: 'Oui, il est disponible cette semaine.', created_at: new Date() }),
+      messageRepo.create({ conversation: conv, sender: user1, content: 'Bonjour, le VTT est-il disponible ?', created_at: new Date() }),
+      messageRepo.create({ conversation: conv, sender: user0, content: 'Oui, il est disponible cette semaine.', created_at: new Date() }),
     ];
     await messageRepo.save(msgs);
     console.log('Conversation et Messages insérés');
   }
 
   // Product unavailabilities
-  if ((await unavailabilityRepo.count()) === 0 && products.length) {
-    const unav = unavailabilityRepo.create({ product: products[0], start_date_time: new Date(Date.now() + 3*86400000), end_date_time: new Date(Date.now() + 5*86400000) });
+  if ((await unavailabilityRepo.count()) === 0) {
+    const unav = unavailabilityRepo.create({ product: product0, start_date_time: new Date(Date.now() + 3*86400000), end_date_time: new Date(Date.now() + 5*86400000) });
     await unavailabilityRepo.save(unav);
     console.log('ProductUnavailability insérée');
   }
