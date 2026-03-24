@@ -9,6 +9,7 @@ import { Image } from '../entities/image.entity';
 import { Category } from '../entities/category.entity';
 import { ProductHasCategory } from '../entities/product-has-category.entity';
 import { ProductUnavailability } from '../entities/product-unavailability.entity';
+import { PaymentsService } from './payments.service';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { ProductUnavailability } from '../entities/product-unavailability.entity
       ProductUnavailability,
     ]),
   ],
-  providers: [ProductsService],
+  providers: [ProductsService, PaymentsService],
   controllers: [ProductsController],
   exports: [ProductsService],
 })
