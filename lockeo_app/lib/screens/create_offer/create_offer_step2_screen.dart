@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:flutter/services.dart';
 
 import '../../models/offerDraft.dart';
@@ -7,6 +6,8 @@ import '../../widgets/button.dart';
 import 'create_offer_step3_screen.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../../widgets/main_scaffold.dart';
+import '../home_screen.dart';
 
 class CreateOfferStep2Screen extends StatefulWidget {
   final OfferDraft draft;
@@ -29,6 +30,15 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
 
   int _price3Days = 0; // total pour 3 jours
   int _price7Days = 0; // total pour 7 jours
+
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainScaffold(currentIndex: 0, child: HomeScreen()),
+      ),
+      (route) => false,
+    );
+  }
 
   @override
   void initState() {
@@ -288,7 +298,7 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: InkWell(
-            onTap: () => AppNavigator.back(context),
+            onTap: _goHome,
             borderRadius: BorderRadius.circular(999),
             child: Container(
               width: 36,

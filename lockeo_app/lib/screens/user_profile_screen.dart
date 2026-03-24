@@ -12,7 +12,6 @@ import 'package:lockeo_app/widgets/product_grid.dart';
 import 'package:lockeo_app/widgets/reviews_list.dart';
 import 'package:lockeo_app/widgets/profile_header.dart';
 import 'package:lockeo_app/widgets/transactions_list.dart';
-import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:lockeo_app/widgets/main_scaffold.dart';
 
 import '../theme/app_colors.dart';
@@ -214,10 +213,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       transactionsCount: transactionsCount,
       isCertified: true,
       isReactive: true,
-      onBack: () => AppNavigator.back(
-        context,
-        fallbackBuilder: (_) =>
-            const MainScaffold(currentIndex: 0, child: HomeScreen()),
+      onBack: () => Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const MainScaffold(currentIndex: 0, child: HomeScreen()),
+        ),
+        (route) => false,
       ),
     );
   }

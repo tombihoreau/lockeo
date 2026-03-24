@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:lockeo_app/utils/app_navigator.dart';
 import '../../widgets/button.dart';
 import '../../models/category.dart';
 import '../../models/offerDraft.dart';
@@ -43,6 +42,15 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   List<XFile> photos = [];
 
   final ImagePicker _picker = ImagePicker();
+
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainScaffold(currentIndex: 0, child: HomeScreen()),
+      ),
+      (route) => false,
+    );
+  }
 
   @override
   void initState() {
@@ -311,11 +319,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: InkWell(
-            onTap: () => AppNavigator.back(
-              context,
-              fallbackBuilder: (_) =>
-                  const MainScaffold(currentIndex: 0, child: HomeScreen()),
-            ),
+            onTap: _goHome,
             borderRadius: BorderRadius.circular(999),
             child: Container(
               width: 36,

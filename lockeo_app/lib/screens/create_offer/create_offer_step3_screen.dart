@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lockeo_app/utils/app_navigator.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../models/offerDraft.dart';
@@ -7,6 +6,8 @@ import '../../widgets/button.dart';
 import 'create_offer_summary_screen.dart';
 import 'package:lockeo_app/theme/app_colors.dart';
 import 'package:lockeo_app/theme/app_text_styles.dart';
+import '../../widgets/main_scaffold.dart';
+import '../home_screen.dart';
 
 class CreateOfferStep3Screen extends StatefulWidget {
   final OfferDraft draft;
@@ -25,6 +26,15 @@ class _CreateOfferStep3ScreenState extends State<CreateOfferStep3Screen> {
   late Set<DateTime> _unavailableDates;
 
   DateTime _focusedDay = DateTime.now();
+
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainScaffold(currentIndex: 0, child: HomeScreen()),
+      ),
+      (route) => false,
+    );
+  }
 
   @override
   void initState() {
@@ -200,7 +210,7 @@ class _CreateOfferStep3ScreenState extends State<CreateOfferStep3Screen> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 12),
           child: InkWell(
-            onTap: () => AppNavigator.back(context),
+            onTap: _goHome,
             borderRadius: BorderRadius.circular(999),
             child: Container(
               width: 36,

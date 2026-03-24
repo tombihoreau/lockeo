@@ -51,48 +51,31 @@ async function runSeed() {
   }
 
   // Seed Categories
-  if ((await categoryRepo.count()) === 0) {
-    const parentCategories = [
-      categoryRepo.create({ label: 'Bricolage', parent_id: 0 }),
-      categoryRepo.create({ label: 'Maison', parent_id: 0 }),
-      categoryRepo.create({ label: 'Sport', parent_id: 0 }),
-      categoryRepo.create({ label: 'Vélo', parent_id: 0 }),
-      categoryRepo.create({ label: 'Informatique', parent_id: 0 }),
-      categoryRepo.create({ label: 'Jardin', parent_id: 0 }),
-    ];
-    await categoryRepo.save(parentCategories);
+  const categoryDefinitions = [
+    { category_id: 1, label: 'Nautique', parent_id: 0 },
+    { category_id: 2, label: 'Randonnée', parent_id: 0 },
+    { category_id: 3, label: 'Vélo', parent_id: 0 },
+    { category_id: 4, label: 'Sport de balle', parent_id: 0 },
+    { category_id: 5, label: 'Kayak', parent_id: 1 },
+    { category_id: 6, label: 'Plongée', parent_id: 1 },
+    { category_id: 7, label: 'Surf', parent_id: 1 },
+    { category_id: 8, label: 'VTT', parent_id: 3 },
+    { category_id: 9, label: 'Vélos électriques', parent_id: 3 },
+    { category_id: 10, label: 'Vélos de route', parent_id: 3 },
+    { category_id: 11, label: 'Football', parent_id: 4 },
+    { category_id: 12, label: 'Basketball', parent_id: 4 },
+    { category_id: 13, label: 'Tennis', parent_id: 4 },
+    { category_id: 14, label: 'Chaussures de randonnée', parent_id: 2 },
+    { category_id: 15, label: 'Tentes', parent_id: 2 },
+    { category_id: 16, label: 'Accessoires de randonnée', parent_id: 2 },
+  ];
 
-    const savedParents = await categoryRepo.findBy({ parent_id: 0 });
-    const parentByLabel = new Map(savedParents.map((category) => [category.label, category]));
-
-    const childDefinitions: Array<{ label: string; parentLabel: string }> = [
-      { label: 'Perceuse', parentLabel: 'Bricolage' },
-      { label: 'Nettoyage', parentLabel: 'Maison' },
-      { label: 'Camping', parentLabel: 'Sport' },
-      { label: 'Randonnée', parentLabel: 'Sport' },
-      { label: 'VTT', parentLabel: 'Vélo' },
-      { label: 'Route', parentLabel: 'Vélo' },
-      { label: 'Electrique', parentLabel: 'Vélo' },
-      { label: 'Ordinateur', parentLabel: 'Informatique' },
-      { label: 'Tondeuse', parentLabel: 'Jardin' },
-      { label: 'Taille-haie', parentLabel: 'Jardin' },
-    ];
-
-    const childCategories = childDefinitions.map(({ label, parentLabel }) => {
-      const parent = parentByLabel.get(parentLabel);
-      if (!parent) {
-        throw new Error(`Catégorie parente introuvable pour ${label}`);
-      }
-
-      return categoryRepo.create({
-        label,
-        parent_id: parent.category_id,
-      });
-    });
-
-    await categoryRepo.save(childCategories);
-    console.log('Categories insérées');
-  }
+  await phcRepo.clear();
+  await categoryRepo.clear();
+  await categoryRepo.save(
+    categoryDefinitions.map((definition) => categoryRepo.create(definition)),
+  );
+  console.log('Categories synchronisées');
 
   const users = await userRepo.find();
   const categories = await categoryRepo.find();
@@ -118,22 +101,27 @@ async function runSeed() {
     await imageRepo.save(images);
     console.log('Images insérées');
 
-    // Lier catégories (simple mapping arbitraire)
-    const map: [Product, string[]][] = [
-      [products[0], ['Vélo', 'VTT']],
-      [products[1], ['Sport', 'Camping']],
-      [products[2], ['Sport', 'Randonnée']],
-    ];
-    for (const [prod, catLabels] of map) {
-      for (const label of catLabels) {
-        const c = categories.find(c => c.label === label);
-        if (c) await phcRepo.save(phcRepo.create({ product: prod, category: c }));
-      }
-    }
-    console.log('Associations produit-catégorie insérées');
   }
 
   const products = await productRepo.find();
+
+  const productCategoryMap: [Product | undefined, string[]][] = [
+    [products[0], ['Vélo', 'VTT']],
+    [products[1], ['Randonnée', 'Tentes']],
+    [products[2], ['Randonnée', 'Chaussures de randonnée']],
+  ];
+
+  for (const [product, categoryLabels] of productCategoryMap) {
+    if (!product) continue;
+    for (const label of categoryLabels) {
+      const category = categories.find((c) => c.label === label);
+      if (!category) continue;
+      await phcRepo.save(
+        phcRepo.create({ product, category }),
+      );
+    }
+  }
+  console.log('Associations produit-catégorie synchronisées');
 
   // Offers
   if ((await offerRepo.count()) === 0) {
