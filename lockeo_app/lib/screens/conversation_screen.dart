@@ -97,6 +97,7 @@ class _ConversationScreenState extends State<ConversationScreen>
   bool _isConnectingSocket = false;
   bool _isOtherUserTyping = false;
   bool _isTypingSent = false;
+  bool _keyboardVisible = false;
 
   bool _hasReadChanges = false;
   bool _checkoutCongratsShown = false;
@@ -104,6 +105,7 @@ class _ConversationScreenState extends State<ConversationScreen>
   StreamSubscription<ConversationMessageEvent>? _newMessageSub;
   StreamSubscription<ConversationTypingEvent>? _typingSub;
   StreamSubscription<String>? _socketErrorSub;
+  StreamSubscription<ChatNotificationEvent>? _notificationSub;
   Timer? _typingStopTimer;
   double _lastBottomInset = 0;
 
@@ -114,6 +116,12 @@ class _ConversationScreenState extends State<ConversationScreen>
       widget.conversationId,
     );
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _syncKeyboardVisibility();
+    });
+    _notificationSub = AppNotificationsRealtimeService.instance.notificationsStream
+        .listen(_handleRealtimeNotification);
     _load();
   }
 
@@ -128,6 +136,7 @@ class _ConversationScreenState extends State<ConversationScreen>
     _newMessageSub?.cancel();
     _typingSub?.cancel();
     _socketErrorSub?.cancel();
+    _notificationSub?.cancel();
     _typingStopTimer?.cancel();
     if (_socketConnected) {
       _chatSocketService.emitTyping(
@@ -147,6 +156,8 @@ class _ConversationScreenState extends State<ConversationScreen>
     super.didChangeMetrics();
     if (!mounted) return;
 
+    _syncKeyboardVisibility();
+
     final view = View.of(context);
     final bottomInset = view.viewInsets.bottom / view.devicePixelRatio;
     final keyboardWasVisible = _lastBottomInset > 0;
@@ -158,19 +169,21 @@ class _ConversationScreenState extends State<ConversationScreen>
     }
   }
 
+  void _syncKeyboardVisibility() {
+    final view = View.of(context);
+    final bottomInset = view.viewInsets.bottom / view.devicePixelRatio;
+    final nextKeyboardVisible = bottomInset > 0;
+    if (_keyboardVisible == nextKeyboardVisible) return;
+    setState(() {
+      _keyboardVisible = nextKeyboardVisible;
+    });
+  }
+
   Future<void> _load() async {
     setState(() => _loading = true);
 
     final currentUserId = AuthSession.instance.userId ?? 1;
-
-    ConversationSnapshot? backendSnapshot;
-    try {
-      backendSnapshot = await _conversationsService.fetchConversationSnapshot(
-        conversationId: widget.conversationId,
-      );
-    } catch (_) {
-      backendSnapshot = null;
-    }
+    final backendSnapshot = await _fetchConversationSnapshot();
 
     final resolvedMessages = backendSnapshot?.messages ?? const <Message>[];
     final resolvedOtherUserName =
@@ -199,6 +212,39 @@ class _ConversationScreenState extends State<ConversationScreen>
     _markAllIncomingAsRead();
     _scrollToBottom();
     await _initRealtime();
+  }
+
+  Future<ConversationSnapshot?> _fetchConversationSnapshot() async {
+    try {
+      return await _conversationsService.fetchConversationSnapshot(
+        conversationId: widget.conversationId,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _refreshConversationSnapshot() async {
+    final backendSnapshot = await _fetchConversationSnapshot();
+    if (!mounted || backendSnapshot == null) return;
+
+    setState(() {
+      _otherUserName =
+          backendSnapshot.otherUser?.displayName ??
+          widget.initialArgs?.otherUserName ??
+          _otherUserName;
+      _reservationContext = backendSnapshot.reservationContext;
+      _messages = backendSnapshot.messages;
+    });
+
+    _maybeShowCheckoutCongrats();
+    _markAllIncomingAsRead();
+    _scheduleScrollToBottom(animated: false);
+  }
+
+  void _handleRealtimeNotification(ChatNotificationEvent event) {
+    if (event.conversationId != widget.conversationId) return;
+    _refreshConversationSnapshot();
   }
 
   // -------------------------
@@ -661,7 +707,6 @@ class _ConversationScreenState extends State<ConversationScreen>
   @override
   Widget build(BuildContext context) {
     final lightBg = const Color(0xFFF5F7FA);
-    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return PopScope(
       canPop: false,
@@ -675,7 +720,7 @@ class _ConversationScreenState extends State<ConversationScreen>
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  if (!keyboardVisible)
+                  if (!_keyboardVisible)
                     Container(
                       color: Colors.white,
                       child: Padding(
@@ -738,23 +783,27 @@ class _ConversationScreenState extends State<ConversationScreen>
                     ),
 
                   Expanded(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: () => FocusScope.of(context).unfocus(),
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        itemCount: _messages.length,
+                        itemBuilder: (context, index) {
+                          final m = _messages[index];
+                          final isMe = m.senderUserId == _currentUserId;
+                          return _MessageRow(
+                            isMe: isMe,
+                            text: m.text,
+                            timeLabel: _formatTime(m.createdAt),
+                            teal: AppColors.blue100,
+                          );
+                        },
                       ),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final m = _messages[index];
-                        final isMe = m.senderUserId == _currentUserId;
-                        return _MessageRow(
-                          isMe: isMe,
-                          text: m.text,
-                          timeLabel: _formatTime(m.createdAt),
-                          teal: AppColors.blue100,
-                        );
-                      },
                     ),
                   ),
 

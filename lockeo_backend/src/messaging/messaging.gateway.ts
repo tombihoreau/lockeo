@@ -31,6 +31,17 @@ type SocketHandshake = {
   };
 };
 
+export interface OutboundNotificationPayload {
+  user_notification_id: number;
+  conversation_id: number;
+  destination_user_id: number;
+  sender_user_id: number;
+  sender_name: string;
+  title: string;
+  body: string;
+  created_at: string;
+}
+
 @WebSocketGateway({
   cors: { origin: '*' },
 })
@@ -126,6 +137,12 @@ export class MessagingGateway
     this.server
       .to(this.userRoomFor(result.notification.destination_user_id))
       .emit('notification:new', result.notification);
+  }
+
+  emitNotificationToUser(payload: OutboundNotificationPayload): void {
+    this.server
+      .to(this.userRoomFor(payload.destination_user_id))
+      .emit('notification:new', payload);
   }
 
   private userRoomFor(userId: number): string {

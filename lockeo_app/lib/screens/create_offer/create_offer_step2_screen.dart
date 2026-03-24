@@ -125,17 +125,24 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
     );
   }
 
-  Widget _pillRecommended(int value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppColors.blue50,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.primaryBlue, width: 1),
-      ),
-      child: Text(
-        "Prix conseillé : $value€",
-        style: AppTextStyles.caption.copyWith(color: AppColors.primaryBlue),
+  Widget _pillRecommended({
+    required int value,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+        decoration: BoxDecoration(
+          color: AppColors.blue50,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.primaryBlue, width: 1),
+        ),
+        child: Text(
+          "Prix conseillé : $value€",
+          style: AppTextStyles.caption.copyWith(color: AppColors.primaryBlue),
+        ),
       ),
     );
   }
@@ -190,6 +197,7 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
     required int max,
     required VoidCallback onMinus,
     required VoidCallback onPlus,
+    required VoidCallback onRecommendedTap,
   }) {
     final bool canMinus = current > min;
     final bool canPlus = current < max;
@@ -210,7 +218,7 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
                 style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
               ),
             ),
-            _pillRecommended(recommended),
+            _pillRecommended(value: recommended, onTap: onRecommendedTap),
           ],
         ),
         const SizedBox(height: 20),
@@ -356,6 +364,10 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
                   max: max3,
                   onMinus: _dec3,
                   onPlus: _inc3,
+                  onRecommendedTap: () => setState(
+                    () =>
+                        _price3Days = _clampInt(_recommended3, _minTotal, _max3),
+                  ),
                 ),
 
                 const SizedBox(height: 24),
@@ -368,6 +380,10 @@ class _CreateOfferStep2ScreenState extends State<CreateOfferStep2Screen> {
                   max: max7,
                   onMinus: _dec7,
                   onPlus: _inc7,
+                  onRecommendedTap: () => setState(
+                    () =>
+                        _price7Days = _clampInt(_recommended7, _minTotal, _max7),
+                  ),
                 ),
               ],
             ],

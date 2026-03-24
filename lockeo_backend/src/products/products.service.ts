@@ -16,6 +16,8 @@ import { ProductUnavailability } from '../entities/product-unavailability.entity
 import { Reservation } from '../entities/reservation.entity';
 import { Review } from '../entities/review.entity';
 import { Conversation } from '../entities/conversation.entity';
+import { NotificationTemplate } from '../entities/notification-template.entity';
+import { UserNotification } from '../entities/user-notification.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 
@@ -134,6 +136,18 @@ export interface CreatedReservationDto {
 export interface UpdatedReservationStatusDto {
   reservation_id: number;
   status: string;
+  realtime_notification?: ReservationStatusNotificationDto | null;
+}
+
+export interface ReservationStatusNotificationDto {
+  user_notification_id: number;
+  conversation_id: number;
+  destination_user_id: number;
+  sender_user_id: number;
+  sender_name: string;
+  title: string;
+  body: string;
+  created_at: string;
 }
 
 function sanitizePostalCode(value: string | null | undefined): string {
@@ -836,6 +850,11 @@ export class ProductsService {
     status: 'accepted' | 'refused',
   ): Promise<UpdatedReservationStatusDto> {
     const reservationRepo = this.repo.manager.getRepository(Reservation);
+    const conversationRepo = this.repo.manager.getRepository(Conversation);
+    const notificationTemplateRepo =
+      this.repo.manager.getRepository(NotificationTemplate);
+    const userNotificationRepo =
+      this.repo.manager.getRepository(UserNotification);
 
     const reservation = await reservationRepo.findOne({
       where: { reservation_id: reservationId },
@@ -861,9 +880,65 @@ export class ProductsService {
     reservation.status = status;
     await reservationRepo.save(reservation);
 
+    const conversation = await conversationRepo.findOne({
+      where: { reservation: { reservation_id: reservation.reservation_id } },
+      relations: ['renter', 'owner'],
+      order: { conversation_id: 'DESC' },
+    });
+
+    let realtimeNotification: ReservationStatusNotificationDto | null = null;
+    if (conversation) {
+      const templateCode =
+          status === 'accepted' ? 'RESERVATION_ACCEPTED' : 'RESERVATION_REFUSED';
+      const title =
+          status === 'accepted' ? 'Demande acceptee' : 'Demande refusee';
+      const body =
+          status === 'accepted'
+              ? 'Votre demande de location a ete acceptee.'
+              : 'Votre demande de location a ete refusee.';
+
+      let template = await notificationTemplateRepo.findOne({
+        where: { code: templateCode },
+      });
+      template ??= await notificationTemplateRepo.save(
+        notificationTemplateRepo.create({
+          code: templateCode,
+          title,
+          content: body,
+        }),
+      );
+
+      const notification = await userNotificationRepo.save(
+        userNotificationRepo.create({
+          template,
+          destinationUser: reservation.renter,
+          status: 'unread',
+          conversation_id: conversation.conversation_id,
+        }),
+      );
+
+      const senderName =
+          reservation.offer.owner.first_name?.trim() ||
+          reservation.offer.owner.last_name?.trim() ||
+          reservation.offer.owner.login?.trim() ||
+          'Quelqu’un';
+
+      realtimeNotification = {
+        user_notification_id: notification.user_notification_id,
+        conversation_id: conversation.conversation_id,
+        destination_user_id: reservation.renter.user_id,
+        sender_user_id: actorUserId,
+        sender_name: senderName,
+        title,
+        body,
+        created_at: notification.created_at.toISOString(),
+      };
+    }
+
     return {
       reservation_id: reservation.reservation_id,
       status: reservation.status,
+      realtime_notification: realtimeNotification,
     };
   }
 
