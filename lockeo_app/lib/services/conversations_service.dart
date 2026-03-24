@@ -1,5 +1,6 @@
 import '../services/api_client.dart';
 import '../services/auth_session.dart';
+import '../services/backend_config.dart';
 import '../models/message.dart';
 
 class ConversationListItem {
@@ -92,6 +93,27 @@ class ConversationsService {
   ConversationsService({ApiClient? api}) : _api = api ?? ApiClient();
 
   final ApiClient _api;
+
+  String? _normalizeImagePath(dynamic raw) {
+    final value = (raw ?? '').toString().trim();
+    if (value.isEmpty) return null;
+
+    if (value.startsWith('assets/') ||
+        value.startsWith('http://') ||
+        value.startsWith('https://') ||
+        value.startsWith('file://')) {
+      return value;
+    }
+    if (value.startsWith('uploads/') ||
+        value.startsWith('/uploads/') ||
+        value.startsWith('api/uploads/') ||
+        value.startsWith('/api/uploads/')) {
+      return BackendConfig.resolveApiUrl(value);
+    }
+    if (value.startsWith('/')) return value;
+
+    return 'assets/images/$value';
+  }
 
   Future<List<ConversationListItem>> fetchMyConversations() async {
     final token = AuthSession.instance.accessToken;
@@ -197,7 +219,7 @@ class ConversationsService {
           cityLabel: (productMap['city'] as String?)?.trim() ?? '',
           postalCodeLabel: (productMap['postal_code'] as String?)?.trim() ?? '',
           pricePerDay: _toDouble(productMap['price_per_day']),
-          imagePath: (productMap['image_uri'] as String?)?.trim(),
+          imagePath: _normalizeImagePath(productMap['image_uri']),
         );
       }
     }

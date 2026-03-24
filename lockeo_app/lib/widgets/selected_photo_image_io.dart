@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../services/backend_config.dart';
+
 Widget buildSelectedPhotoImage({
   required String path,
   required BoxFit fit,
@@ -9,9 +11,11 @@ Widget buildSelectedPhotoImage({
   double? height,
   ImageErrorWidgetBuilder? errorBuilder,
 }) {
-  if (path.startsWith('assets/')) {
+  final normalizedPath = path.trim();
+
+  if (normalizedPath.isEmpty) {
     return Image.asset(
-      path,
+      'assets/images/default.jpg',
       fit: fit,
       width: width,
       height: height,
@@ -19,9 +23,33 @@ Widget buildSelectedPhotoImage({
     );
   }
 
-  if (path.startsWith('http://') || path.startsWith('https://')) {
+  if (normalizedPath.startsWith('assets/')) {
+    return Image.asset(
+      normalizedPath,
+      fit: fit,
+      width: width,
+      height: height,
+      errorBuilder: errorBuilder,
+    );
+  }
+
+  if (normalizedPath.startsWith('http://') ||
+      normalizedPath.startsWith('https://')) {
     return Image.network(
-      path,
+      normalizedPath,
+      fit: fit,
+      width: width,
+      height: height,
+      errorBuilder: errorBuilder,
+    );
+  }
+
+  if (normalizedPath.startsWith('uploads/') ||
+      normalizedPath.startsWith('/uploads/') ||
+      normalizedPath.startsWith('api/uploads/') ||
+      normalizedPath.startsWith('/api/uploads/')) {
+    return Image.network(
+      BackendConfig.resolveApiUrl(normalizedPath),
       fit: fit,
       width: width,
       height: height,
@@ -30,7 +58,7 @@ Widget buildSelectedPhotoImage({
   }
 
   return Image.file(
-    File(path),
+    File(normalizedPath),
     fit: fit,
     width: width,
     height: height,
