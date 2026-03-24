@@ -25,6 +25,6 @@ import { MessagingController } from './messaging.controller';
   ],
   controllers: [MessagingController],
   providers: [MessagingService, MessagingGateway],
-  exports: [MessagingService],
+  exports: [MessagingService, MessagingGateway],
 })
 export class MessagingModule {}

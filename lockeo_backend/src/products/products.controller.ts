@@ -30,6 +30,7 @@ import type { Request } from 'express';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import { extname, join } from 'path';
 import { mkdirSync } from 'fs';
+import { MessagingGateway } from '../messaging/messaging.gateway';
 
 type UploadedImageFile = {
   filename: string;
@@ -76,7 +77,10 @@ interface RequestWithUser extends Request {
 @ApiTags('products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly products: ProductsService) {}
+  constructor(
+    private readonly products: ProductsService,
+    private readonly messagingGateway: MessagingGateway,
+  ) {}
 
   @Get('suggestions')
   async suggestions(
@@ -239,10 +243,16 @@ export class ProductsController {
     @Body() body: UpdateReservationStatusDto,
   ) {
     const parsedReservationId = parseInt(reservationId, 10);
-    return this.products.updateReservationStatus(
+    const result = await this.products.updateReservationStatus(
       req.user.userId,
       parsedReservationId,
       body.status,
     );
+    if (result.realtime_notification != null) {
+      this.messagingGateway.emitNotificationToUser(
+        result.realtime_notification,
+      );
+    }
+    return result;
   }
 }

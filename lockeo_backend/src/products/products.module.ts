@@ -9,9 +9,11 @@ import { Image } from '../entities/image.entity';
 import { Category } from '../entities/category.entity';
 import { ProductHasCategory } from '../entities/product-has-category.entity';
 import { ProductUnavailability } from '../entities/product-unavailability.entity';
+import { MessagingModule } from '../messaging/messaging.module';
 
 @Module({
   imports: [
+    MessagingModule,
     TypeOrmModule.forFeature([
       Product,
       User,

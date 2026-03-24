@@ -42,10 +42,6 @@ class _SearchPageState extends State<SearchPage> {
     _draftQuery = widget.initialQuery ?? '';
     _submittedQuery = widget.initialQuery ?? '';
     _selectedCategories = widget.initialCategoryIds ?? [];
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(_focusNode);
-    });
   }
 
   void _submitSearch([String? value]) {
