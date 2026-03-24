@@ -22,6 +22,8 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canToggleFavorite = onToggleFavorite != null;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -30,70 +32,101 @@ class ProductCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            // Image en haut
-            SelectedPhotoImage(
-              path: image.url,
-              height: 150,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SelectedPhotoImage(
+                  path: image.url,
                   height: 150,
                   width: double.infinity,
-                  color: const Color(0xFFE8EDF2),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: AppColors.textGrey,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 150,
+                      width: double.infinity,
+                      color: const Color(0xFFE8EDF2),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.image_not_supported_outlined,
+                        color: AppColors.textGrey,
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.h3.copyWith(color: Colors.black),
+                      ),
+                      const SizedBox(height: 10),
+                      _distanceOrCity(),
+                    ],
                   ),
-                );
-              },
+                ),
+
+                const Spacer(),
+
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "${product.price?.toStringAsFixed(0)}€",
+                        style: AppTextStyles.label.copyWith(
+                          color: Colors.black,
+                        ),
+                      ),
+                      Text(
+                        "1 journée",
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.textGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
 
-            const SizedBox(height: 12),
-
-            // Infos produit
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.h3.copyWith(color: Colors.black),
-                  ),
-                  const SizedBox(height: 10),
-                  _distanceOrCity(),
-                ],
-              ),
-            ),
-
-            const Spacer(), // 👈 pousse la Row vers le bas
-
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "${product.price?.toStringAsFixed(0)}€",
-                    style: AppTextStyles.label.copyWith(color: Colors.black),
-                  ),
-
-                  Text(
-                    "1 journée",
-                    style: AppTextStyles.label.copyWith(
-                      color: AppColors.textGrey,
+            if (canToggleFavorite)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Material(
+                  color: Colors.white,
+                  shape: const CircleBorder(),
+                  elevation: 2,
+                  child: InkWell(
+                    onTap: onToggleFavorite,
+                    customBorder: const CircleBorder(),
+                    child: SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: Icon(
+                        product.isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        size: 20,
+                        color: product.isFavorite
+                            ? const Color(0xFFE74C3C)
+                            : Colors.black87,
+                      ),
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
           ],
         ),
       ),

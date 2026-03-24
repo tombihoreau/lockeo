@@ -26,6 +26,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationStatusDto } from './dto/update-reservation-status.dto';
+import { CheckoutReservationDto } from './dto/checkout-reservation.dto';
 import type { Request } from 'express';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
 import { extname, join } from 'path';
@@ -225,6 +226,26 @@ export class ProductsController {
   ) {
     const parsedOfferId = parseInt(offerId, 10);
     return this.products.createReservation(
+      req.user.userId,
+      parsedOfferId,
+      body,
+    );
+  }
+
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  @Post('offers/:offerId/reservations/checkout')
+  @ApiOperation({
+    summary:
+      'Effectuer un paiement de demonstration puis creer la demande de location',
+  })
+  async checkoutReservation(
+    @Req() req: RequestWithUser,
+    @Param('offerId') offerId: string,
+    @Body() body: CheckoutReservationDto,
+  ) {
+    const parsedOfferId = parseInt(offerId, 10);
+    return this.products.checkoutReservation(
       req.user.userId,
       parsedOfferId,
       body,

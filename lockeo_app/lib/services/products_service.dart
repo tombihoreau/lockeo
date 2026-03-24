@@ -6,10 +6,20 @@ import 'auth_session.dart';
 class CreatedReservationResult {
   final int reservationId;
   final int conversationId;
+  final String? paymentProvider;
+  final String? paymentStatus;
+  final String? paymentReference;
+  final String? paymentCardLabel;
+  final String? paymentCardPreview;
 
   const CreatedReservationResult({
     required this.reservationId,
     required this.conversationId,
+    this.paymentProvider,
+    this.paymentStatus,
+    this.paymentReference,
+    this.paymentCardLabel,
+    this.paymentCardPreview,
   });
 }
 
@@ -99,6 +109,47 @@ class ProductsService {
     return CreatedReservationResult(
       reservationId: reservationId,
       conversationId: conversationId,
+    );
+  }
+
+  Future<CreatedReservationResult> checkoutReservation({
+    required int offerId,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String paymentScenario,
+  }) async {
+    final token = AuthSession.instance.accessToken;
+    if (token == null || token.trim().isEmpty) {
+      throw StateError('Utilisateur non connecté');
+    }
+
+    _api.setBearerToken(token);
+    final json = await _api.postJson(
+      '/products/offers/$offerId/reservations/checkout',
+      body: {
+        'startDate': startDate.toUtc().toIso8601String(),
+        'endDate': endDate.toUtc().toIso8601String(),
+        'paymentScenario': paymentScenario,
+      },
+    );
+
+    final reservationId = _toInt(json['reservation_id']);
+    final conversationId = _toInt(json['conversation_id']);
+
+    if (reservationId == null || conversationId == null) {
+      throw const FormatException(
+        'Réponse backend invalide (reservation_id/conversation_id manquants)',
+      );
+    }
+
+    return CreatedReservationResult(
+      reservationId: reservationId,
+      conversationId: conversationId,
+      paymentProvider: json['payment_provider']?.toString(),
+      paymentStatus: json['payment_status']?.toString(),
+      paymentReference: json['payment_reference']?.toString(),
+      paymentCardLabel: json['payment_card_label']?.toString(),
+      paymentCardPreview: json['payment_card_preview']?.toString(),
     );
   }
 

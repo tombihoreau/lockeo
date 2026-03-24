@@ -40,6 +40,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
   Product? _product;
   ImageModel? _img;
   bool _submitting = false;
+  _DemoPaymentScenario _selectedPaymentScenario = _demoPaymentScenarios.first;
 
   @override
   void initState() {
@@ -98,10 +99,11 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
 
     setState(() => _submitting = true);
     try {
-      final createdReservation = await _productsService.createReservation(
+      final createdReservation = await _productsService.checkoutReservation(
         offerId: widget.offerId,
         startDate: widget.startDate,
         endDate: widget.endDate,
+        paymentScenario: _selectedPaymentScenario.code,
       );
       if (!mounted) return;
 
@@ -116,6 +118,9 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
             conversationId: createdReservation.conversationId,
             reservationId: createdReservation.reservationId,
             reservationTotalPrice: _rentalPrice,
+            paymentProvider: createdReservation.paymentProvider,
+            paymentCardLabel: createdReservation.paymentCardLabel,
+            paymentCardPreview: createdReservation.paymentCardPreview,
           ),
         ),
       );
@@ -142,7 +147,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
         return messageMatch.group(1)!;
       }
     }
-    return "Impossible d'envoyer la demande de location.";
+    return "Impossible de traiter le paiement.";
   }
 
   @override
@@ -399,6 +404,8 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
                   _paymentTile('assets/images/LogoPaiement-2.png'),
                 ],
               ),
+              const SizedBox(height: 16),
+              ..._demoPaymentScenarios.map(_buildPaymentScenarioCard),
 
               const SizedBox(height: 40),
             ],
@@ -414,7 +421,7 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
         child: SizedBox(
           width: 300,
           child: CustomButton(
-            text: _submitting ? "Envoi..." : "Demande de location",
+            text: _submitting ? "Paiement..." : "Payer et envoyer la demande",
             onPressed: _submitting ? null : _submitReservation,
           ),
         ),
@@ -442,8 +449,98 @@ class _ReservationPaymentScreenState extends State<ReservationPaymentScreen> {
     );
   }
 
+  Widget _buildPaymentScenarioCard(_DemoPaymentScenario scenario) {
+    final isSelected = _selectedPaymentScenario.code == scenario.code;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => setState(() => _selectedPaymentScenario = scenario),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : const Color(0xFFF7FAFD),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primaryBlue
+                  : const Color(0xFFD7E5F2),
+              width: isSelected ? 1.6 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isSelected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_off,
+                color: isSelected
+                    ? AppColors.primaryBlue
+                    : AppColors.textGrey800,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      scenario.label,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      scenario.cardNumber,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   String _formatDate(DateTime d) {
     final formatted = DateFormat('d MMMM y', 'fr_FR').format(d);
     return formatted[0].toUpperCase() + formatted.substring(1);
   }
 }
+
+class _DemoPaymentScenario {
+  final String code;
+  final String label;
+  final String cardNumber;
+
+  const _DemoPaymentScenario({
+    required this.code,
+    required this.label,
+    required this.cardNumber,
+  });
+}
+
+const List<_DemoPaymentScenario> _demoPaymentScenarios = [
+  _DemoPaymentScenario(
+    code: 'visa',
+    label: 'Visa de test',
+    cardNumber: '4242 4242 4242 4242',
+  ),
+  _DemoPaymentScenario(
+    code: 'insufficient_funds',
+    label: 'Carte refusée',
+    cardNumber: '4000 0000 0000 9995',
+  ),
+  _DemoPaymentScenario(
+    code: 'three_d_secure',
+    label: 'Carte 3D Secure',
+    cardNumber: '4000 0000 0000 3220',
+  ),
+];

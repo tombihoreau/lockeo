@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/product_detail.dart';
 import '../services/auth_session.dart';
 import '../services/conversations_service.dart';
+import '../services/favorites_service.dart';
 import '../services/products_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -28,6 +29,7 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final _conversationsService = ConversationsService();
   final _productsService = ProductsService();
+  final _favoritesService = FavoritesService.instance;
 
   late Future<ProductDetail> _detailFuture;
 
@@ -35,6 +37,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void initState() {
     super.initState();
     _detailFuture = _productsService.getOfferDetail(widget.offerId);
+    _favoritesService.ensureLoaded();
+  }
+
+  Future<void> _toggleFavorite(int productId) async {
+    final currentValue = _favoritesService.favoriteProductIds.value.contains(
+      productId,
+    );
+
+    try {
+      await _favoritesService.toggleFavorite(
+        productId,
+        currentValue: currentValue,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Impossible de mettre à jour les favoris"),
+        ),
+      );
+    }
   }
 
   @override
@@ -117,7 +140,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: 320,
-                  child: ImageSlider(images: detail.images, height: 320),
+                  child: ValueListenableBuilder<Set<int>>(
+                    valueListenable: _favoritesService.favoriteProductIds,
+                    builder: (context, favoriteIds, _) {
+                      return ImageSlider(
+                        images: detail.images,
+                        height: 320,
+                        isFavorite: favoriteIds.contains(product.productId),
+                        onToggleFavorite: () =>
+                            _toggleFavorite(product.productId),
+                      );
+                    },
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(

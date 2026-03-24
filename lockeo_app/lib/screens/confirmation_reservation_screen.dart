@@ -20,6 +20,9 @@ class ReservationConfirmationScreen extends StatefulWidget {
   final int? conversationId;
   final int? reservationId;
   final double? reservationTotalPrice;
+  final String? paymentProvider;
+  final String? paymentCardLabel;
+  final String? paymentCardPreview;
 
   const ReservationConfirmationScreen({
     super.key,
@@ -30,6 +33,9 @@ class ReservationConfirmationScreen extends StatefulWidget {
     this.conversationId,
     this.reservationId,
     this.reservationTotalPrice,
+    this.paymentProvider,
+    this.paymentCardLabel,
+    this.paymentCardPreview,
   });
 
   @override
@@ -158,6 +164,7 @@ class _ReservationConfirmationScreenState
         : detail.owner.login.trim().isNotEmpty
         ? detail.owner.login.trim()
         : 'le propriétaire';
+    final paymentSummary = _buildPaymentSummary();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -196,6 +203,16 @@ class _ReservationConfirmationScreenState
                     color: AppColors.textGrey,
                   ),
                 ),
+                if (paymentSummary != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    paymentSummary,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -287,5 +304,34 @@ class _ReservationConfirmationScreenState
   String _formatDate(DateTime d) {
     final formatted = DateFormat('d MMMM y', 'fr_FR').format(d);
     return formatted[0].toUpperCase() + formatted.substring(1);
+  }
+
+  String? _buildPaymentSummary() {
+    final provider = widget.paymentProvider?.trim();
+    final cardLabel = widget.paymentCardLabel?.trim();
+    final cardPreview = widget.paymentCardPreview?.trim();
+
+    if ((provider == null || provider.isEmpty) &&
+        (cardLabel == null || cardLabel.isEmpty) &&
+        (cardPreview == null || cardPreview.isEmpty)) {
+      return null;
+    }
+
+    final providerLabel = switch (provider) {
+      'stripe_test' => 'Stripe',
+      'mock_demo' => 'Lockeo Pay',
+      _ => 'Lockeo Pay',
+    };
+
+    final cardPart = [
+      if (cardLabel != null && cardLabel.isNotEmpty) cardLabel,
+      if (cardPreview != null && cardPreview.isNotEmpty) cardPreview,
+    ].join(' - ');
+
+    if (cardPart.isEmpty) {
+      return "Paiement confirmé via $providerLabel.";
+    }
+
+    return "Paiement confirmé via $providerLabel avec $cardPart.";
   }
 }
