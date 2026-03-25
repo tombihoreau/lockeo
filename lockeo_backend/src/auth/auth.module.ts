@@ -21,7 +21,7 @@ import type { JwtSignOptions } from '@nestjs/jwt';
         signOptions: {
           expiresIn: config.get<JwtSignOptions['expiresIn']>(
             'JWT_EXPIRES',
-            '1h',
+            '24h',
           ),
         },
       }),
