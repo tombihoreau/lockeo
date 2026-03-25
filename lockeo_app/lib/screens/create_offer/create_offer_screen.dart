@@ -389,6 +389,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               ),
               child: TextField(
                 controller: titleController,
+                textCapitalization: TextCapitalization.sentences,
                 style: AppTextStyles.label.copyWith(
                   color: AppColors.textPrimary, // couleur du texte saisi
                 ),
@@ -409,6 +410,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               ),
               child: TextField(
                 controller: descriptionController,
+                textCapitalization: TextCapitalization.sentences,
                 maxLines: 4,
                 style: AppTextStyles.label.copyWith(
                   color: AppColors.textPrimary,
@@ -463,6 +465,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                     child: TextField(
                       controller: _locationCtrl,
                       keyboardType: TextInputType.text,
+                      textCapitalization: TextCapitalization.words,
                       autofillHints: const [AutofillHints.addressCity],
                       onChanged: (value) {
                         _onManualLocationChanged(value);

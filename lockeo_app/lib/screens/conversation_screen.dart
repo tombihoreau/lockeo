@@ -707,6 +707,7 @@ class _ConversationScreenState extends State<ConversationScreen>
   @override
   Widget build(BuildContext context) {
     final lightBg = const Color(0xFFF5F7FA);
+    final topPadding = MediaQuery.of(context).padding.top;
 
     return PopScope(
       canPop: false,
@@ -788,9 +789,11 @@ class _ConversationScreenState extends State<ConversationScreen>
                       onTap: () => FocusScope.of(context).unfocus(),
                       child: ListView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          _keyboardVisible ? topPadding + 12 : 8,
+                          16,
+                          8,
                         ),
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
@@ -989,6 +992,7 @@ class _ComposerBar extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
                     hintText: "Envoyer un message",
                     hintStyle: AppTextStyles.label.copyWith(
