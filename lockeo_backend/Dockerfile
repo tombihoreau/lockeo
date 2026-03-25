@@ -23,6 +23,7 @@ ENV PORT=3000
 # Copie node_modules de prod + build
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/seed-assets ./seed-assets
 COPY package*.json ./
 
 # Copy entrypoint
