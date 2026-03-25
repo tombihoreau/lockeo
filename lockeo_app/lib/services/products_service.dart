@@ -73,6 +73,56 @@ class ProductsService {
         .toList();
   }
 
+  Future<List<ProductSuggestion>> getHomeSuggestions({
+    int limit = 4,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final token = AuthSession.instance.accessToken;
+    if (token == null || token.trim().isEmpty) {
+      return getSuggestions(limit: limit);
+    }
+
+    _api.setBearerToken(token);
+    final list = await _api.getJsonList(
+      '/products/home/suggestions',
+      query: {
+        'limit': limit,
+        if (latitude != null) 'lat': latitude,
+        if (longitude != null) 'lng': longitude,
+      },
+    );
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map((e) => ProductSuggestion.fromJson(e))
+        .toList();
+  }
+
+  Future<List<ProductSuggestion>> getPopularNearby({
+    int limit = 4,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final token = AuthSession.instance.accessToken;
+    if (token == null || token.trim().isEmpty) {
+      return getSuggestions(limit: limit);
+    }
+
+    _api.setBearerToken(token);
+    final list = await _api.getJsonList(
+      '/products/home/popular-nearby',
+      query: {
+        'limit': limit,
+        if (latitude != null) 'lat': latitude,
+        if (longitude != null) 'lng': longitude,
+      },
+    );
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map((e) => ProductSuggestion.fromJson(e))
+        .toList();
+  }
+
   Future<ProductDetail> getOfferDetail(int offerId) async {
     final json = await _api.getJson('/products/offers/$offerId');
     return ProductDetail.fromJson(json);

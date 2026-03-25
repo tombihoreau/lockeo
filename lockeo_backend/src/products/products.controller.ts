@@ -21,7 +21,11 @@ import {
 } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
-import { ProductDetailDto, ProductSuggestionDto } from './products.service';
+import {
+  HomeFeedDto,
+  ProductDetailDto,
+  ProductSuggestionDto,
+} from './products.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
@@ -87,6 +91,69 @@ export class ProductsController {
   ): Promise<ProductSuggestionDto[]> {
     const take = Math.max(1, Math.min(parseInt(limit || '4', 10) || 4, 20));
     return this.products.getSuggestions(take);
+  }
+
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  @Get('home')
+  async homeFeed(
+    @Req() req: RequestWithUser,
+    @Query('limit') limit = '4',
+    @Query('lat') latitude?: string,
+    @Query('lng') longitude?: string,
+  ): Promise<HomeFeedDto> {
+    const take = Math.max(1, Math.min(parseInt(limit || '4', 10) || 4, 20));
+    const parsedLatitude = latitude != null ? Number(latitude) : undefined;
+    const parsedLongitude = longitude != null ? Number(longitude) : undefined;
+
+    return this.products.getHomeFeed(
+      req.user.userId,
+      take,
+      Number.isFinite(parsedLatitude) ? parsedLatitude : undefined,
+      Number.isFinite(parsedLongitude) ? parsedLongitude : undefined,
+    );
+  }
+
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  @Get('home/suggestions')
+  async personalizedSuggestions(
+    @Req() req: RequestWithUser,
+    @Query('limit') limit = '4',
+    @Query('lat') latitude?: string,
+    @Query('lng') longitude?: string,
+  ): Promise<ProductSuggestionDto[]> {
+    const take = Math.max(1, Math.min(parseInt(limit || '4', 10) || 4, 20));
+    const parsedLatitude = latitude != null ? Number(latitude) : undefined;
+    const parsedLongitude = longitude != null ? Number(longitude) : undefined;
+
+    return this.products.getPersonalizedSuggestions(
+      req.user.userId,
+      take,
+      Number.isFinite(parsedLatitude) ? parsedLatitude : undefined,
+      Number.isFinite(parsedLongitude) ? parsedLongitude : undefined,
+    );
+  }
+
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  @Get('home/popular-nearby')
+  async popularNearby(
+    @Req() req: RequestWithUser,
+    @Query('limit') limit = '4',
+    @Query('lat') latitude?: string,
+    @Query('lng') longitude?: string,
+  ): Promise<ProductSuggestionDto[]> {
+    const take = Math.max(1, Math.min(parseInt(limit || '4', 10) || 4, 20));
+    const parsedLatitude = latitude != null ? Number(latitude) : undefined;
+    const parsedLongitude = longitude != null ? Number(longitude) : undefined;
+
+    return this.products.getPopularNearby(
+      req.user.userId,
+      take,
+      Number.isFinite(parsedLatitude) ? parsedLatitude : undefined,
+      Number.isFinite(parsedLongitude) ? parsedLongitude : undefined,
+    );
   }
 
   @Get('search')

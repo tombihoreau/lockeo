@@ -18,6 +18,7 @@ import { Review } from '../entities/review.entity';
 import { Conversation } from '../entities/conversation.entity';
 import { NotificationTemplate } from '../entities/notification-template.entity';
 import { UserNotification } from '../entities/user-notification.entity';
+import { Favorite } from '../entities/favorite.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { CheckoutReservationDto } from './dto/checkout-reservation.dto';
@@ -125,6 +126,12 @@ export interface ProductDetailDto {
   other_offers: ProductSuggestionDto[];
 }
 
+export interface HomeFeedDto {
+  suggestions: ProductSuggestionDto[];
+  popular_nearby: ProductSuggestionDto[];
+  recent_favorites: ProductSuggestionDto[];
+}
+
 export interface CreatedOfferDto {
   product_id: number;
   offer_id: number;
@@ -159,6 +166,11 @@ export interface ReservationStatusNotificationDto {
   body: string;
   created_at: string;
 }
+
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+};
 
 function sanitizePostalCode(value: string | null | undefined): string {
   const normalized = (value ?? '').trim();
@@ -198,6 +210,143 @@ export class ProductsService {
     );
 
     return products.map((p) => this.toSuggestionDto(p));
+  }
+
+  async getHomeFeed(
+    userId: number,
+    limit: number,
+    latitude?: number,
+    longitude?: number,
+  ): Promise<HomeFeedDto> {
+    const [suggestions, popularNearby, recentFavorites] = await Promise.all([
+      this.getPersonalizedSuggestions(userId, limit, latitude, longitude),
+      this.getPopularNearby(userId, limit, latitude, longitude),
+      this.getRecentFavorites(userId, limit),
+    ]);
+
+    return {
+      suggestions,
+      popular_nearby: popularNearby,
+      recent_favorites: recentFavorites,
+    };
+  }
+
+  async getPersonalizedSuggestions(
+    userId: number,
+    limit: number,
+    latitude?: number,
+    longitude?: number,
+  ): Promise<ProductSuggestionDto[]> {
+    const coordinates = await this.resolveUserCoordinates(
+      userId,
+      latitude,
+      longitude,
+    );
+    const rentedCategoryIds = await this.getRentedCategoryIds(userId);
+
+    if (coordinates == null && rentedCategoryIds.length === 0) {
+      return this.getSuggestions(limit);
+    }
+
+    const products = await this.loadAvailableListingProducts();
+    if (products.length === 0) {
+      return [];
+    }
+
+    const rentedCategoryIdSet = new Set(rentedCategoryIds);
+    const createdAtTimestamps = products.map((product) =>
+      product.created_at.getTime(),
+    );
+    const oldestCreatedAt = Math.min(...createdAtTimestamps);
+    const newestCreatedAt = Math.max(...createdAtTimestamps);
+
+    const scored = products.map((product) => {
+      const productCategoryIds = this.extractCategoryIds(product);
+      const matchedCategoriesCount = productCategoryIds.filter((categoryId) =>
+        rentedCategoryIdSet.has(categoryId),
+      ).length;
+      const distanceKm = this.calculateDistanceKm(product, coordinates);
+      const recencyScore =
+        newestCreatedAt === oldestCreatedAt
+          ? 1
+          : (product.created_at.getTime() - oldestCreatedAt) /
+            (newestCreatedAt - oldestCreatedAt);
+      const proximityScore = distanceKm == null ? 0 : 1 / (1 + distanceKm / 25);
+      const categoryScore =
+        rentedCategoryIdSet.size === 0
+          ? 0
+          : matchedCategoriesCount > 0
+            ? 1 + matchedCategoriesCount / 10
+            : 0;
+
+      return {
+        product,
+        matchedCategoriesCount,
+        distanceKm,
+        recencyScore,
+        score: categoryScore * 100 + proximityScore * 10 + recencyScore,
+      };
+    });
+
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.matchedCategoriesCount !== a.matchedCategoriesCount) {
+        return b.matchedCategoriesCount - a.matchedCategoriesCount;
+      }
+
+      const distanceA = a.distanceKm ?? Number.POSITIVE_INFINITY;
+      const distanceB = b.distanceKm ?? Number.POSITIVE_INFINITY;
+      if (distanceA !== distanceB) return distanceA - distanceB;
+
+      return b.product.created_at.getTime() - a.product.created_at.getTime();
+    });
+
+    return scored
+      .slice(0, limit)
+      .map(({ product }) => this.toSuggestionDto(product));
+  }
+
+  async getPopularNearby(
+    userId: number,
+    limit: number,
+    latitude?: number,
+    longitude?: number,
+  ): Promise<ProductSuggestionDto[]> {
+    const coordinates = await this.resolveUserCoordinates(
+      userId,
+      latitude,
+      longitude,
+    );
+    const products = await this.loadAvailableListingProducts();
+    if (products.length === 0) {
+      return [];
+    }
+
+    const rentalCounts = await this.getRentalCounts(
+      products.map((product) => product.product_id),
+    );
+
+    const scored = products.map((product) => ({
+      product,
+      rentalCount: rentalCounts.get(product.product_id) ?? 0,
+      distanceKm: this.calculateDistanceKm(product, coordinates),
+    }));
+
+    scored.sort((a, b) => {
+      if (b.rentalCount !== a.rentalCount) {
+        return b.rentalCount - a.rentalCount;
+      }
+
+      const distanceA = a.distanceKm ?? Number.POSITIVE_INFINITY;
+      const distanceB = b.distanceKm ?? Number.POSITIVE_INFINITY;
+      if (distanceA !== distanceB) return distanceA - distanceB;
+
+      return b.product.created_at.getTime() - a.product.created_at.getTime();
+    });
+
+    return scored
+      .slice(0, limit)
+      .map(({ product }) => this.toSuggestionDto(product));
   }
 
   async searchProducts(
@@ -431,6 +580,194 @@ export class ProductsService {
       .leftJoinAndSelect('phc.category', 'category')
       .where('p.product_id IN (:...ids)', { ids })
       .getMany();
+  }
+
+  private async loadAvailableListingProducts(): Promise<Product[]> {
+    return this.repo
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.images', 'img')
+      .leftJoinAndSelect('p.offers', 'offer', 'offer.status = :status', {
+        status: 'open',
+      })
+      .leftJoinAndSelect('offer.owner', 'offerOwner')
+      .leftJoinAndSelect('p.productCategories', 'phc')
+      .leftJoinAndSelect('phc.category', 'category')
+      .where('p.is_available = :avail', { avail: true })
+      .andWhere('offer.offer_id IS NOT NULL')
+      .getMany();
+  }
+
+  private async resolveUserCoordinates(
+    userId: number,
+    latitude?: number,
+    longitude?: number,
+  ): Promise<Coordinates | null> {
+    if (
+      typeof latitude === 'number' &&
+      Number.isFinite(latitude) &&
+      typeof longitude === 'number' &&
+      Number.isFinite(longitude)
+    ) {
+      return {
+        latitude,
+        longitude,
+      };
+    }
+
+    const user = await this.repo.manager.getRepository(User).findOne({
+      where: { user_id: userId },
+      select: {
+        user_id: true,
+        latitude: true,
+        longitude: true,
+      },
+    });
+
+    if (
+      user?.latitude == null ||
+      user.longitude == null ||
+      !Number.isFinite(user.latitude) ||
+      !Number.isFinite(user.longitude)
+    ) {
+      return null;
+    }
+
+    return {
+      latitude: user.latitude,
+      longitude: user.longitude,
+    };
+  }
+
+  private async getRentedCategoryIds(userId: number): Promise<number[]> {
+    const rows = await this.repo.manager
+      .getRepository(Reservation)
+      .createQueryBuilder('reservation')
+      .leftJoin('reservation.renter', 'renter')
+      .leftJoin('reservation.offer', 'offer')
+      .leftJoin('offer.product', 'product')
+      .leftJoin('product.productCategories', 'phc')
+      .leftJoin('phc.category', 'category')
+      .select('category.category_id', 'category_id')
+      .addSelect('COUNT(reservation.reservation_id)', 'rental_count')
+      .where('renter.user_id = :userId', { userId })
+      .andWhere('category.category_id IS NOT NULL')
+      .andWhere('reservation.status NOT IN (:...ignoredStatuses)', {
+        ignoredStatuses: ['cancelled', 'canceled', 'rejected', 'refused'],
+      })
+      .groupBy('category.category_id')
+      .orderBy('rental_count', 'DESC')
+      .getRawMany<{ category_id: string | number }>();
+
+    return rows
+      .map((row) =>
+        typeof row.category_id === 'number'
+          ? row.category_id
+          : parseInt(row.category_id, 10),
+      )
+      .filter((categoryId) => Number.isInteger(categoryId) && categoryId > 0);
+  }
+
+  private async getRecentFavorites(
+    userId: number,
+    limit: number,
+  ): Promise<ProductSuggestionDto[]> {
+    const favorites = await this.repo.manager
+      .getRepository(Favorite)
+      .createQueryBuilder('favorite')
+      .leftJoinAndSelect('favorite.product', 'product')
+      .leftJoinAndSelect('product.images', 'img')
+      .leftJoinAndSelect('product.offers', 'offer', 'offer.status = :status', {
+        status: 'open',
+      })
+      .leftJoinAndSelect('offer.owner', 'offerOwner')
+      .leftJoinAndSelect('product.productCategories', 'phc')
+      .leftJoinAndSelect('phc.category', 'category')
+      .where('favorite.user = :userId', { userId })
+      .orderBy('favorite.created_at', 'DESC')
+      .limit(limit)
+      .getMany();
+
+    return favorites
+      .map((favorite) => favorite.product)
+      .filter((product): product is Product => product != null)
+      .map((product) => this.toSuggestionDto(product));
+  }
+
+  private async getRentalCounts(
+    productIds: number[],
+  ): Promise<Map<number, number>> {
+    if (productIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.repo.manager
+      .getRepository(Reservation)
+      .createQueryBuilder('reservation')
+      .leftJoin('reservation.offer', 'offer')
+      .leftJoin('offer.product', 'product')
+      .select('product.product_id', 'product_id')
+      .addSelect('COUNT(reservation.reservation_id)', 'rental_count')
+      .where('product.product_id IN (:...productIds)', { productIds })
+      .andWhere('reservation.status NOT IN (:...ignoredStatuses)', {
+        ignoredStatuses: ['cancelled', 'canceled', 'rejected', 'refused'],
+      })
+      .groupBy('product.product_id')
+      .getRawMany<{ product_id: string | number; rental_count: string }>();
+
+    return new Map(
+      rows.map((row) => [
+        typeof row.product_id === 'number'
+          ? row.product_id
+          : parseInt(row.product_id, 10),
+        parseInt(row.rental_count, 10) || 0,
+      ]),
+    );
+  }
+
+  private extractCategoryIds(product: Product): number[] {
+    return Array.from(
+      new Set(
+        (product.productCategories ?? [])
+          .map((relation) => relation.category?.category_id)
+          .filter(
+            (categoryId): categoryId is number =>
+              typeof categoryId === 'number',
+          ),
+      ),
+    );
+  }
+
+  private calculateDistanceKm(
+    product: Product,
+    coordinates: Coordinates | null,
+  ): number | null {
+    if (
+      coordinates == null ||
+      product.latitude == null ||
+      product.longitude == null
+    ) {
+      return null;
+    }
+
+    const earthRadiusKm = 6371;
+    const toRadians = (value: number) => (value * Math.PI) / 180;
+    const deltaLat = toRadians(product.latitude - coordinates.latitude);
+    const deltaLng = toRadians(product.longitude - coordinates.longitude);
+    const lat1 = toRadians(coordinates.latitude);
+    const lat2 = toRadians(product.latitude);
+
+    const haversine =
+      Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+      Math.cos(lat1) *
+        Math.cos(lat2) *
+        Math.sin(deltaLng / 2) *
+        Math.sin(deltaLng / 2);
+
+    return (
+      2 *
+      earthRadiusKm *
+      Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
+    );
   }
 
   private async getOwnerOtherOffers(
@@ -826,13 +1163,13 @@ export class ProductsService {
     let realtimeNotification: ReservationStatusNotificationDto | null = null;
     if (conversation) {
       const templateCode =
-          status === 'accepted' ? 'RESERVATION_ACCEPTED' : 'RESERVATION_REFUSED';
+        status === 'accepted' ? 'RESERVATION_ACCEPTED' : 'RESERVATION_REFUSED';
       const title =
-          status === 'accepted' ? 'Demande acceptee' : 'Demande refusee';
+        status === 'accepted' ? 'Demande acceptee' : 'Demande refusee';
       const body =
-          status === 'accepted'
-              ? 'Votre demande de location a ete acceptee.'
-              : 'Votre demande de location a ete refusee.';
+        status === 'accepted'
+          ? 'Votre demande de location a ete acceptee.'
+          : 'Votre demande de location a ete refusee.';
 
       let template = await notificationTemplateRepo.findOne({
         where: { code: templateCode },
@@ -855,10 +1192,10 @@ export class ProductsService {
       );
 
       const senderName =
-          reservation.offer.owner.first_name?.trim() ||
-          reservation.offer.owner.last_name?.trim() ||
-          reservation.offer.owner.login?.trim() ||
-          'Quelqu’un';
+        reservation.offer.owner.first_name?.trim() ||
+        reservation.offer.owner.last_name?.trim() ||
+        reservation.offer.owner.login?.trim() ||
+        'Quelqu’un';
 
       realtimeNotification = {
         user_notification_id: notification.user_notification_id,

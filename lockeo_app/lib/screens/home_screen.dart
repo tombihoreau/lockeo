@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../widgets/product_grid.dart';
 import '../widgets/category_grid.dart';
 import '../widgets/header.dart';
 import '../widgets/favorites_section.dart';
+import '../widgets/home_suggestions_grid.dart';
+import '../widgets/popular_nearby_grid.dart';
 import '../theme/app_colors.dart';
 import '../widgets/complete_profile_card.dart';
 import '../widgets/main_scaffold.dart';
@@ -194,11 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(height: 20),
-                  const ProductGrid(
-                    maxItems: 4,
-                    sortBy: "Popularité",
-                    shrinkWrap: true,
-                  ),
+                  const HomeSuggestionsGrid(maxItems: 4, shrinkWrap: true),
                   const SizedBox(height: 40),
 
                   Row(
@@ -247,68 +244,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(height: 20),
-                  const ProductGrid(
-                    maxItems: 4,
-                    sortBy: "Distance",
-                    shrinkWrap: true,
-                  ),
+                  const PopularNearbyGrid(maxItems: 4, shrinkWrap: true),
                   const SizedBox(height: 40),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          "Vos favoris",
-                          style: AppTextStyles.h2.copyWith(color: Colors.black),
-                          softWrap: true,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MainScaffold(
-                                currentIndex: 1,
-                                child: SearchPage(favoritesOnly: true),
-                              ),
-                            ),
-                          );
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "Tout voir",
-                              style: AppTextStyles.link.copyWith(
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.none,
-                                color: AppColors.primaryBlue,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: AppColors.primaryBlue,
-                              size: 18,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-                  const ProductGrid(
-                    maxItems: 4,
-                    favoritesOnly: true,
-                    shrinkWrap: true,
-                  ),
-                  const SizedBox(height: 40),
-                  // 🔵 Section favoris (masquée si l'utilisateur n'a pas de favoris)
                   const FavoritesSection(maxItems: 4),
-
                 ],
               ),
             ),

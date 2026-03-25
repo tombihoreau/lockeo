@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../screens/search_screen.dart';
 import '../models/product_suggestion.dart';
 import '../services/products_service.dart';
+import 'main_scaffold.dart';
 import 'product_suggestions_grid.dart';
 
 class FavoritesSection extends StatelessWidget {
@@ -41,7 +43,15 @@ class FavoritesSection extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/products');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MainScaffold(
+                          currentIndex: 1,
+                          child: SearchPage(favoritesOnly: true),
+                        ),
+                      ),
+                    );
                   },
                   child: const Text(
                     'Tout voir',
@@ -54,9 +64,7 @@ class FavoritesSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            ProductSuggestionsGrid(
-              suggestions: favorites,
-            ),
+            ProductSuggestionsGrid(suggestions: favorites),
             const SizedBox(height: 40),
           ],
         );
