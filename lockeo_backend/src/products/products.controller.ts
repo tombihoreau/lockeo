@@ -29,9 +29,9 @@ import { UpdateReservationStatusDto } from './dto/update-reservation-status.dto'
 import { CheckoutReservationDto } from './dto/checkout-reservation.dto';
 import type { Request } from 'express';
 import type { AuthenticatedUser } from '../auth/jwt.strategy';
-import { extname, join } from 'path';
-import { mkdirSync } from 'fs';
+import { extname } from 'path';
 import { MessagingGateway } from '../messaging/messaging.gateway';
+import { ensureProductUploadsDir } from '../uploads/uploads-path';
 
 type UploadedImageFile = {
   filename: string;
@@ -50,7 +50,7 @@ type DiskStorageFactory = (options: {
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
 const { diskStorage }: { diskStorage: DiskStorageFactory } = require('multer');
 
-const productUploadsDir = join(process.cwd(), 'uploads', 'products');
+const productUploadsDir = ensureProductUploadsDir();
 const allowedImageExtensions = new Set([
   '.jpg',
   '.jpeg',
@@ -58,8 +58,6 @@ const allowedImageExtensions = new Set([
   '.webp',
   '.gif',
 ]);
-
-mkdirSync(productUploadsDir, { recursive: true });
 
 function slugifyFilename(name: string): string {
   return name

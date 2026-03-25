@@ -3,13 +3,15 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { mkdirSync } from 'fs';
-import { join } from 'path';
 import 'reflect-metadata';
+import {
+  ensureProductUploadsDir,
+  resolveUploadsDir,
+} from './uploads/uploads-path';
 
 async function bootstrap() {
-  const uploadsDir = join(process.cwd(), 'uploads');
-  mkdirSync(join(uploadsDir, 'products'), { recursive: true });
+  ensureProductUploadsDir();
+  const uploadsDir = resolveUploadsDir();
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
